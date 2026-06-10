@@ -1,0 +1,68 @@
+name: Update Docker Images
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Weekly on Monday at 9 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-docker-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check and update docker images
+        run: |
+          set -e
+
+          # Get latest versions using Docker Registry API
+          echo "Checking for latest image versions..."
+          NODE_LATEST=$(curl -s 'https://registry.hub.docker.com/v2/repositories/library/node/tags/?page_size=100' | grep -o '"name":"[0-9]*\.[0-9]*\.[0-9]*"' | grep -o '[0-9]*\.[0-9]*\.[0-9]*' | sort -V | tail -1)
+          POSTGRES_LATEST=$(curl -s 'https://registry.hub.docker.com/v2/repositories/library/postgres/tags/?page_size=100' | grep -o '"name":"[0-9]*"' | grep -o '[0-9]*' | sort -V | tail -1)
+          PROOF_SERVER_LATEST=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" 'https://ghcr.io/v2/midnight-ntwrk/proof-server/tags/list' | jq -r '.tags[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          INDEXER_LATEST=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" 'https://ghcr.io/v2/midnight-ntwrk/indexer-standalone/tags/list' | jq -r '.tags[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          MIDNIGHT_NODE_LATEST=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" 'https://ghcr.io/v2/midnight-ntwrk/midnight-node/tags/list' | jq -r '.tags[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+
+          echo "Found latest versions:"
+          echo "  node: ${NODE_LATEST}"
+          echo "  postgres: ${POSTGRES_LATEST}"
+          echo "  proof-server: ${PROOF_SERVER_LATEST}"
+          echo "  indexer-standalone: ${INDEXER_LATEST}"
+          echo "  midnight-node: ${MIDNIGHT_NODE_LATEST}"
+
+          # Update Dockerfile
+          sed -i "s|FROM node:.*|FROM node:${NODE_LATEST}|g" Dockerfile
+
+          # Update docker-compose.yml
+          sed -i "s|postgres:[0-9]*|postgres:${POSTGRES_LATEST}|g" docker-compose.yml
+          sed -i "s|proof-server:[0-9.]*|proof-server:${PROOF_SERVER_LATEST}|g" docker-compose.yml
+          sed -i "s|indexer-standalone:[0-9.]*|indexer-standalone:${INDEXER_LATEST}|g" docker-compose.yml
+          sed -i "s|midnight-node:[0-9.]*|midnight-node:${MIDNIGHT_NODE_LATEST}|g" docker-compose.yml
+
+          # Update tests/docker-compose-dynamic.yml
+          sed -i "s|postgres:[0-9]*|postgres:${POSTGRES_LATEST}|g" tests/docker-compose-dynamic.yml
+          sed -i "s|proof-server:[0-9.]*|proof-server:${PROOF_SERVER_LATEST}|g" tests/docker-compose-dynamic.yml
+          sed -i "s|indexer-standalone:[0-9.]*|indexer-standalone:${INDEXER_LATEST}|g" tests/docker-compose-dynamic.yml
+          sed -i "s|midnight-node:[0-9.]*|midnight-node:${MIDNIGHT_NODE_LATEST}|g" tests/docker-compose-dynamic.yml
+
+          # Update tests/docker-compose-proof-server-dynamic.yml
+          sed -i "s|postgres:[0-9]*|postgres:${POSTGRES_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
+          sed -i "s|proof-server:[0-9.]*|proof-server:${PROOF_SERVER_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
+          sed -i "s|indexer-standalone:[0-9.]*|indexer-standalone:${INDEXER_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
+          sed -i "s|midnight-node:[0-9.]*|midnight-node:${MIDNIGHT_NODE_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: 'chore: update docker image versions'
+          title: 'chore: update docker image versions to latest'
+          body: |
+            This PR updates the docker-compose.yml with the latest image versions from their respective registries.
+
+            Please review the updated versions and test before merging.
+          branch: chore/update-docker-images
+          delete-branch: true

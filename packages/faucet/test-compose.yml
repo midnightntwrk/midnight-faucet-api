@@ -1,0 +1,42 @@
+services:
+  proof-server:
+    image: "ghcr.io/midnight-ntwrk/proof-server:8.0.2"
+    container_name: "faucet-test-proof-server"
+    ports:
+      - 6300
+    environment:
+      RUST_BACKTRACE: "full"
+  indexer:
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:3.0.0-alpha.23"
+    container_name: "faucet-test-indexer"
+    ports:
+      - "8088:8088"
+    environment:
+      RUST_LOG: "indexer=warn,chain_indexer=warn,indexer_api=warn,wallet_indexer=warn,indexer_common=warn,fastrace_opentelemetry=off,info"
+      APP__INFRA__SECRET: "303132333435363738393031323334353637383930313233343536373839303132"
+      APP__INFRA__NODE__URL: "ws://node:9944"
+      APP__APPLICATION__NETWORK_ID: "undeployed"
+    healthcheck:
+      test: ["CMD-SHELL", "cat /var/run/indexer-standalone/running"]
+      start_interval: "5s"
+      interval: "5s"
+      timeout: "2s"
+      retries: 2
+      start_period: 5s
+    depends_on:
+      node:
+        condition: service_started
+  node:
+    image: "ghcr.io/midnight-ntwrk/midnight-node:0.20.0-alpha.1"
+    container_name: "faucet-test-node"
+    ports:
+      - "9944:9944"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9944/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    environment:
+      CFG_PRESET: "dev"
+      SIDECHAIN_BLOCK_BENEFICIARY: "04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e"

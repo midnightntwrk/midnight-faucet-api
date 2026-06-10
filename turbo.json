@@ -1,0 +1,47 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local", ".eslintrc.js"],
+  "tasks": {
+    "do-publish": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "build": {
+      "dependsOn": ["^build", "typecheck"],
+      "outputs": ["dist/**"],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.css", "!src/**/*.spec.ts", "tsconfig.json", "tsconfig.build.json"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "tsconfig.json"],
+      "outputs": []
+    },
+    "lint": {
+      "inputs": ["src/**/*.ts", "src/**/*.tsx"],
+      "dependsOn": ["^build", "typecheck"],
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["build", "typecheck"],
+      "outputs": ["reports/**", "coverage/**"],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.json", "tsconfig.json", "tsconfig.test.json", "test-compose.yml"]
+    },
+    "pull-test-images": {
+      "cache": false,
+      "inputs": ["test-compose.yml"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "persistent": true,
+      "cache": false,
+      "dependsOn": ["build"]
+    },
+    "publish": {},
+    "check": {
+      "dependsOn": ["build", "lint", "test"]
+    }
+  }
+}

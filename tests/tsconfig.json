@@ -1,0 +1,29 @@
+{
+  "include": ["src/smoke/*.ts", "src/e2e/**/*.ts"],
+  "compilerOptions": {
+    "rootDir": "./src",
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "noEmit": true,
+    "allowUnreachableCode": false,
+    "incremental": true,
+    "moduleResolution": "bundler"
+  },
+  "ts-node": {
+    "esm": true
+  }
+}

@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+  schedule:
+    - cron: '2 0 * * *'
+
+permissions: {}
+
+jobs:
+  check:
+    name: Build & Test
+    runs-on: ubuntu-latest-8-core-x64
+    permissions:
+      id-token: write       # This is required for requesting the JWT
+      contents: read        # This is required for actions/checkout
+      packages: write       # This is required for using GH docker registry
+      checks: write         # This is needed to upload test results
+      pull-requests: write  # This is needed to upload test results
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          always-auth: true
+          registry-url: https://npm.pkg.github.com/
+          scope: '@midnight-ntwrk'
+          node-version-file: '.nvmrc'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Log in to GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: 'https://ghcr.io'
+          username: ntwrk-bot
+          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Configure yarn
+        run: |
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_READ }}"
+
+      - name: Dependencies cache restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./.yarn/cache
+            ./node_modules
+          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            yarn-${{ github.ref_name }}
+            yarn-main
+
+      - name: Install dependencies
+        run: "yarn install --immutable"
+
+      - name: Dependencies cache save
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ./.yarn/cache
+            ./node_modules
+          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+
+      - name: Turbo cache restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ./turbo_cache
+          key: turbo-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            turbo-${{ github.ref_name }}
+            turbo-main
+
+      - name: Run checks
+        run: |
+          npx turbo check --cache-dir ./turbo_cache --concurrency 1
+
+      - name: Turbo cache save
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: ./turbo_cache
+          key: turbo-${{ github.ref_name }}-${{ github.run_id }}
+
+      - name: Publish Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Vitest Tests Report
+          path: |
+            !(node_modules)/**/report/test-report.xml
+          reporter: java-junit
+
+      - name: Publish Test Summary
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: success() || failure()
+        with:
+          check_name: Vitest Tests Results
+          files: |
+            ./packages/**/report/test-report.xml
+            ./apps/**/report/test-report.xml
+            !(node_modules)/**/report/test-report.xml
+
+      - name: Aggregate coverage reports
+        run: |
+          mkdir -p coverage/workspaces
+          yarn workspaces foreach -Apv exec bash -c '[ ! -f coverage/coverage-final.json ] && exit 0 || cp coverage/coverage-final.json '$(pwd)'/coverage/workspaces/$(basename $(pwd))-coverage-final.json'
+
+      - name: Merge report as ZIP
+        run: mv coverage coverage_$(date +"%Y%m%d%H%M%S")
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage*

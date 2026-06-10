@@ -1,0 +1,23 @@
+name: Faucet Smoke Test - devnet
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs twice a day
+    - cron: "0 0,6,12,16 * * *"
+
+permissions: {}
+
+jobs:
+  test:
+    name: Faucet Smoke Test
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/smoke-test.yml
+    with:
+      network: devnet
+    secrets: inherit

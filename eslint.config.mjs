@@ -1,0 +1,60 @@
+import esLint from '@eslint/js';
+import tsLint from 'typescript-eslint';
+import esLintPrettier from 'eslint-plugin-prettier/recommended';
+import vitest from '@vitest/eslint-plugin'
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+//TODO: consider defining config for config JS files too (for consistent formatting at the very least)
+export default tsLint.config(
+  esLint.configs.recommended,
+  ...tsLint.configs.recommendedTypeChecked,
+  {
+    ignores: ["dist/**"],
+  },
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: dirname(fileURLToPath(import.meta.url))
+      }
+    },
+    plugins: { vitest },
+    rules: {
+      'max-len': [ 'warn', { 'code': 120, 'tabWidth': 2 } ],
+      'eol-last': [ 'error', 'always' ],
+      'brace-style': [ 'error', 'stroustrup' ],
+      'no-console': 'warn',
+      'no-unused-vars': 'off',
+      'object-curly-newline': [
+        'error',
+        {
+          'ObjectExpression': { 'consistent': true },
+          'ObjectPattern': { 'consistent': true }
+        }
+      ],
+      'object-curly-spacing': ['error', 'always'],
+      'no-trailing-spaces': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-floating-promises': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        // Ensure that discards (i.e., _, __) don't trigger this rule.
+        {
+          'argsIgnorePattern': '^_',
+          'destructuredArrayIgnorePattern': '^_',
+          'varsIgnorePattern': '^_'
+        }
+      ],
+      '@typescript-eslint/no-namespace': [
+        'error',
+        // Ensure that we allow namespace declarations to support Effect style typing.
+        {
+          'allowDeclarations': true
+        }
+      ],
+      ...vitest.configs.recommended.rules,
+    }
+  },
+  esLintPrettier
+);

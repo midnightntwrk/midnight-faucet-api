@@ -1,0 +1,120 @@
+services:
+  faucet:
+    # This requires `yarn build`
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "5300:5300"
+      - "9696:9696"
+    environment:
+      NODE_URL: "ws://node:9944"
+      INDEXER_URL: "http://indexer:8088/api/v4/graphql"
+      PROVING_SERVER_URL: "http://proof-server:6300"
+      DB_HOST: "db"
+      LOG_LEVEL: "debug"
+      LOG_FORMAT: "pretty"
+      PRINT_CONFIG: "true"
+      MAX_CONCURRENT_TASKS: 1
+      THIRD_PARTY_ALLOWED_ORIGINS: "http://localhost:5300"
+      THIRD_PARTY_API_KEY: "test-api-key-12345"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5300/api/health"]
+      interval: 1s
+      timeout: 1s
+      retries: 0
+      start_period: 30s
+    depends_on:
+      db:
+        condition: service_started
+      node:
+        condition: service_started
+      indexer:
+        condition: service_started
+      proof-server:
+        condition: service_started
+  db:
+    image: postgres:18
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-faucet}
+      # kics-scan ignore-line
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-faucet}
+
+  proof-server:
+    image: "ghcr.io/midnight-ntwrk/proof-server:8.0.3"
+    container_name: proof-server_$TESTCONTAINERS_UID
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "6300:6300"
+    environment:
+      RUST_BACKTRACE: "full"
+      EXTRA_ARGS: -v
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6300/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  indexer:
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.3.2"
+    container_name: indexer_$TESTCONTAINERS_UID
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8088:8088"
+    environment:
+      RUST_LOG: "indexer=debug,chain_indexer=debug,indexer_api=debug,wallet_indexer=debug,indexer_common=debug,fastrace_opentelemetry=off,info"
+      # APP__INFRA__NODE__URL: "wss://rpc.devnet.midnight.network:443"
+      APP_INFRA_NODE_URL: "ws://node:9944"
+      APP__APPLICATION__NETWORK_ID: "undeployed"
+      # kics-scan ignore-line
+      APP__INFRA__STORAGE__PASSWORD: ${INDEXER_STORAGE_PASSWORD:?INDEXER_STORAGE_PASSWORD must be set}
+      # kics-scan ignore-line
+      APP__INFRA__PUB_SUB__PASSWORD: ${INDEXER_PUB_SUB_PASSWORD:?INDEXER_PUB_SUB_PASSWORD must be set}
+      # kics-scan ignore-line
+      APP__INFRA__LEDGER_STATE_STORAGE__PASSWORD: ${INDEXER_LEDGER_STATE_PASSWORD:?INDEXER_LEDGER_STATE_PASSWORD must be set}
+      APP__INFRA__SECRET: ${INDEXER_SECRET:?INDEXER_SECRET must be set}
+
+    healthcheck:
+      test: ["CMD-SHELL", "cat /var/run/indexer-standalone/running"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    depends_on:
+      node:
+        condition: service_healthy
+  node:
+    image: "ghcr.io/midnight-ntwrk/midnight-node:0.22.5"
+    container_name: node_$TESTCONTAINERS_UID
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+    ports:
+      - "9944:9944"
+    volumes:
+      - node-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9944/health"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    environment:
+      CFG_PRESET: "dev"
+      SIDECHAIN_BLOCK_BENEFICIARY: "04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e"
+
+volumes:
+  node-data:

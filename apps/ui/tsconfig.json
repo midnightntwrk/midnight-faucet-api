@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Default",
+  "include": ["src/**/*"],
+  "exclude": ["dist", "build", "node_modules"],
+  "compilerOptions": {
+    "types": ["vitest/globals"],
+    "outDir": "ts-dist",
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "inlineSources": false,
+    "isolatedModules": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "allowUnreachableCode": false,
+    "incremental": true
+  }
+}

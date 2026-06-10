@@ -1,0 +1,83 @@
+name: Faucet Load Test
+
+env:
+  GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+  MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        description: Midnight network to use
+        required: true
+        default: "qanet"
+        options:
+          - qanet
+          - preview
+          - preprod
+      numberOfUsers:
+        required: true
+        default: "1"
+      warmupRuns:
+        required: true
+        default: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+      packages: write # This is required for using GH docker registry
+      checks: write # This is needed to upload test results
+      pull-requests: write # This is needed to upload test results
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          always-auth: true
+          registry-url: https://npm.pkg.github.com/
+          scope: "@midnight-ntwrk"
+          node-version-file: ".nvmrc"
+        env:
+          NODE_AUTH_TOKEN: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Log in to GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: "https://ghcr.io"
+          username: ntwrk-bot
+          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Configure yarn
+        run: |
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
+
+      - name: Dependencies cache restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./.yarn/cache
+            ./node_modules
+          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            yarn-${{ github.ref_name }}
+            yarn-main
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable
+          yarn build
+
+      - name: Run Load Test
+        env:
+          NETWORK: ${{ inputs.network }}
+          NUMBER_OF_USERS: ${{ inputs.numberOfUsers }}
+          WARMUP_RUNS: ${{ inputs.warmupRuns }}
+        run: |
+          ./tests/src/load/loadTest.mjs

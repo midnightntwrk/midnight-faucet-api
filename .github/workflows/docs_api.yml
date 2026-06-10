@@ -1,0 +1,106 @@
+name: Publish updated API documentation
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          always-auth: true
+          registry-url: https://npm.pkg.github.com/
+          scope: "@midnight-ntwrk"
+          node-version-file: ".nvmrc"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Configure yarn
+        run: |
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_READ }}"
+
+      - name: Dependencies cache restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./.yarn/cache
+            ./node_modules
+          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            yarn-${{ github.ref_name }}
+            yarn-main
+
+      - name: Install dependencies
+        run: "yarn install --immutable"
+
+      - name: Dependencies cache save
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            ./.yarn/cache
+            ./node_modules
+          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+
+      - name: Turbo cache restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ./turbo_cache
+          key: turbo-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            turbo-${{ github.ref_name }}
+            turbo-main
+
+      - name: Generate documentation
+        run: |
+          yarn install && yarn build
+          yarn build:markdown-docs
+
+      - name: Turbo cache save
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: ./turbo_cache
+          key: turbo-${{ github.ref_name }}-${{ github.run_id }}
+
+      - name: Check if there are changes in docs and create a new branch
+        id: set_update
+        run: |
+          if [ -n "$(git status ./docs --porcelain)" ]; then
+            echo "Adding new..."
+            git config --global user.email "midnight-ci@users.noreply.github.com"
+            git config --global user.name "Midnight CI GitHub Action"
+            BRANCH=api-docs/merge-prs/`date +'%Y-%m-%dT%H%M%S'`
+            git checkout -b $BRANCH
+            git push -u origin $BRANCH
+            echo "UPDATE=true" >> $GITHUB_OUTPUT
+            echo "NEW_BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+          else
+            echo "Nothing to update"
+            echo "UPDATE=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
+
+      - uses: MonikaJassova/ghcommit-action@aee0efc02d3707e178c534477e5c87f70fe6678f
+        if: steps.set_update.outputs.UPDATE == 'true'
+        with:
+          commit_message: "Faucet API documentation update - created by Midnight CI Github Action"
+          repo: ${{ github.repository }}
+          branch: ${{ steps.set_update.outputs.NEW_BRANCH }}
+          file_pattern: "docs"
+        env:
+          GITHUB_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
+
+      - name: Open a PR
+        if: steps.set_update.outputs.UPDATE == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
+        run: gh pr create --base main --head ${{ steps.set_update.outputs.NEW_BRANCH }} --title "API documentation update" --body "Update API documentation - created by Midnight CI Github Action"

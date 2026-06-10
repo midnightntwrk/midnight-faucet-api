@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>midnightntwrk/renovate-config"],
+  "nix": { "enabled": true },
+  "hostRules": [
+    {
+      "hostType": "npm",
+      "matchHost": "https://npm.pkg.github.com/",
+      "npmrc": "@midnight-ntwrk:registry=https://npm.pkg.github.com/"
+    }
+  ]
+}

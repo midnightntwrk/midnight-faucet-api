@@ -1,0 +1,82 @@
+{
+  "name": "@midnight-ntwrk/faucet-server",
+  "version": "0.13.0",
+  "description": "Midnight faucet server",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/midnight-ntwrk/artifacts.git"
+  },
+  "author": "IOHK",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint --max-warnings=0",
+    "build": "tsc -b ./tsconfig.build.json && chmod +x ./dist/index.js",
+    "typecheck": "tsc -p tsconfig.json",
+    "start": "node --experimental-specifier-resolution=node ./dist/index.js"
+  },
+  "bin": {
+    "midnight-faucet": "./dist/index.js"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/faucet": "workspace:^",
+    "@midnight-ntwrk/faucet-auth": "workspace:^",
+    "@midnight-ntwrk/faucet-internal-api": "workspace:^",
+    "@midnight-ntwrk/faucet-ui": "workspace:^",
+    "@midnight-ntwrk/faucet-utils": "workspace:^",
+    "@midnight-ntwrk/wallet-sdk-abstractions": "^2.1.0",
+    "@types/convict": "^6.1.5",
+    "@types/cors": "^2.8.15",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.4",
+    "@types/lodash": "^4.14.200",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.37",
+    "convict": "^6.2.5",
+    "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
+    "express": "^5.0.0",
+    "fp-ts": "^2.16.1",
+    "io-ts": "^2.2.20",
+    "io-ts-types": "^0.5.19",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.2.10",
+    "lodash": "^4.18.1",
+    "luxon": "^3.4.3",
+    "monocle-ts": "^2.3.13",
+    "newtype-ts": "^0.3.5",
+    "passport": "^0.6.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "pg": "^8.11.3",
+    "pino": "^10.0.0",
+    "pino-pretty": "^13.0.0",
+    "prom-client": "^15.1.2",
+    "quick-lru": "^7.0.0",
+    "rxjs": "^7.8.1",
+    "vitest": "^4.1.2",
+    "yargs": "^18.0.0"
+  },
+  "files": [
+    "dist/"
+  ],
+  "devDependencies": {
+    "@midnight-ntwrk/faucet-client": "workspace:^",
+    "@midnight-ntwrk/wallet-sdk-address-format": "^3.1.1",
+    "@testcontainers/postgresql": "^11.14.0",
+    "eslint": "^10.1.0",
+    "fast-check": "^4.8.0",
+    "testcontainers": "^12.0.1",
+    "typescript": "^6.0.2"
+  }
+}

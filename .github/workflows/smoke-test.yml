@@ -1,0 +1,160 @@
+name: Faucet Smoke Test
+
+env:
+  GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+  MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+  SYNC_CACHE: ${{ github.workspace }}/tests/src/smoke/.sync_cache
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        description: Midnight network to use
+        required: true
+        default: "preview"
+        options:
+          - preview
+          - qanet
+          - preprod
+          - undeployed
+      modifier:
+        type: string
+        description: Suite or a testname to run
+        required: false
+      branch:
+        type: string
+        description: Branch to run the tests against
+        required: false
+        default: "main"
+  workflow_call:
+    inputs:
+      network:
+        type: string
+        description: Midnight network to use (preview/qanet/preprod/undeployed)
+        required: true
+        default: "preview"
+      modifier:
+        type: string
+        description: Suite or a testname to run
+        required: false
+      branch:
+        type: string
+        description: Branch to run the tests against
+        required: false
+        default: "main"
+    secrets:
+      GH_TOKEN:
+        required: true
+      GH_USERNAME:
+        required: true
+      MIDNIGHTCI_PACKAGES_READ:
+        required: true
+
+jobs:
+  build:
+    name: Faucet Smoke Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+      packages: write # This is required for using GH docker registry
+      checks: write # This is needed to upload test results
+      pull-requests: write # This is needed to upload test results
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      # - name: Determine the latest run ID with appropriate artifact
+      #   continue-on-error: true
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      #   run: |
+      #       LATEST_RUN_ID=$(./.github/scripts/find_run_id.sh ${{ github.repository }} "Faucet Smoke Test - ${{ inputs.network }}" ".sync_cache")
+      #       echo "LATEST_RUN_ID=$LATEST_RUN_ID" >> $GITHUB_ENV
+      #       mkdir -p ${{ env.SYNC_CACHE }}
+
+      # - uses: actions/download-artifact@v4
+      #   continue-on-error: true
+      #   with:
+      #     run-id: ${{ env.LATEST_RUN_ID }}
+      #     path: ${{ env.SYNC_CACHE }}
+      #     github-token: ${{ secrets.GH_TOKEN }}
+      #     name: .sync_cache
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          always-auth: true
+          registry-url: https://npm.pkg.github.com/
+          scope: "@midnight-ntwrk"
+          node-version-file: ".nvmrc"
+        env:
+          NODE_AUTH_TOKEN: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Log in to GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: "https://ghcr.io"
+          username: ntwrk-bot
+          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Configure yarn
+        run: |
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
+
+      - name: Dependencies cache restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ./.yarn/cache
+            ./node_modules
+          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            yarn-${{ github.ref_name }}
+            yarn-main
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable
+
+      - name: Run smoke test
+        env:
+          NETWORK: ${{ inputs.network }}
+          SYNC_CACHE: ${{ env.SYNC_CACHE }}
+          TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
+          THIRD_PARTY_API_KEY: ${{ secrets.THIRD_PARTY_API_KEY }}
+          NODE_OPTIONS: --max-old-space-size=8192
+        run: |
+          cd tests
+          yarn smoke-test
+
+      - name: Upload sync cache
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: .sync_cache
+          path: ${{ env.SYNC_CACHE }}
+          include-hidden-files: true
+
+      - name: Publish Faucet Smoke Tests Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Faucet Smoke Tests Report
+          reporter: java-junit
+          path: ./tests/reports/report/test-report.xml
+
+      - name: Publish Faucet Smoke Tests Summary
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: success() || failure()
+        with:
+          check_name: Faucet Smoke Tests Summary
+          files: ./tests/reports/report/test-report.xml

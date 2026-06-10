@@ -1,0 +1,191 @@
+name: Faucet E2E Test
+
+env:
+  GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+  MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+  DISPLAY: ":99.0"
+  SYNC_CACHE: ${{ github.workspace }}/tests/src/e2e/.sync_cache
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        type: choice
+        description: Midnight network to use
+        required: true
+        default: "qanet"
+        options:
+          - qanet
+          - preprod
+          - preview
+          - undeployed
+      deployment:
+        type: choice
+        description: Midnight deployment to use
+        required: false
+        default: "preprod"
+        options:
+          - local
+          - qanet
+          - preview
+          - preprod
+      modifier:
+        type: string
+        description: Suite or a testname to run
+        required: false
+      branch:
+        type: string
+        description: Branch to run the tests against
+        required: false
+        default: "main"
+  workflow_call:
+    inputs:
+      network:
+        type: string
+        description: Midnight network to use (qanet/preview/preprod/undeployed)
+        required: true
+        default: "preprod"
+      deployment:
+        type: string
+        description: Midnight deployment to use (qanet/preview/preprod/local)
+        required: false
+        default: "preprod"
+      modifier:
+        type: string
+        description: Suite or a testname to run
+        required: false
+      branch:
+        type: string
+        description: Branch to run the tests against
+        required: false
+        default: "main"
+    secrets:
+      GH_TOKEN:
+        required: true
+      GH_USERNAME:
+        required: true
+      MIDNIGHTCI_PACKAGES_READ:
+        required: true
+
+jobs:
+  build:
+    name: Faucet E2E Test
+    runs-on: ubuntu-latest-8-core-x64
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+      packages: write # This is required for using GH docker registry
+      checks: write # This is needed to upload test results
+      pull-requests: write # This is needed to upload test results
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      # - name: Determine the latest run ID with appropriate artifact
+      #   continue-on-error: true
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      #   run: |
+      #       LATEST_RUN_ID=$(./.github/scripts/find_run_id.sh ${{ github.repository }} "Faucet E2E Test - ${{ inputs.network }}" ".sync_cache")
+      #       echo "LATEST_RUN_ID=$LATEST_RUN_ID" >> $GITHUB_ENV
+      #       mkdir -p ${{ env.SYNC_CACHE }}
+
+      # - uses: actions/download-artifact@v4
+      #   continue-on-error: true
+      #   with:
+      #     run-id: ${{ env.LATEST_RUN_ID }}
+      #     path: ${{ env.SYNC_CACHE }}
+      #     github-token: ${{ secrets.GH_TOKEN }}
+      #     name: .sync_cache
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          always-auth: true
+          registry-url: https://npm.pkg.github.com/
+          scope: "@midnight-ntwrk"
+          node-version-file: ".nvmrc"
+        env:
+          NODE_AUTH_TOKEN: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Log in to GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: "https://ghcr.io"
+          username: ntwrk-bot
+          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Configure yarn
+        run: |
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
+
+      - name: Install Playwright
+        working-directory: ./tests
+        run: |
+          yarn install --immutable
+          yarn playwright install --with-deps
+
+      - name: Log in to GitHub Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: "https://ghcr.io"
+          username: ntwrk-bot
+          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+
+      - name: Start XVFB
+        run: |
+          Xvfb :99 &
+
+      - name: Run E2E tests
+        id: tests
+        env:
+          NETWORK: ${{ inputs.network }}
+          DEPLOYMENT: ${{ inputs.deployment }}
+          TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
+          VISITOR_PASSWORD: ${{ secrets.VISITOR_PASSWORD }}
+        run: |
+          cd tests
+          yarn e2e-test
+
+      - name: Upload sync cache
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: .sync_cache
+          path: ${{ env.SYNC_CACHE }}
+          include-hidden-files: true
+
+      - name: Publish test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: "E2E Test Results - ${{ inputs.network }}"
+          path: ./tests/src/e2e/reports/junit-results.xml
+          reporter: java-junit
+          fail-on-empty: "false"
+
+      - name: Publish artifacts (test reports)
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: test-reports
+          path: |
+            ./tests/src/e2e/reports/playwright-report
+            ./tests/src/e2e/reports/playwrightResults
+          retention-days: 30
+
+      # - uses: rtCamp/action-slack-notify@v2
+      #   if: ${{ failure() && inputs.network == 'testnet' && steps.tests.outcome == 'failure' }}
+      #   env:
+      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+      #     SLACK_CHANNEL: topic-incident-management
+      #     SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
+      #     SLACK_MESSAGE: 'Testnet run failed :x:'
+      #     SLACK_TITLE: Faucet E2E tests

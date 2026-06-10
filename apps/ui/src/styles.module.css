@@ -1,0 +1,259 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+@import 'normalize.css';
+
+html {
+    font-size: 16px;
+    line-height: 1.25;
+    width: 100%;
+    font-family: 'Outfit', sans-serif;
+    color: white;
+    --color-black: #0A0A0A;
+    --color-lavender: #8A96B5;
+    --color-blue: #0000FE;
+    --color-grey: #4B4B4B;
+    --color-green: #2CB67D;
+    --color-red: #FE4646;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-top: 0.875rem;
+    margin-bottom: 0.875rem;
+}
+
+p {
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+button, .button {
+    box-sizing: border-box;
+    width: 321px;
+    height: 60px;
+    border: none;
+    border-radius: 100px;
+    backdrop-filter: blur(15px);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    font-size: 1.25rem;
+    text-decoration: none;
+    background-color: var(--color-blue);
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: white;
+    display: block;
+    text-align: center;
+    cursor: pointer;
+}
+
+button:disabled, .button:disabled {
+    background-color: var(--color-lavender);
+    cursor: default;
+}
+
+input {
+    box-sizing: border-box;
+    height: 60px;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    padding-left: 1.5rem;
+    font-size: 0.875rem;
+    color: white;
+    backdrop-filter: blur(15px);
+    background-color: var(--color-grey);
+    border: none;
+    border-radius: 100px;
+}
+
+.formInput {
+    display: block;
+    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    min-width: 321px;
+}
+
+.blackbox {
+    border-radius: 20px;
+    box-sizing: border-box;
+    padding: 125px 135px 50px;
+    background-color: var(--color-black);
+    background-image: url("assets/logo-render.png");
+    background-repeat: no-repeat;
+    background-size: 607px;
+    background-position-x: 73px;
+    background-position-y: 91px;
+    background-origin: border-box;
+}
+
+.appContainer {
+    margin: 0 auto;
+    max-width: 1600px;
+}
+
+.appContentWrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: start;
+    justify-content: end;
+}
+
+.appContent {
+    width: 100%;
+    max-width: 653px;
+}
+
+.appFooter {
+    display: flex;
+    flex-direction: row;
+    justify-content: end;
+    margin-top: 2rem;
+}
+
+.confirmationMessage {
+    color: var(--color-green);
+    line-break: anywhere;
+}
+
+.errorMessage {
+    color: var(--color-red);
+}
+
+.hr {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.4);
+    border: none;
+    height: 1px;
+    margin-top: 4.5rem;
+    margin-bottom: 3rem;
+}
+
+.withArrow::after {
+    content: url("assets/arrow.svg");
+    display: inline-block;
+    height: 1em;
+    margin-left: 0.875rem;
+    vertical-align: baseline;
+    position: relative;
+    top: 1px
+}
+
+.spacer {
+    height: 7rem;
+}
+
+.socialsRow {
+    padding-inline-start: 0;
+    list-style-type: none;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: end;
+}
+.socialsRow .social ~ .social {
+    margin-left: 1.5rem;
+}
+
+.topBar {
+    background-color: var(--color-black);
+    width: 100%;
+    height: 89px;
+    margin-bottom: 54px;
+}
+
+.topBarContents {
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+}
+
+@media screen and (max-width: 1600px) {
+    .topBar {
+        margin-bottom: 0;
+    }
+
+    .topBarContents {
+        padding-left: 135px;
+        padding-right: 135px;
+    }
+
+    .blackbox {
+        border-radius: 0;
+    }
+}
+
+@media screen and (max-width: 1440px) {
+    .blackbox {
+        padding-top: 60px;
+    }
+}
+
+@media screen and (max-width: 670px) {
+    .blackbox {
+        padding-top: 0;
+    }
+
+    .appFooter {
+        flex-direction: column-reverse;
+        align-items: center;
+    }
+
+    .socialsRow {
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media screen and (max-width: 590px) {
+    .blackbox {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+.loader {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 5px solid #FFF;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+.loaderContainer {
+    display: inline-flex;
+    align-items: center;
+}
+
+.loaderText {
+    padding-left: 0.87rem;
+    font-weight: 300;
+}

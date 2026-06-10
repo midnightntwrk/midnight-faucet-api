@@ -1,0 +1,9 @@
+# OpenGrep configuration
+# Local development configs are excluded - insecure protocols (ws://, http://)
+# are intentional for localhost-only services during development
+
+paths:
+  exclude:
+    - docker-compose.yml
+    - packages/faucet/test-compose.yml
+    - scripts/run-benchmark.mjs

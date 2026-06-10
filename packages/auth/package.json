@@ -1,0 +1,41 @@
+{
+  "name": "@midnight-ntwrk/faucet-auth",
+  "version": "0.13.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/midnight-ntwrk/artifacts.git"
+  },
+  "author": "IOHK",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint --max-warnings=0",
+    "build": "tsc -b ./tsconfig.build.json",
+    "prepack": "yarn build"
+  },
+  "files": [
+    "dist/"
+  ],
+  "devDependencies": {
+    "eslint": "^10.1.0",
+    "fast-check": "^4.8.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/faucet-utils": "workspace:^",
+    "@types/jsonwebtoken": "^9.0.4",
+    "date-fns": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "vitest": "^4.1.2"
+  },
+  "peerDependencies": {
+    "fp-ts": "*",
+    "pino": "*",
+    "rxjs": "*"
+  }
+}
