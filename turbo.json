@@ -24,7 +24,8 @@
     "test": {
       "dependsOn": ["build", "typecheck"],
       "outputs": ["reports/**", "coverage/**"],
-      "inputs": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.json", "tsconfig.json", "tsconfig.test.json", "test-compose.yml"]
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.json", "tsconfig.json", "tsconfig.test.json", "test-compose.yml"],
+      "passThroughEnv": ["ENCRYPTION_KEY", "JWT_SIGN_SECRET"]
     },
     "pull-test-images": {
       "cache": false,

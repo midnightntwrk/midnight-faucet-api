@@ -3,6 +3,7 @@
 A production-grade token faucet for the Midnight Network, built with TypeScript and RxJS. Provides both public (captcha-protected) and third-party (API-key authenticated) endpoints for requesting test tokens.
 
 **Features:**
+
 - Multi-wallet support (shielded, unshielded, dust) with automatic syncing
 - Task-queue based transaction processing with PostgreSQL persistence
 - Prometheus metrics and health checks
@@ -21,6 +22,7 @@ docker-compose up
 ```
 
 This brings up:
+
 - PostgreSQL database
 - Midnight node
 - Indexer service
@@ -30,22 +32,26 @@ This brings up:
 ### Manual Setup
 
 1. **Install dependencies:**
+
    ```shell
    yarn install
    ```
 
 2. **Build all packages:**
+
    ```shell
    yarn build
    ```
 
 3. **Configure the faucet:**
+
    ```shell
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Run migrations:**
+
    ```shell
    npx midnight-faucet migrate-db
    ```
@@ -71,10 +77,12 @@ yarn && yarn start
 This is a **Turborepo monorepo** with the following structure:
 
 ### Apps
+
 - **`apps/server`** — Express HTTP server, wallet management, task queue orchestration
 - **`apps/ui`** — React + Vite web interface
 
 ### Packages
+
 - **`packages/faucet`** — Core faucet implementation (wallet integration, transaction handling)
 - **`packages/auth`** — JWT and password authentication primitives
 - **`packages/faucet-client`** — TypeScript client library for the public API
@@ -82,6 +90,7 @@ This is a **Turborepo monorepo** with the following structure:
 - **`packages/faucet-utils`** — Lifecycle utilities (Resource/Task patterns)
 
 ### Tests
+
 - **`tests/`** — Smoke tests and E2E tests (Vitest + Playwright)
 
 ## API Documentation
@@ -105,6 +114,7 @@ curl -X POST http://localhost:3000/api/drips \
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "dripId": "string",
@@ -141,6 +151,7 @@ Prometheus metrics (text or JSON).
 For whitelisted partner integrations (origin whitelist + API key authentication).
 
 See **[Third-Party API Documentation](./THIRD_PARTY_API.md)** for complete details, including:
+
 - `POST /v1/drips` — Request a drip
 - `GET /v1/drips/{dripId}` — Get status
 - `GET /v1/health` — Check health
@@ -148,16 +159,19 @@ See **[Third-Party API Documentation](./THIRD_PARTY_API.md)** for complete detai
 ## Configuration
 
 Configuration is loaded via:
+
 1. `convict` config file (JSON5 format, path via `FAUCET_CONFIG_FILE`)
 2. Environment variables
 3. CLI arguments
 
 For all available options:
+
 ```shell
 npx midnight-faucet help
 ```
 
-Key env vars:
+Other env vars:
+
 - `FAUCET_CONFIG_FILE` — Path to JSON5 config file
 - `WALLET_SEED` — 32-byte hex wallet seed
 - `DATABASE_URL` — PostgreSQL connection string
@@ -199,6 +213,7 @@ yarn test --reporter=verbose path/to/spec.spec.ts # Verbose output
 ### Architecture Notes
 
 **Read CLAUDE.md** for in-depth architecture details, including:
+
 - Composition root and dependency injection
 - Task queue and transaction pipeline
 - State persistence and recovery
@@ -206,6 +221,7 @@ yarn test --reporter=verbose path/to/spec.spec.ts # Verbose output
 - Health checks and observability
 
 Key architectural decisions:
+
 - **ESM throughout** with `--experimental-specifier-resolution=node`
 - **Resource/Task lifecycle** from `@midnight-ntwrk/faucet-utils` (not raw Promises)
 - **io-ts codecs** for API types (source of truth)
@@ -244,6 +260,7 @@ See [docker-compose.yml](./docker-compose.yml) for a complete example.
 For security issues and vulnerability disclosure, see [SECURITY.md](./SECURITY.md).
 
 **Key security features:**
+
 - Transaction validation (coins verified before signing)
 - Concurrent transaction prevention (coin freshness checks)
 - State encryption and persistence recovery
@@ -252,6 +269,7 @@ For security issues and vulnerability disclosure, see [SECURITY.md](./SECURITY.m
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
+
 - Setting up your development environment
 - Code style and conventions
 - Testing requirements
@@ -263,11 +281,13 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
 We use Git Flow for releases:
 
 1. **Bump version** on `develop`:
+
    ```bash
    yarn workspaces foreach version <major|minor|patch|pre> --immediate
    ```
 
 2. **Create release branch:**
+
    ```bash
    git checkout -b release/v0.13.0
    ```

@@ -84,5 +84,8 @@
     "apps/*",
     "packages/*",
     "tests"
-  ]
+  ],
+  "dependencies": {
+    "@types/node": "^25.9.3"
+  }
 }

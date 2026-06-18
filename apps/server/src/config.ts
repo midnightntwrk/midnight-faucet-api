@@ -15,11 +15,21 @@ import { TaskManagerConfig } from "./TaskManager.js";
 convict.addFormat({
   name: "faucet-hex-string",
   validate(val) {
-    if (typeof val === "string" && Buffer.from(val, "hex").toString("hex") === val) {
+    if (
+      typeof val === "string" &&
+      val.length > 0 &&
+      Buffer.from(val, "hex").toString("hex") === val
+    ) {
       return true;
     } else {
-      throw new Error("Expected a hex string");
+      throw new Error("Expected a non-empty hex string");
     }
+  },
+  coerce(val) {
+    if (typeof val === "string") {
+      return val;
+    }
+    throw new Error("Expected a hex string");
   },
 });
 
@@ -116,8 +126,8 @@ export const schema = {
   },
   encryptionKey: {
     doc: "Key for state encryption",
-    format: Buffer,
-    default: "ae18ad906ec2686f7cd8e3b9e97255f4d048225771c0412e82717256dc27c49a",
+    format: "faucet-hex-string",
+    default: "",
     env: "ENCRYPTION_KEY",
     arg: "encryption-key",
   },
@@ -166,7 +176,7 @@ export const schema = {
   jwtSignSecret: {
     doc: "Secret to use for signing JWTs",
     format: "faucet-hex-string",
-    default: Buffer.from("unsafe_secret", "utf-8").toString("hex"),
+    default: "",
     env: "JWT_SIGN_SECRET",
     arg: "jwt-sign-secret",
   },
@@ -412,7 +422,7 @@ export const loadConfig = (): ServerConfig => {
     metricsPort: config.get("metricsPort"),
     dropAmount: config.get("dropAmount"),
     encryptionKey: Buffer.from(config.get("encryptionKey"), "hex"),
-    walletSeed: Buffer.from(config.get("walletSeed"), "hex"),
+    walletSeed: Buffer.from(config.get("walletSeed") as string, "hex"),
     targetCoinNumber: config.get("targetCoinNumber"),
     targetCoinSizeFactor: BigInt(config.get("targetCoinSizeFactor")),
     numberOfOutputs: config.get("numberOfOutputs"),
