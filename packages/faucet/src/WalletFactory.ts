@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/no-base-to-string */
 import {
   createKeystore,
@@ -60,8 +59,8 @@ export const checkNode = (nodeURL: URL) => async (logger: pino.Logger) => {
   logger.debug({ url: nodeURL }, "Pinging node");
   const httpUrl = new URL(nodeURL);
   const healthUrl = new URL("/health", httpUrl);
-  
-  healthUrl.protocol = httpUrl.protocol.startsWith('wss') ? 'https' : 'http';
+
+  healthUrl.protocol = httpUrl.protocol.startsWith("wss") ? "https" : "http";
 
   const response = await fetch(healthUrl);
 
@@ -71,17 +70,14 @@ export const checkNode = (nodeURL: URL) => async (logger: pino.Logger) => {
 
   const body = (await response.json()) as { isSyncing?: boolean; shouldHavePeers?: boolean };
 
-  if (!httpUrl.protocol.startsWith('wss')) {
+  if (!httpUrl.protocol.startsWith("wss")) {
     return response;
   }
 
-  if (
-    body.shouldHavePeers !== true &&
-    body.isSyncing === false
-  ) {
+  if (body.shouldHavePeers !== true && body.isSyncing === false) {
     throw new Error("Node is not syncing and should have peers");
   }
-  
+
   return response;
 };
 
@@ -93,13 +89,16 @@ export const checkIndexer = (indexerURL: URL) => {
     // This avoids callers having to guard for undefined and allows local dev to proceed.
     // eslint-disable-next-line @typescript-eslint/require-await
     return async (logger: pino.Logger) => {
-      logger.debug({ url: indexerURL }, "Skipping indexer healthcheck (non-wss) — assuming ready for local dev");
-      return new Response (null, { status: 200 });
+      logger.debug(
+        { url: indexerURL },
+        "Skipping indexer healthcheck (non-wss) — assuming ready for local dev",
+      );
+      return new Response(null, { status: 200 });
     };
   }
 
   return doCheck("indexer", new URL("/ready", indexerURL));
-}
+};
 
 export const checkProofServer = (proofServerURL: URL) => async (logger: pino.Logger) => {
   logger.debug({ url: proofServerURL }, "Pinging proof server");
@@ -141,7 +140,7 @@ const buildWalletFacade = async (
     },
     batchUpdates: {
       size: 600,
-      timeout: 1000
+      timeout: 1000,
     },
     provingServerUrl: urls.provingServerURL,
     relayURL: urls.nodeURL,
