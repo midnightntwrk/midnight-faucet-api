@@ -19,6 +19,7 @@ on:
           - preview
           - qanet
           - preprod
+          - stagenet
           - undeployed
       modifier:
         type: string

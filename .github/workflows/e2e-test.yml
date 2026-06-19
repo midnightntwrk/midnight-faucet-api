@@ -20,6 +20,7 @@ on:
           - qanet
           - preprod
           - preview
+          - stagenet
           - undeployed
       deployment:
         type: choice

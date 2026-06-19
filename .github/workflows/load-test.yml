@@ -18,6 +18,7 @@ on:
           - qanet
           - preview
           - preprod
+          - stagenet
       numberOfUsers:
         required: true
         default: "1"
