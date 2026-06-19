@@ -5,9 +5,9 @@ export class DevnetConfig {
 
   nodeUrl = "wss://rpc.devnet.midnight.network";
 
-  indexerURL = "https://indexer.devnet.midnight.network/api/v3/graphql";
+  indexerURL = "https://indexer.devnet.midnight.network/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.devnet.midnight.network/api/v3/graphql";
+  indexerSubscriptionURL = "wss://indexer.devnet.midnight.network/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.DevNet;
 }
@@ -17,9 +17,9 @@ export class QanetConfig {
 
   nodeUrl = "wss://rpc.qanet.midnight.network";
 
-  indexerURL = "https://indexer.qanet.midnight.network/api/v3/graphql";
+  indexerURL = "https://indexer.qanet.midnight.network/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.qanet.midnight.network/api/v3/graphql";
+  indexerSubscriptionURL = "wss://indexer.qanet.midnight.network/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.QaNet;
 }
@@ -29,9 +29,9 @@ export class PreviewConfig {
 
   nodeUrl = "wss://rpc.preview.midnight.network";
 
-  indexerURL = "https://indexer.preview.midnight.network/api/v3/graphql";
+  indexerURL = "https://indexer.preview.midnight.network/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.preview.midnight.network/api/v3/graphql";
+  indexerSubscriptionURL = "wss://indexer.preview.midnight.network/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.Preview;
 }
@@ -41,11 +41,23 @@ export class PreprodConfig {
 
   nodeUrl = "wss://rpc.preprod.midnight.network";
 
-  indexerURL = "https://indexer.preprod.midnight.network/api/v3/graphql";
+  indexerURL = "https://indexer.preprod.midnight.network/api/4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.preprod.midnight.network/api/v3/graphql";
+  indexerSubscriptionURL = "wss://indexer.preprod.midnight.network/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.PreProd;
+}
+
+export class StagnetConfig {
+  faucetUrl = "https://faucet.stagnet.midnight.network";
+
+  nodeUrl = "wss://rpc.stagnet.midnight.network";
+
+  indexerURL = "https://indexer.stagnet.midnight.network/api/v4/graphql";
+
+  indexerSubscriptionURL = "wss://indexer.stagnet.midnight.network/api/v4/graphql";
+
+  networkId = "stagnet";
 }
 
 export function getConfig() {
@@ -68,6 +80,9 @@ export function getConfig() {
       break;
     case "preprod":
       config = new PreprodConfig();
+      break;
+    case "stagnet":
+      config = new StagnetConfig();
       break;
     default:
       throw new Error(`Unknown env value=${env}`);

@@ -75,6 +75,9 @@ export class TestContainersFixture {
       case "devnet": {
         return "https://indexer.devnet.midnight.network/api/v4/graphql";
       }
+      case "stagnet": {
+        return "https://indexer.stagnet.midnight.network/api/v4/graphql";
+      }
       case "undeployed": {
         const indexerPort = this.getIndexerPort();
         return `http://localhost:${indexerPort}/api/v4/graphql`;
@@ -98,6 +101,9 @@ export class TestContainersFixture {
       case "qanet": {
         return "wss://indexer.qanet.midnight.network/api/v4/graphql/ws";
       }
+      case "stagnet": {
+        return "wss://indexer.stagnet.midnight.network/api/v4/graphql/ws";
+      }
       case "undeployed": {
         const indexerPort = this.getIndexerPort();
         return `ws://localhost:${indexerPort}/api/v4/graphql/ws`;
@@ -120,6 +126,9 @@ export class TestContainersFixture {
       }
       case "qanet": {
         return "wss://rpc.qanet.midnight.network";
+      }
+      case "stagnet": {
+        return "wss://rpc.stagnet.midnight.network";
       }
       case "undeployed": {
         const nodePortRpc = this.getNodeContainer().getMappedPort(
@@ -146,6 +155,9 @@ export class TestContainersFixture {
       case "qanet": {
         return "https://faucet.qanet.midnight.network";
       }
+      case "stagnet": {
+        return "https://faucet.stagnet.midnight.network";
+      }
       case "undeployed": {
         const faucetPort = this.getFaucetContainer().getMappedPort(
           TestContainersFixture.FAUCET_PORT,
@@ -169,6 +181,8 @@ export class TestContainersFixture {
         return NetworkId.NetworkId.Preview;
       case "preprod":
         return NetworkId.NetworkId.PreProd;
+      case "stagnet":
+        return "stagnet";
       default:
         throw new Error(`Unrecognized network: ${String(TestContainersFixture.network)}`);
     }
@@ -214,7 +228,8 @@ export function useTestContainersFixture() {
       case "devnet":
       case "qanet":
       case "preview":
-      case "preprod": {
+      case "preprod":
+      case "stagnet": {
         composeEnvironment = await new DockerComposeEnvironment(
           "./",
           "docker-compose-proof-server-dynamic.yml",

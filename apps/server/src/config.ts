@@ -161,7 +161,7 @@ export const schema = {
   },
   networkId: {
     doc: "Network to be used",
-    format: Object.values(NetworkId.NetworkId),
+    format: String,
     default: NetworkId.NetworkId.Undeployed,
     env: "NETWORK_ID",
     arg: "network-id",

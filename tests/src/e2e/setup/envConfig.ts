@@ -19,9 +19,9 @@ export class DevnetConfig implements Config {
 
   nodeAddress = "wss://rpc.devnet.midnight.network";
 
-  indexerAddress = "https://indexer.devnet.midnight.network/api/v3/graphql";
+  indexerAddress = "https://indexer.devnet.midnight.network/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.devnet.midnight.network/api/v3/graphql/ws";
+  indexerWsAddress = "wss://indexer.devnet.midnight.network/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -35,9 +35,9 @@ export class QanetConfig implements Config {
 
   nodeAddress = "wss://rpc.qanet.midnight.network";
 
-  indexerAddress = "https://indexer.qanet.midnight.network/api/v3/graphql";
+  indexerAddress = "https://indexer.qanet.midnight.network/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.qanet.midnight.network/api/v3/graphql/ws";
+  indexerWsAddress = "wss://indexer.qanet.midnight.network/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -51,9 +51,9 @@ export class PreviewConfig implements Config {
 
   nodeAddress = "wss://rpc.preview.midnight.network";
 
-  indexerAddress = "https://indexer.preview.midnight.network/api/v3/graphql";
+  indexerAddress = "https://indexer.preview.midnight.network/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.preview.midnight.network/api/v3/graphql/ws";
+  indexerWsAddress = "wss://indexer.preview.midnight.network/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -67,9 +67,25 @@ export class PreProdConfig implements Config {
 
   nodeAddress = "wss://rpc.preprod.midnight.network";
 
-  indexerAddress = "https://indexer.preprod.midnight.network/api/v3/graphql";
+  indexerAddress = "https://indexer.preprod.midnight.network/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.preprod.midnight.network/api/v3/graphql/ws";
+  indexerWsAddress = "wss://indexer.preprod.midnight.network/api/v4/graphql/ws";
+
+  proofServerAddress = "http://localhost:6300";
+
+  wallet = testWalletHalo2;
+}
+
+export class StagnetConfig implements Config {
+  networkId = "stagnet";
+
+  faucetUi = "https://faucet.stagnet.midnight.network?isTesting=true";
+
+  nodeAddress = "wss://rpc.stagnet.midnight.network";
+
+  indexerAddress = "https://indexer.stagnet.midnight.network/api/v4/graphql";
+
+  indexerWsAddress = "wss://indexer.stagnet.midnight.network/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -94,6 +110,9 @@ export function getConfig(): Config {
       break;
     case "preprod":
       config = new PreProdConfig();
+      break;
+    case "stagnet":
+      config = new StagnetConfig();
       break;
     default:
       throw new Error(`Unknown env value=${env}`);

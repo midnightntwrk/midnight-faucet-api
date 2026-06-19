@@ -12,6 +12,7 @@ package-lock.json
 !.yarn/releases
 !.yarn/sdks
 logs
+.yarnrc.yml
 
 # dist
 dist/
