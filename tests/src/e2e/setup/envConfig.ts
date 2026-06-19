@@ -76,16 +76,16 @@ export class PreProdConfig implements Config {
   wallet = testWalletHalo2;
 }
 
-export class StagnetConfig implements Config {
-  networkId = "stagnet";
+export class StagenetConfig implements Config {
+  networkId = "stagenet";
 
-  faucetUi = "https://faucet.stagnet.midnight.network?isTesting=true";
+  faucetUi = "https://faucet.stagenet.midnight.network?isTesting=true";
 
-  nodeAddress = "wss://rpc.stagnet.midnight.network";
+  nodeAddress = "wss://rpc.stagenet.midnight.network";
 
-  indexerAddress = "https://indexer.stagnet.midnight.network/api/v4/graphql";
+  indexerAddress = "https://indexer.stagenet.midnight.network/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.stagnet.midnight.network/api/v4/graphql/ws";
+  indexerWsAddress = "wss://indexer.stagenet.midnight.network/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -111,8 +111,8 @@ export function getConfig(): Config {
     case "preprod":
       config = new PreProdConfig();
       break;
-    case "stagnet":
-      config = new StagnetConfig();
+    case "stagenet":
+      config = new StagenetConfig();
       break;
     default:
       throw new Error(`Unknown env value=${env}`);

@@ -422,7 +422,7 @@ export const getFaucetEnvPage = (networkId: NetworkId.NetworkId, page: Page) => 
       return new DevnetFaucetMainPage(page);
     case NetworkId.NetworkId.PreProd:
       return new DevnetFaucetMainPage(page);
-    case "stagnet":
+    case "stagenet":
       return new DevnetFaucetMainPage(page);
     default:
       throw new Error("Unsupported network ID");
@@ -439,14 +439,20 @@ export const getConstants = (networkId: NetworkId.NetworkId) => {
       return qanetConstants;
     case NetworkId.NetworkId.PreProd:
       return qanetConstants;
-    case "stagnet":
+    case "stagenet":
       return qanetConstants;
     default:
       throw new Error("Unsupported network ID");
   }
 };
 
-export type MidnightNetwork = "undeployed" | "preview" | "preprod" | "devnet" | "qanet" | "stagnet";
+export type MidnightNetwork =
+  | "undeployed"
+  | "preview"
+  | "preprod"
+  | "devnet"
+  | "qanet"
+  | "stagenet";
 
 export const waitForBalanceIncrease = async (
   wallet: WalletFacade,

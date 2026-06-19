@@ -48,16 +48,16 @@ export class PreprodConfig {
   networkId = NetworkId.NetworkId.PreProd;
 }
 
-export class StagnetConfig {
-  faucetUrl = "https://faucet.stagnet.midnight.network";
+export class StagenetConfig {
+  faucetUrl = "https://faucet.stagenet.midnight.network";
 
-  nodeUrl = "wss://rpc.stagnet.midnight.network";
+  nodeUrl = "wss://rpc.stagenet.midnight.network";
 
-  indexerURL = "https://indexer.stagnet.midnight.network/api/v4/graphql";
+  indexerURL = "https://indexer.stagenet.midnight.network/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.stagnet.midnight.network/api/v4/graphql";
+  indexerSubscriptionURL = "wss://indexer.stagenet.midnight.network/api/v4/graphql";
 
-  networkId = "stagnet";
+  networkId = "stagenet";
 }
 
 export function getConfig() {
@@ -81,8 +81,8 @@ export function getConfig() {
     case "preprod":
       config = new PreprodConfig();
       break;
-    case "stagnet":
-      config = new StagnetConfig();
+    case "stagenet":
+      config = new StagenetConfig();
       break;
     default:
       throw new Error(`Unknown env value=${env}`);
