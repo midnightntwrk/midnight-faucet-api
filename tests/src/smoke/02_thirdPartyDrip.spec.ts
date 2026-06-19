@@ -246,10 +246,13 @@ describe("Third-Party API Smoke Tests", () => {
       expect(response.data.error).toContain("Invalid amount");
     }, 20_000);
 
-    test("Request drip returns 400 for unsupported amount", async () => {
+    test("Request drip returns 400 for amount just above the maximum", async () => {
+      // The third-party API limit (THIRD_PARTY_MAX_AMOUNT) defaults to 5000,
+      // which is distinct from the public route limit (dropAmount / TNIGHT_UNIT = 1000).
+      // 5001 is the smallest value that should be rejected on /v1/drips.
       const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: "1001" },
+        { recipientAddress: walletAddress, amount: "5001" },
         {
           headers: {
             ...thirdPartyHeaders,
