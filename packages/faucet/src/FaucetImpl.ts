@@ -63,6 +63,20 @@ export class InsufficientFundsError extends Error {
   }
 }
 
+/**
+ * Maximum acceptable gap (in transaction ids / indices) between the wallet's
+ * applied position and the chain tip for it to be considered "synced enough"
+ * to operate on.
+ *
+ * NOTE: we intentionally do NOT use `isStrictlyComplete()` here. In the v9
+ * wallet SDK that method requires an exact zero gap (`isCompleteWithin(0n)`),
+ * which on a live network is essentially never true because the chain tip keeps
+ * advancing. Requiring a strict gap of zero leaves `isSynced` permanently false,
+ * which prevents the task worker from ever picking up drips (they stay stuck in
+ * PENDING / "scheduled"). The SDK's own default tolerance is 50.
+ */
+const SYNC_GAP_TOLERANCE = 50n;
+
 export const calculateFaucetState = (state: WalletState): FaucetState => {
   const unshieldedToken = ledger.unshieldedToken().raw;
   const shieldedToken = ledger.shieldedToken().raw;
@@ -74,7 +88,7 @@ export const calculateFaucetState = (state: WalletState): FaucetState => {
     totalCoins: state.shielded.totalCoins.map((c) => c.coin.value),
     pendingCoins: state.shielded.pendingCoins.map((c) => c.coin.value),
     syncProgress: state.shielded.progress,
-    isSynced: state.shielded.progress.isStrictlyComplete(),
+    isSynced: state.shielded.progress.isCompleteWithin(SYNC_GAP_TOLERANCE),
   };
 
   const unshieldedState = {
@@ -84,7 +98,7 @@ export const calculateFaucetState = (state: WalletState): FaucetState => {
     totalCoins: state.unshielded.totalCoins.map((coin) => coin.utxo.value),
     pendingCoins: state.unshielded.pendingCoins.map((coin) => coin.utxo.value),
     syncProgress: state.unshielded.progress,
-    isSynced: state.unshielded.progress.isStrictlyComplete(),
+    isSynced: state.unshielded.progress.isCompleteWithin(SYNC_GAP_TOLERANCE),
   };
 
   const now = new Date();
@@ -96,7 +110,7 @@ export const calculateFaucetState = (state: WalletState): FaucetState => {
     totalCoins: state.dust.totalCoins.map((coin) => coin.token.initialValue),
     pendingCoins: state.dust.pendingCoins.map((coin) => coin.generatedNow),
     syncProgress: state.dust.progress,
-    isSynced: state.dust.progress.isStrictlyComplete(),
+    isSynced: state.dust.progress.isCompleteWithin(SYNC_GAP_TOLERANCE),
   };
 
   return {
