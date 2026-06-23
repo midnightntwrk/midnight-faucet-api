@@ -3,15 +3,15 @@ import {
   createKeystore,
   PublicKey,
   UnshieldedWallet,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import { NetworkId, NoOpTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import { NetworkId, NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import { URL } from "node:url";
 import pino from "pino";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
-import { type DefaultConfiguration, WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { DustSecretKey, LedgerParameters, ZswapSecretKeys } from "@midnight-ntwrk/ledger-v8";
+import { type DefaultConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
+import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { DustSecretKey, LedgerParameters, ZswapSecretKeys } from "@midnightntwrk/ledger-v9";
 import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
 
 export const DustOptions = {
@@ -166,7 +166,7 @@ const buildWalletFacade = async (
   }
 
   // Unshielded wallet
-  const unshieldedKeystore = createKeystore(unshieldedSeed, networkId);
+  const unshieldedKeystore = createKeystore({ kind: "schnorr", secret: unshieldedSeed }, networkId);
 
   const unshieldedWallet = UnshieldedWallet({
     ...config,

@@ -1,6 +1,6 @@
 services:
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:8.0.2"
+    image: "ghcr.io/midnight-ntwrk/proof-server:8.1.0"
     container_name: "faucet-test-proof-server"
     ports:
       - 6300
@@ -27,7 +27,7 @@ services:
       node:
         condition: service_started
   node:
-    image: "ghcr.io/midnight-ntwrk/midnight-node:0.20.0-alpha.1"
+    image: "ghcr.io/midnight-ntwrk/midnight-node:1.0.0"
     container_name: "faucet-test-node"
     ports:
       - "9944:9944"

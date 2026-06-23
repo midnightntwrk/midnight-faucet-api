@@ -9,7 +9,7 @@ import { URL } from "node:url";
 import { availableFormats, availableLevels, LoggingConfig } from "./logging.js";
 import { PostgresqlConfig } from "./postgres.js";
 import { RateLimitConfig } from "./rate-limiting/rate-limiting.js";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { TaskManagerConfig } from "./TaskManager.js";
 
 convict.addFormat({

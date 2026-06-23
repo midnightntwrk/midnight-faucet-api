@@ -36,9 +36,9 @@ import {
   take,
   EMPTY,
 } from "rxjs";
-import { ZswapSecretKeys } from "@midnight-ntwrk/ledger-v8";
-import { UnshieldedAddress, MidnightBech32m } from "@midnight-ntwrk/wallet-sdk-address-format";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { ZswapSecretKeys } from "@midnightntwrk/ledger-v9";
+import { UnshieldedAddress, MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { prepareAuthContext } from "../auth/authContext.js";
 import { PostgresqlUserRepository } from "../auth/postgresql-user-repository.js";
 import { defaultRoot } from "../composition-root.js";
@@ -642,7 +642,7 @@ describe("Faucet Server", () => {
         ).toBe(true);
         expect(
           fileNames.some(
-            (name) => name.includes("midnight_ledger_wasm_bg") && name.endsWith(".wasm"),
+            (name) => name.includes("midnight_ledger_wasm_v9_bg") && name.endsWith(".wasm"),
           ),
         ).toBe(true);
 

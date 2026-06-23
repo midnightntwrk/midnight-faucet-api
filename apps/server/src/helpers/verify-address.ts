@@ -1,5 +1,5 @@
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
+import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 export class InvalidAddressError extends Error {
   constructor(

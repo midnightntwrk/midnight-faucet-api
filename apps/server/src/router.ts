@@ -8,7 +8,7 @@ import { apiHttpRequestTimer } from "./metrics/http/index.js";
 import { ServerConfig } from "./config.js";
 import { CloudflareTurnstileVerifier } from "./captcha-verifier.js";
 import { runtimeConfigMiddleware } from "./middleware.js";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { thirdPartyRouter } from "./third-party/router.js";
 import { createDripRoutes, type DripRouteDeps } from "./api/drip-routes.js";
 import { RateLimitConfig } from "./rate-limiting/rate-limiting.js";

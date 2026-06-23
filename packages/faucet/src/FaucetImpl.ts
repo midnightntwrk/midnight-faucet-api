@@ -21,19 +21,16 @@ import {
   concatMap,
 } from "rxjs";
 import { FaucetWallet, WalletFactory } from "./WalletFactory.js";
-import {
-  createKeystore,
-  UnshieldedWalletState,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import { ShieldedWalletState } from "@midnight-ntwrk/wallet-sdk-shielded";
-import { DustWalletState } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { DustSecretKey, ZswapSecretKeys, unshieldedToken } from "@midnight-ntwrk/ledger-v8";
-import { WalletFacade, CombinedTokenTransfer } from "@midnight-ntwrk/wallet-sdk-facade";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import { createKeystore, UnshieldedWalletState } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import { ShieldedWalletState } from "@midnightntwrk/wallet-sdk-shielded";
+import { DustWalletState } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { DustSecretKey, ZswapSecretKeys, unshieldedToken } from "@midnightntwrk/ledger-v9";
+import { WalletFacade, CombinedTokenTransfer } from "@midnightntwrk/wallet-sdk-facade";
+import * as ledger from "@midnightntwrk/ledger-v9";
 
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
+import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 export type FaucetConfig<WalletConfig> = {
   networkId: NetworkId.NetworkId;
@@ -217,11 +214,14 @@ const mkRequestTokens = (
     const requestLogger = logger.child(fullContext);
     requestLogger.debug("Handling request for tokens");
 
-    const shieldedSeed = WalletSeedUtils.getShieldedSeed(config.walletSeed as Uint8Array);
-    const unshieldedSeed = WalletSeedUtils.getUnshieldedSeed(config.walletSeed as Uint8Array);
-    const dustSeed = WalletSeedUtils.getDustSeed(config.walletSeed as Uint8Array);
+    const shieldedSeed = WalletSeedUtils.getShieldedSeed(config.walletSeed);
+    const unshieldedSeed = WalletSeedUtils.getUnshieldedSeed(config.walletSeed);
+    const dustSeed = WalletSeedUtils.getDustSeed(config.walletSeed);
 
-    const unshieldedSenderKeystore = createKeystore(unshieldedSeed, config.networkId);
+    const unshieldedSenderKeystore = createKeystore(
+      { kind: "schnorr", secret: unshieldedSeed },
+      config.networkId,
+    );
 
     const state = await firstValueFrom(wallet.state());
     const faucetState = calculateFaucetState(state);

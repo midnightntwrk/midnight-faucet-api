@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Faucet } from "@midnight-ntwrk/faucet-internal-api";
 import { block, firstL, pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { randomBytes } from "crypto";
 import { either } from "fp-ts";
 import path from "path";
@@ -28,7 +28,7 @@ import {
   getFaucetState,
 } from "../FaucetImpl.js";
 import { doCheck, StandardWalletConfig, WalletFactory, WalletURLs } from "../WalletFactory.js";
-import { unshieldedToken } from "@midnight-ntwrk/ledger-v8";
+import { unshieldedToken } from "@midnightntwrk/ledger-v9";
 
 type Environment = {
   urls: WalletURLs;

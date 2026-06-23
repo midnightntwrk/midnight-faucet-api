@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --experimental-specifier-resolution=node
 import { FaucetClient } from "@midnight-ntwrk/faucet-client";
-import { WalletBuilder } from "@midnight-ntwrk/wallet";
+import { WalletBuilder } from "@midnightntwrk/wallet";
 import _ from "lodash";
 import fetch from "node-fetch";
 import { lastValueFrom } from "rxjs";

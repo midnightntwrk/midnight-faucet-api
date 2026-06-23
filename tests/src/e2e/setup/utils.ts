@@ -4,21 +4,21 @@ import * as fsAsync from "node:fs/promises";
 import pinoPretty from "pino-pretty";
 import pino from "pino";
 import { createWriteStream, existsSync } from "node:fs";
-import { type DefaultConfiguration, WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+import { type DefaultConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
 import {
   createKeystore,
   PublicKey,
   UnshieldedWallet,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import { NoOpTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { ShieldedWallet, type ShieldedWalletClass } from "@midnight-ntwrk/wallet-sdk-shielded";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { LedgerParameters } from "@midnight-ntwrk/ledger-v8";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import { NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
+import { ShieldedWallet, type ShieldedWalletClass } from "@midnightntwrk/wallet-sdk-shielded";
+import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { LedgerParameters } from "@midnightntwrk/ledger-v9";
 import * as fs from "node:fs";
 import { exit } from "node:process";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { ShieldedAddress, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
-import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
+import { ShieldedAddress, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
+import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
 import { qanetConstants } from "./Constants";
 import { DevnetFaucetMainPage } from "../pages/DevnetFaucetMainPage";
 import { Page } from "@playwright/test";
@@ -48,7 +48,10 @@ const logger = await createLogger(
 );
 
 export const buildWalletFacade = async (walletSeed: string, walletConfig: DefaultConfiguration) => {
-  const unshieldedKeyStore = createKeystore(getUnshieldedSeed(walletSeed), walletConfig.networkId);
+  const unshieldedKeyStore = createKeystore(
+    { kind: "schnorr", secret: getUnshieldedSeed(walletSeed) },
+    walletConfig.networkId,
+  );
   const Wallet = ShieldedWallet(walletConfig);
 
   const shieldedWallet = Wallet.startWithSeed(getShieldedSeed(walletSeed));

@@ -1,11 +1,11 @@
 import axios from "axios";
 import * as utils from "../e2e/setup/utils";
 import { TestContainersFixture, useTestContainersFixture } from "./test-fixture";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import { describe, expect, beforeAll, afterAll, test } from "vitest";
 import { randomBytes } from "node:crypto";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 
 interface ReadinessResponse {
   status: string;

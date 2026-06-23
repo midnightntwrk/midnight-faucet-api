@@ -5,7 +5,6 @@ import {
   ErrorResponse,
   errorResponseCodec,
   FaucetClientRequests,
-  HealthStatus,
   WalletAddress,
 } from "@midnight-ntwrk/faucet-internal-api";
 import { either } from "fp-ts";
@@ -151,8 +150,11 @@ export const FaucetClient = ({
         fetch(`${url}/health`)
           .then((response) => response.json())
           .then((data) => {
-            const status = (data as { status?: string }).status === "SERVING" ? "ok" : "not_ok";
-            return { status } as HealthStatus;
+            const status =
+              (data as { status?: string }).status === "SERVING"
+                ? ("ok" as const)
+                : ("not_ok" as const);
+            return { status };
           }),
       ).pipe(catchError(() => of({ status: "not_ok" as const }))),
     ),

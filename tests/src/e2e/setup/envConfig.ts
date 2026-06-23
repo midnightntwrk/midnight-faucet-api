@@ -1,6 +1,6 @@
-import { NetworkId, NoOpTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId, NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import { testWalletHalo2, WalletConfig } from "./walletConfig";
-import { type DefaultConfiguration } from "@midnight-ntwrk/wallet-sdk-facade";
+import { type DefaultConfiguration } from "@midnightntwrk/wallet-sdk-facade";
 
 export interface Config {
   readonly faucetUi: string;

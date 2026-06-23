@@ -1,11 +1,11 @@
 import test, { expect } from "@playwright/test";
 import { getConfig, getWalletConfig } from "../setup/envConfig";
 import { pino } from "pino";
-import * as ledger from "@midnight-ntwrk/ledger-v8";
+import * as ledger from "@midnightntwrk/ledger-v9";
 import * as utils from "../setup/utils";
 import { DevnetFaucetMainPage } from "../pages/DevnetFaucetMainPage";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import { UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import { UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 const logger = pino({
   transport: {
