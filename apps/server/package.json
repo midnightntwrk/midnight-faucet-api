@@ -1,6 +1,6 @@
 {
   "name": "@midnight-ntwrk/faucet-server",
-  "version": "0.13.1-alpha.2",
+  "version": "0.13.1-alpha.3",
   "description": "Midnight faucet server",
   "type": "module",
   "main": "./dist/index.js",
@@ -34,7 +34,7 @@
     "@midnight-ntwrk/faucet-internal-api": "workspace:^",
     "@midnight-ntwrk/faucet-ui": "workspace:^",
     "@midnight-ntwrk/faucet-utils": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "2.0.0-canary.20260623092110-2f10bcf",
+    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.1",
     "@types/convict": "^6.1.5",
     "@types/cors": "^2.8.15",
     "@types/express": "^5.0.0",
@@ -72,7 +72,7 @@
   ],
   "devDependencies": {
     "@midnight-ntwrk/faucet-client": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "2.0.0-canary.20260623092110-2f10bcf",
+    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.1",
     "@testcontainers/postgresql": "^11.14.0",
     "eslint": "^10.1.0",
     "fast-check": "^4.8.0",

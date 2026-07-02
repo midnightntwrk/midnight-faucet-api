@@ -1,6 +1,6 @@
 {
   "name": "@midnight-ntwrk/faucet-client",
-  "version": "0.13.1-alpha.2",
+  "version": "0.13.1-alpha.3",
   "description": "Midnight faucet library",
   "type": "module",
   "main": "./dist/index.js",

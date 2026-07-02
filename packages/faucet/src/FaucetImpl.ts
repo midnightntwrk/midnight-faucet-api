@@ -301,7 +301,7 @@ const mkRequestTokens = (
       }
 
       const signedTxRecipe = await wallet.signRecipe(transaction, (payload) =>
-        unshieldedSenderKeystore.signData(payload),
+        unshieldedSenderKeystore.signDataAsync(payload),
       );
 
       const finalizedTx = await wallet.finalizeRecipe(signedTxRecipe);
