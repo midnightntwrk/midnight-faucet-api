@@ -46,7 +46,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-faucet}
 
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:8.1.0"
+    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0-rc.3"
     container_name: proof-server_$TESTCONTAINERS_UID
     cap_drop:
       - ALL
@@ -65,7 +65,7 @@ services:
       start_period: 10s
 
   indexer:
-    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.4.0-pre-alpha.10-l91r2-n2r1-bridge-and-events-epics-balances-fix-1155684"
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.4.0-pre-alpha.15-l91r3-n2r3-bridge-and-events-epics-blockhash-dust-f06af4b4"
     container_name: indexer_$TESTCONTAINERS_UID
     cap_drop:
       - ALL
@@ -98,7 +98,7 @@ services:
       node:
         condition: service_healthy
   node:
-    image: "ghcr.io/midnight-ntwrk/midnight-node:2.0.0-rc.2"
+    image: "ghcr.io/midnight-ntwrk/midnight-node:2.0.0-rc.3"
     container_name: node_$TESTCONTAINERS_UID
     cap_drop:
       - ALL

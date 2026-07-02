@@ -1039,7 +1039,7 @@ __metadata:
     "@midnight-ntwrk/faucet-internal-api": "workspace:^"
     "@midnight-ntwrk/faucet-ui": "workspace:^"
     "@midnight-ntwrk/faucet-utils": "workspace:^"
-    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.1"
+    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@testcontainers/postgresql": "npm:^11.14.0"
     "@types/convict": "npm:^6.1.5"
     "@types/cors": "npm:^2.8.15"
@@ -1085,8 +1085,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@midnight-ntwrk/faucet-smoke-test@workspace:tests"
   dependencies:
-    "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.2"
-    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.1"
+    "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
+    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@playwright/test": "npm:^1.57.0"
     "@types/node": "npm:^25.5.0"
     axios: "npm:^1.16.0"
@@ -1154,8 +1154,8 @@ __metadata:
   dependencies:
     "@midnight-ntwrk/faucet-internal-api": "workspace:^"
     "@midnight-ntwrk/faucet-utils": "workspace:^"
-    "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.2"
-    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.1"
+    "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
+    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@types/lodash": "npm:^4.14.202"
     eslint: "npm:^10.1.0"
     fast-check: "npm:^4.8.0"
@@ -1180,10 +1180,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnightntwrk/ledger-v9@npm:1.0.0-rc.2":
-  version: 1.0.0-rc.2
-  resolution: "@midnightntwrk/ledger-v9@npm:1.0.0-rc.2"
-  checksum: 10/84dc2c7774c23a8122f5f7ccb535ab4a725afd7a02e6c7cdd685e248cbbd151ce5f803056b16061462e6be36d99f8a5162d6db4de8b41a38bd1d5474fde7805c
+"@midnightntwrk/ledger-v9@npm:^1.0.0-rc.3":
+  version: 1.0.0-rc.3
+  resolution: "@midnightntwrk/ledger-v9@npm:1.0.0-rc.3"
+  checksum: 10/5d2c2ff808b6dcc8f8ba2b75f81467c9bc4904e625e246bea1f8c77be7eb6d06cac28b189d1f6b708a85559ddf133efe93147da12169db48f927c72f414d0fa7
   languageName: node
   linkType: hard
 
@@ -1377,7 +1377,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnightntwrk/wallet-sdk@npm:^2.0.0-beta.1":
+"@midnightntwrk/wallet-sdk@npm:^2.0.0-beta.2":
   version: 2.0.0-canary.20260702133504-1f7aaca
   resolution: "@midnightntwrk/wallet-sdk@npm:2.0.0-canary.20260702133504-1f7aaca"
   dependencies:
