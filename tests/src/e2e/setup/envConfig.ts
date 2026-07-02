@@ -79,13 +79,13 @@ export class PreProdConfig implements Config {
 export class StagenetConfig implements Config {
   networkId = "stagenet";
 
-  faucetUi = "https://faucet.stagenet.midnight.network?isTesting=true";
+  faucetUi = "https://faucet.stagenet.shielded.tools?isTesting=true";
 
-  nodeAddress = "wss://rpc.stagenet.midnight.network";
+  nodeAddress = "wss://rpc.stagenet.shielded.tools";
 
-  indexerAddress = "https://indexer.stagenet.midnight.network/api/v4/graphql";
+  indexerAddress = "https://indexer.stagenet.shielded.tools/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.stagenet.midnight.network/api/v4/graphql/ws";
+  indexerWsAddress = "wss://indexer.stagenet.shielded.tools/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 

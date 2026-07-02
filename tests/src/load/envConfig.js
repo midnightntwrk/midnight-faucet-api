@@ -49,13 +49,13 @@ export class PreprodConfig {
 }
 
 export class StagenetConfig {
-  faucetUrl = "https://faucet.stagenet.midnight.network";
+  faucetUrl = "https://faucet.stagenet.shielded.tools";
 
-  nodeUrl = "wss://rpc.stagenet.midnight.network";
+  nodeUrl = "wss://rpc.stagenet.shielded.tools";
 
-  indexerURL = "https://indexer.stagenet.midnight.network/api/v4/graphql";
+  indexerURL = "https://indexer.stagenet.shielded.tools/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.stagenet.midnight.network/api/v4/graphql";
+  indexerSubscriptionURL = "wss://indexer.stagenet.shielded.tools/api/v4/graphql";
 
   networkId = "stagenet";
 }
