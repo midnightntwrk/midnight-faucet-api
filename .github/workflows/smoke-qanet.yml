@@ -20,8 +20,9 @@ jobs:
     uses: ./.github/workflows/smoke-test.yml
     with:
       network: qanet
-      # Pinned: main moved ahead of the deployed envs (wallet-sdk/ledger v9 bump, #581/#583),
-      # causing "Could not deserialize Ledger Event". fb7c345 is the last commit compatible
-      # with the preprod/preview/qanet deployments. Revert to main once envs are upgraded.
-      branch: fb7c345e127ddf1dd84723b84a4029b5797fab36
+      # Pinned: the deployed preprod/preview/qanet envs run the ledger v8 stack, but main
+      # moved to ledger v9 (#574 onward), which breaks wallet sync against these envs.
+      # f27b171 is the last commit on the v8 stack (@midnight-ntwrk/ledger-v8). Revert to
+      # main once the environments are upgraded to ledger v9.
+      branch: f27b17138c42a9f931f31b1ad04b240705007137
     secrets: inherit
