@@ -109,7 +109,16 @@ jobs:
 
       - name: Configure yarn
         run: |
-          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
+          # Most @midnight-ntwrk deps are pinned to GitHub Packages archiveUrls in the
+          # lockfile, so keep an authenticated entry for that host to download them.
+          yarn config set 'npmRegistries["https://npm.pkg.github.com"].npmAuthToken' "$GH_TOKEN"
+          yarn config set 'npmRegistries["https://npm.pkg.github.com"].npmAlwaysAuth' true
+          # A few v8-stack deps (wallet-sdk-abstractions, wallet-sdk-hd, zkir-v2) are only
+          # published to public npm and carry no archiveUrl, so the scope's default registry
+          # must be npmjs; archiveUrl-pinned deps still hit GitHub Packages via the entry above.
+          yarn config set 'npmScopes.midnight-ntwrk.npmRegistryServer' 'https://registry.npmjs.org'
+          yarn config set 'npmScopes.midnight-ntwrk.npmAlwaysAuth' false
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' ""
 
       - name: Dependencies cache restore
         uses: actions/cache/restore@v4
