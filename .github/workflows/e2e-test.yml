@@ -125,16 +125,16 @@ jobs:
 
       - name: Configure yarn
         run: |
-          # Most @midnight-ntwrk deps are pinned to GitHub Packages archiveUrls in the
-          # lockfile, so keep an authenticated entry for that host to download them.
-          yarn config set 'npmRegistries["https://npm.pkg.github.com"].npmAuthToken' "$GH_TOKEN"
-          yarn config set 'npmRegistries["https://npm.pkg.github.com"].npmAlwaysAuth' true
-          # A few v8-stack deps (wallet-sdk-abstractions, wallet-sdk-hd, zkir-v2) are only
-          # published to public npm and carry no archiveUrl, so the scope's default registry
-          # must be npmjs; archiveUrl-pinned deps still hit GitHub Packages via the entry above.
+          # The @midnight-ntwrk scope's deps span two registries: most are pinned to
+          # GitHub Packages archiveUrls in the lockfile, but three v8-stack deps
+          # (wallet-sdk-abstractions, wallet-sdk-hd, zkir-v2) are only on public npm and
+          # carry no archiveUrl. Point the scope at public npm so those three resolve.
+          # yarn ties download auth to the *scope* registry (not the archiveUrl host), so
+          # keep the token on the scope; with npmAlwaysAuth off it is sent only when a host
+          # returns 401 (GitHub Packages, via the archiveUrls) and never to public npm.
           yarn config set 'npmScopes.midnight-ntwrk.npmRegistryServer' 'https://registry.npmjs.org'
           yarn config set 'npmScopes.midnight-ntwrk.npmAlwaysAuth' false
-          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' ""
+          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
 
       - name: Install Playwright
         working-directory: ./tests
