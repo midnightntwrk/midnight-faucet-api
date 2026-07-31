@@ -7,6 +7,7 @@ import pino from "pino";
 import * as t from "io-ts";
 import * as td from "io-ts-types";
 import { subMinutes } from "date-fns";
+import { IN_PROGRESS_TIMEOUT_MINUTES } from "./task-timeouts.js";
 
 export const TABLE_NAME = "tasks";
 
@@ -96,11 +97,12 @@ export class PostgresqlTaskRepository {
     }
   }
 
-  async failTimedOutTasks(): Promise<void> {
-    await this.Tasks()
+  async failTimedOutTasks(): Promise<Array<Pick<TaskType, "address" | "created_at">>> {
+    return this.Tasks()
       .update({ status: "failure", state: JSON.stringify("Token request failed due to timeout") })
       .where("status", "in_progress")
-      .where("start_time", "<", subMinutes(Date.now(), 5));
+      .where("start_time", "<", subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES))
+      .returning(["address", "created_at"]);
   }
 
   async update(
@@ -110,6 +112,52 @@ export class PostgresqlTaskRepository {
     return this.Tasks()
       .update(task)
       .where("id", id)
+      .returning("*")
+      .then((tasks) => tasks[0]);
+  }
+
+  /**
+   * Finalize a picked task, but only while it is still `in_progress`. Returns
+   * the updated row, or `undefined` if no in-progress row matched — i.e. the
+   * timeout sweep already failed (and refunded) it. Lets the caller refund a
+   * failed slot exactly once (#595).
+   */
+  async finalizeIfInProgress(
+    id: string,
+    task: Partial<Omit<TaskType, "id" | "created_at" | "updated_at">>,
+  ): Promise<TaskType | undefined> {
+    return this.updateFromStatus(id, "in_progress", task);
+  }
+
+  /**
+   * Record a success on a task the timeout sweep already marked `failure`.
+   *
+   * Matching on `status = 'failure'` does double duty: it proves the sweep — not
+   * {@link finalizeIfInProgress} — transitioned the row, so the sweep's refund is
+   * the one to reclaim, and it makes the reclaim idempotent, because a second
+   * call finds no failed row to update (#595).
+   */
+  async succeedIfFailed(
+    id: string,
+    task: Partial<Omit<TaskType, "id" | "created_at" | "updated_at">>,
+  ): Promise<TaskType | undefined> {
+    return this.updateFromStatus(id, "failure", task);
+  }
+
+  /**
+   * Apply `task` only while the row is still in `expected` status, returning the
+   * updated row or `undefined` when nothing matched. The status guard is what makes
+   * the slot transitions single-winner under concurrency (#595).
+   */
+  private async updateFromStatus(
+    id: string,
+    expected: StatusType,
+    task: Partial<Omit<TaskType, "id" | "created_at" | "updated_at">>,
+  ): Promise<TaskType | undefined> {
+    return this.Tasks()
+      .update(task)
+      .where("id", id)
+      .where("status", expected)
       .returning("*")
       .then((tasks) => tasks[0]);
   }
