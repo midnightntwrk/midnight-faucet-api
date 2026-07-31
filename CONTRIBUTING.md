@@ -49,19 +49,27 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 
 ### Branch Naming
 
-We use Git Flow with these branch prefixes:
+We work trunk-based off `main`. Name branches `<type>/<ticket>-<short-description>`, where `<type>` is the
+[Conventional Commits](https://www.conventionalcommits.org/) type of the change (use `no-ticket` when there
+isn't an issue):
 
-- `feature/` — New features (e.g., `feature/add-rate-limiting`)
-- `fix/` — Bug fixes (e.g., `fix/transaction-validation`)
+- `feat/` — New features (e.g., `feat/123-add-rate-limiting`)
+- `fix/` — Bug fixes (e.g., `fix/595-refund-rate-limit-on-failed-drip`)
 - `refactor/` — Code cleanup without behavior change
 - `docs/` — Documentation updates
 - `chore/` — Dependency updates, tooling changes
 
-Base your branches on `develop`:
+Base your branches on `main`:
 ```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/your-feature-name
+git switch main
+git pull origin main
+git switch -c feat/123-your-feature-name
+```
+
+When your branch falls behind, rebase onto `main` rather than merging it in:
+```bash
+git fetch origin && git rebase origin/main
+git push --force-with-lease
 ```
 
 ### Building and Testing
@@ -110,86 +118,22 @@ FAUCET_URL=https://faucet.preview.midnight.network yarn smoke-test
 
 ## Code Style
 
-We enforce consistency through automated tools:
+How code is written in this repo — TypeScript rules, naming, comments, tests, and the fp-ts / RxJS / io-ts architecture
+patterns — is documented in **[`docs/CodingConventions.md`](docs/CodingConventions.md)**. That file is the single source
+of truth (and the root `CLAUDE.md` imports it so coding agents pick it up automatically).
 
-### ESLint Configuration
-- Rules in `.eslintrc.json` (ESLint v10+)
-- Plugin: `@typescript-eslint`
-- Config: `eslint-config-turbo`
+Formatting and linting are automated. Before committing, run:
 
-### Prettier Formatting
-- 2-space indentation
-- Single quotes (TypeScript files)
-- Line width: 100 characters (configurable in `.prettierrc.json`)
-
-**Before committing**, run:
 ```bash
 yarn format
-```
-
-### TypeScript
-
-- **Strict mode** enabled (`"strict": true`)
-- **ESM throughout** (import/export syntax)
-- **.js extensions in imports** are intentional (for Node.js ESM resolution)
-- No `any` types without `// @ts-ignore-next-line` comments (with reason)
-
-### Naming Conventions
-
-- **Functions/variables**: `camelCase`
-- **Classes/types**: `PascalCase`
-- **Constants**: `CONSTANT_CASE` (only for true constants)
-- **Files**: `kebab-case.ts` or `PascalCase.ts` for classes
-
-### Comments
-
-- Default: Write self-documenting code; minimal comments
-- Only add comments for **why**, not **what**
-- Complex algorithms, workarounds, or non-obvious behavior deserve comments
-
-Example:
-```typescript
-// Bad: explains what the code does
-const result = arr.filter(x => x > 5);  // Filter numbers greater than 5
-
-// Good: explains why (if not obvious from context)
-// Skip items below threshold due to wallet dust limit
-const usableCoins = availableCoins.filter(c => c.value > dustThreshold);
+yarn lint
 ```
 
 ## Architecture & Patterns
 
-### Key Files to Understand
-
-1. **`CLAUDE.md`** — Comprehensive architecture guide
-2. **`apps/server/src/composition-root.ts`** — Dependency injection root
-3. **`packages/faucet/src/FaucetImpl.ts`** — Core faucet logic
-4. **`apps/server/src/TaskManager.ts`** — Transaction queue implementation
-
-### Important Patterns
-
-**Resource/Task Lifecycle:**
-```typescript
-// From @midnight-ntwrk/faucet-utils
-import { Resource, Task, pipe } from "@midnight-ntwrk/faucet-utils";
-
-const myResource = Resource.make(
-  Task.lift(() => acquire()),  // Setup
-  (acquired) => Task.lift(() => cleanup(acquired)),  // Teardown
-);
-
-pipe(myResource, Resource.use((resource) => Task.never));
-```
-
-**RxJS Observables:**
-- Use `shareReplay({ bufferSize: 1, refCount: true })` for subscriptions shared across consumers
-- Use `exhaustMap` for backpressure (skip intermediate emissions)
-- Use `auditTime` to throttle high-frequency emissions (e.g., wallet state)
-
-**Type Safety:**
-- io-ts codecs for API request/response types
-- Codecs are the source of truth; TypeScript types derive from them
-- Example: `packages/faucet-internal-api/src/types.ts`
+New to the codebase? Start with **[`CLAUDE.md`](CLAUDE.md)** for a repo overview and the common commands, then
+**[`docs/CodingConventions.md`](docs/CodingConventions.md)** for the key files to read first, the coding conventions,
+and the fp-ts / RxJS / io-ts patterns (Resource/Task lifecycle, RxJS operators, io-ts codecs).
 
 ## Making Changes
 
@@ -336,13 +280,13 @@ history check fails.
 
 - New features need documentation
 - API changes require doc updates
-- Architecture changes should be reflected in CLAUDE.md
+- Repo overview or conventions changes should be reflected in CLAUDE.md / docs/CodingConventions.md
 - Non-obvious code patterns deserve explanation
 
 ### Documentation Files
 
 - **README.md** — Quick start, overview, API reference
-- **CLAUDE.md** — Architecture, patterns, file structure
+- **CLAUDE.md** — Repo guide for Claude Code: overview, commands, and the imported coding conventions
 - **CONTRIBUTING.md** — This file
 - **THIRD_PARTY_API.md** — Partner integration guide
 - **SECURITY.md** — Security policy and vulnerability reporting
@@ -387,7 +331,8 @@ Great ideas are welcome! Please:
 
 ## Additional Resources
 
-- [CLAUDE.md](./CLAUDE.md) — Complete architecture guide
+- [CLAUDE.md](./CLAUDE.md) — Repo guide for Claude Code (overview + imported coding conventions)
+- [docs/CodingConventions.md](./docs/CodingConventions.md) — How code is written in this repo
 - [SECURITY.md](./SECURITY.md) — Security policies
 - [THIRD_PARTY_API.md](./THIRD_PARTY_API.md) — Partner API docs
 - [Conventional Commits](https://www.conventionalcommits.org/)

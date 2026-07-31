@@ -132,6 +132,11 @@ export const defaultRoot = (
             );
           }),
         ),
+        {
+          refund: (address: string, registeredAt: Date) =>
+            stateContext.rateCountRepository.decrement(address, registeredAt),
+          consume: (address: string) => stateContext.rateCountRepository.increment(address),
+        },
       );
     }),
     Resource.map(([[{ stateContext, knexDb }, faucet], taskManager]): CompositionRoot => {

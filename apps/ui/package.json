@@ -13,7 +13,8 @@
     "lint": "eslint --max-warnings=0",
     "build": "vite build --mode=production",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "start": "vite --mode=development"
+    "start": "vite --mode=development",
+    "dev": "vite --mode=development --clearScreen false"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.1.0",

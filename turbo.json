@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", ".eslintrc.js"],
+  "globalPassThroughEnv": ["*"],
   "tasks": {
     "do-publish": {
       "dependsOn": ["build"],
@@ -24,8 +25,7 @@
     "test": {
       "dependsOn": ["build", "typecheck"],
       "outputs": ["reports/**", "coverage/**"],
-      "inputs": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.json", "tsconfig.json", "tsconfig.test.json", "test-compose.yml"],
-      "passThroughEnv": ["ENCRYPTION_KEY", "JWT_SIGN_SECRET"]
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "vitest.config.json", "tsconfig.json", "tsconfig.test.json", "test-compose.yml"]
     },
     "pull-test-images": {
       "cache": false,
@@ -33,10 +33,15 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "dependsOn": ["^build"]
     },
     "start": {
       "persistent": true,
+      "cache": false,
+      "dependsOn": ["build"]
+    },
+    "migrate-db": {
       "cache": false,
       "dependsOn": ["build"]
     },

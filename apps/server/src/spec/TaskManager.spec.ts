@@ -8,6 +8,7 @@ import { StatusResponse } from "@midnight-ntwrk/faucet-internal-api";
 import {
   CompletedResponse,
   isCompleted,
+  noRateLimitSlots,
   TaskManager,
   TaskManagerConfig,
   Response,
@@ -60,6 +61,7 @@ describe.todo("Task Manager", () => {
           return deferreds[parseInt(taskNr, 2)].promise;
         },
         $isReady,
+        noRateLimitSlots,
       ),
       Resource.use((taskManager) =>
         Task.lift(async () => {
@@ -153,6 +155,7 @@ describe.todo("Task Manager", () => {
         taskRepository,
         () => Promise.reject(new Error("failingInPromise")),
         $isReady,
+        noRateLimitSlots,
       ),
       Resource.use((taskManager) =>
         Task.lift(async () => {
@@ -212,6 +215,7 @@ describe.todo("Task Manager", () => {
           return Promise.reject(new Error("failingInPromise"));
         },
         $isReady,
+        noRateLimitSlots,
       ),
       Resource.use((taskManager) =>
         Task.lift(async () => {
@@ -275,7 +279,7 @@ describe.todo("Task Manager", () => {
     ];
 
     return pipe(
-      TaskManager.create(logger, config, taskRepository, taskHandler, $isReady),
+      TaskManager.create(logger, config, taskRepository, taskHandler, $isReady, noRateLimitSlots),
       Resource.use((taskManager) =>
         Task.lift(async () => {
           return pipe(
@@ -324,6 +328,7 @@ describe.todo("Task Manager", () => {
           taskRepository,
           () => Promise.resolve(),
           $isReady,
+          noRateLimitSlots,
         ),
         Resource.use((taskManager) =>
           Task.lift(() => {

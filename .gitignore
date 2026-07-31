@@ -64,5 +64,4 @@ ts-dist
 temp
 .direnv
 .claude
-CLAUDE.md
 .claude/

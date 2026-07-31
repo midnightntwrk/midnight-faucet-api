@@ -116,13 +116,12 @@ export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
         return request;
       }),
       Task.flatMapPromise(async (request) => {
-        const dripId = await deps.taskManager.registerTask(
+        // registerTask reserves the rate-limit slot on the create path (and only
+        // there, so deduped duplicates don't each consume one — #595).
+        return deps.taskManager.registerTask(
           request.recipientAddress,
           request.amount * TNIGHT_UNIT,
         );
-        // Increment rate count at creation time to prevent bypass via not polling
-        await deps.rateCountRepository.increment(request.recipientAddress);
-        return dripId;
       }),
       Task.flatMap((dripId) =>
         Task.delay(() => {

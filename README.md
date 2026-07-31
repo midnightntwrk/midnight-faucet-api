@@ -13,13 +13,24 @@ A production-grade token faucet for the Midnight Network, built with TypeScript 
 
 ## Quick Start
 
-### Local Development (Full Stack)
-
-The fastest way to get running locally:
+Both paths below — running the full stack with Docker, or the server/UI locally — need a `.env` at the repo root. Create it first:
 
 ```shell
-docker-compose up
+cp .env.example .env
+# edit .env as needed
 ```
+
+> The same `.env` is read two ways. **Docker Compose** uses the entire file (the full stack configuration). When you run the **faucet on your host** (see below), the checked-in `.envrc` loads the whole `.env` into your shell via [direnv](https://direnv.net) — the app reads only what it needs (and turbo passes it through). Only `ENCRYPTION_KEY` and `JWT_SIGN_SECRET` are strictly required; everything else has a default. Without direnv, export those two yourself.
+
+### Everything in Docker
+
+The fastest way to get everything running — the faucet and all backing services in containers. From the repo root:
+
+```shell
+docker compose up
+```
+
+> **`docker compose` vs `docker-compose`:** current Docker bundles Compose **v2**, invoked as `docker compose` (a subcommand, with a space). Older installs have the standalone **v1** binary `docker-compose` (with a hyphen). If `docker compose` isn't found, use `docker-compose up` — both do the same thing.
 
 This brings up:
 
@@ -29,47 +40,41 @@ This brings up:
 - Proof server
 - Faucet server
 
-### Manual Setup
+### Faucet on your host (backing services in Docker)
 
-1. **Install dependencies:**
-
-   ```shell
-   yarn install
-   ```
-
-2. **Build all packages:**
-
-   ```shell
-   yarn build
-   ```
-
-3. **Configure the faucet:**
-
-   ```shell
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Run migrations:**
-
-   ```shell
-   npx midnight-faucet migrate-db
-   ```
-
-5. **Start the server:**
-   ```shell
-   npx midnight-faucet start
-   ```
-
-View available commands: `npx midnight-faucet help`
-
-### Frontend Development Only
-
-To develop just the UI without the full stack:
+The backing services — Postgres, the Midnight node, the indexer, and the proof server — still run in Docker; only the faucet app and UI run on your host, with live reload. First-time setup, from the repo root:
 
 ```shell
-cd apps/ui
-yarn && yarn start
+yarn install
+docker compose up -d db node indexer proof-server   # backing services (everything but the faucet)
+yarn migrate-db                                      # apply the schema
+```
+
+Then pick a run mode. Both build automatically via Turbo — there's no separate build step.
+
+#### Development (watch mode)
+
+```shell
+yarn dev          # both: server restarts on change + UI hot-reloads
+yarn dev:server   # server only — restarts on change
+yarn dev:ui       # UI only — hot-reloads (http://localhost:5173)
+```
+
+The server restarts on source changes (via `tsx`); the UI hot-reloads in the browser (via Vite).
+
+#### Run the built server
+
+```shell
+yarn start-server
+```
+
+This builds and serves everything — including the compiled UI, which the server hosts as static assets. There's no separate "built UI" command: in production the UI is served by the server.
+
+Other CLI commands (create/manage users, etc.) run via the server bin:
+
+```shell
+cd apps/server
+npx midnight-faucet help
 ```
 
 ## Project Structure
@@ -170,14 +175,15 @@ For all available options:
 npx midnight-faucet help
 ```
 
-Other env vars:
+Key env vars (everything except the two secrets has a sensible localhost default):
 
+- `ENCRYPTION_KEY`, `JWT_SIGN_SECRET` — **required** hex secrets (no default)
 - `FAUCET_CONFIG_FILE` — Path to JSON5 config file
 - `WALLET_SEED` — 32-byte hex wallet seed
-- `DATABASE_URL` — PostgreSQL connection string
+- `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` — PostgreSQL connection
 - `NODE_URL` — Midnight node RPC endpoint
 - `INDEXER_URL` — Indexer service URL
-- `PROOF_SERVER_URL` — Proof server URL
+- `PROVING_SERVER_URL` — Proof server URL
 
 See `apps/server/src/config.ts` for the authoritative schema.
 
@@ -193,6 +199,13 @@ yarn lint               # Lint with ESLint (--max-warnings=0)
 yarn test               # Run all tests (Vitest)
 yarn check              # build + lint + test
 yarn format             # Format with Prettier
+
+# Run / develop
+yarn dev                # Watch mode: server restarts on change + UI hot-reloads
+yarn dev:server         # Watch mode: server only
+yarn dev:ui             # Watch mode: UI only
+yarn migrate-db         # Apply DB migrations
+yarn start-server       # Start the built server
 
 # Inside a specific workspace (e.g., packages/faucet)
 cd packages/faucet
@@ -240,7 +253,8 @@ docker build -t midnight-faucet .
 docker run \
   --net=host \
   -e NODE_URL='http://localhost:9944' \
-  -e DATABASE_URL='postgresql://user:pass@localhost/faucet' \
+  -e DB_HOST='localhost' -e DB_PORT='5432' -e DB_NAME='faucet' \
+  -e DB_USER='user' -e DB_PASSWORD='pass' \
   midnight-faucet
 ```
 

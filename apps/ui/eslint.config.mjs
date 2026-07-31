@@ -6,6 +6,7 @@ export default [
       '*.mjs',
       "dist/**",
       "coverage/**",
+      "reports/**",
     ]
   },
   ...rootConfig.map(config => ({
