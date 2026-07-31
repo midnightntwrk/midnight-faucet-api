@@ -214,7 +214,7 @@ export const getWalletAddress = (
     return UnshieldedAddress.codec.encode(networkId, state.unshielded.address).asString();
   });
 
-const mkRequestTokens = (
+export const mkRequestTokens = (
   logger: pino.Logger,
   config: FaucetConfig<unknown>,
   wallet: FaucetWallet,
@@ -239,11 +239,6 @@ const mkRequestTokens = (
 
     const state = await firstValueFrom(wallet.state());
     const faucetState = calculateFaucetState(state);
-
-    // Snapshot available coins BEFORE building transaction to detect if they get spent
-    const availableUnshieldedCoins = new Set(
-      state.unshielded.availableCoins.map((c) => `${c.utxo.intentHash}#${c.utxo.outputNo}`),
-    );
 
     // Create a new coin for itself when wallet balance approaches 0.
     const selfOutputs =
@@ -276,9 +271,21 @@ const mkRequestTokens = (
       },
     ];
 
-    try {
+    // Building the transfer reserves the selected coins into `pending`. Attempt
+    // the sign/submit as a unit that reports whether it reached a successful
+    // submit, so the caller can release the reservation on any earlier failure —
+    // otherwise a failed attempt strands the coins in pending until restart/resync.
+    type TransferResult =
+      | { submitted: true; submittedTxHash: string; finalizedTxHash: string }
+      | {
+          submitted: false;
+          recipe: Awaited<ReturnType<typeof wallet.transferTransaction>>;
+          error: unknown;
+        };
+
+    const attemptTransfer = async (): Promise<TransferResult> => {
       const ttl = new Date(Date.now() + 30 * 60 * 1000);
-      const transaction = await wallet.transferTransaction(
+      const recipe = await wallet.transferTransaction(
         tokenTransfer,
         {
           shieldedSecretKeys: ZswapSecretKeys.fromSeed(shieldedSeed),
@@ -289,33 +296,44 @@ const mkRequestTokens = (
         },
       );
 
-      // Validate coins still exist before signing (detect concurrent spending)
-      const preSigState = await firstValueFrom(wallet.state());
-      const stillAvailable = preSigState.unshielded.availableCoins.some((c) =>
-        availableUnshieldedCoins.has(`${c.utxo.intentHash}#${c.utxo.outputNo}`),
-      );
-      if (!stillAvailable) {
-        throw new InsufficientFundsError(effectiveAmount, {
-          cause: new Error("Selected coins no longer available"),
-        });
+      try {
+        const signedTxRecipe = await wallet.signRecipe(recipe, (payload) =>
+          unshieldedSenderKeystore.signDataAsync(payload),
+        );
+
+        const finalizedTx = await wallet.finalizeRecipe(signedTxRecipe);
+        const finalizedTxHash = finalizedTx.transactionHash().toString();
+
+        logger.info("We have a recipe to submit");
+        const submittedTxHash = await wallet.submitTransaction(finalizedTx);
+
+        logger.info(`We have a transaction hash. ${submittedTxHash}`);
+        return { submitted: true, submittedTxHash, finalizedTxHash };
+      } catch (error: unknown) {
+        return { submitted: false, recipe, error };
       }
+    };
 
-      const signedTxRecipe = await wallet.signRecipe(transaction, (payload) =>
-        unshieldedSenderKeystore.signDataAsync(payload),
-      );
+    try {
+      const result = await attemptTransfer();
 
-      const finalizedTx = await wallet.finalizeRecipe(signedTxRecipe);
-      const finalizedTxHash = finalizedTx.transactionHash().toString();
-
-      logger.info("We have a recipe to submit");
-      const submittedTxHash = await wallet.submitTransaction(finalizedTx);
-
-      logger.info(`We have a transaction hash. ${submittedTxHash}`);
+      if (!result.submitted) {
+        // Reserved by transferTransaction but never submitted — release the reservation.
+        try {
+          await wallet.revert(result.recipe);
+        } catch (revertError: unknown) {
+          requestLogger.error(
+            { err: revertError },
+            "Failed to release reserved coins after aborted request",
+          );
+        }
+        throw result.error;
+      }
 
       // Validate transaction in background without blocking response
       firstValueFrom(
         wallet.state().pipe(
-          concatMap(() => wallet.queryTxHistoryByHash(finalizedTxHash)),
+          concatMap(() => wallet.queryTxHistoryByHash(result.finalizedTxHash)),
           filter((entry) => entry !== undefined && entry.status === "SUCCESS"),
           timeout(30_000),
         ),
@@ -336,7 +354,7 @@ const mkRequestTokens = (
         });
 
       return {
-        transactionIdentifier: submittedTxHash,
+        transactionIdentifier: result.submittedTxHash,
         timeToNextRequest: Duration.fromMillis(0),
       };
     } catch (error: unknown) {
