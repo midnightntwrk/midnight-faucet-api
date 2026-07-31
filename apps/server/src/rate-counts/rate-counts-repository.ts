@@ -70,13 +70,20 @@ export class PostgresqlRateCountRepository {
     );
   }
 
-  async increment(address: string): Promise<void> {
-    await this.adjustCount(address, "increment", (current) =>
+  /**
+   * Reserve a slot, returning the window anchor the row now carries. Callers that
+   * may have to hand the slot back must pass that anchor to {@link decrement} — it
+   * is the database's clock, and comparing it against the app's would silently
+   * no-op the refund whenever the two straddle midnight (#595).
+   */
+  async increment(address: string): Promise<Date> {
+    const reserved = await this.adjustCount(address, "increment", (current) =>
       option.some({
         count: current.count + 1,
         updated_at: this.knex.fn.now(),
       }),
     );
+    return reserved.updated_at;
   }
 
   /**
@@ -169,8 +176,11 @@ export class PostgresqlRateCountRepository {
       return { rateCount: inserted, created: true };
     }
 
-    // Conflict occurred due to concurrency caused by spamming
-    const rateCount = await this.RateCounts().transacting(trx).where(keys).first();
+    // Conflict occurred due to concurrency caused by spamming. `forUpdate` is
+    // required, not just defensive: callers read-modify-write the count, so an
+    // unlocked read lets a concurrent refund and reservation lose each other's
+    // update — reverting a refund, or handing out an extra slot (#595).
+    const rateCount = await this.RateCounts().transacting(trx).where(keys).forUpdate().first();
     if (!rateCount) {
       throw new Error(`Error creating row in ${TABLE_NAME} table.`);
     }

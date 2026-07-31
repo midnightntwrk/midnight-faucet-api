@@ -97,9 +97,16 @@ type FakeRepository = ReturnType<typeof fakeRepository>;
 const asRepository = (fake: FakeRepository): PostgresqlTaskRepository =>
   fake as unknown as PostgresqlTaskRepository;
 
+/**
+ * `consume` resolves a distinct anchor rather than `new Date()`, so a test can prove
+ * a compensating refund was given the anchor the reservation actually wrote instead
+ * of an app-clock guess (#595).
+ */
+const RESERVED_ANCHOR = new Date("2026-07-31T12:00:00.000Z");
+
 const fakeSlots = () => ({
   refund: vi.fn((_address: string, _registeredAt: Date): Promise<void> => Promise.resolve()),
-  consume: vi.fn((_address: string): Promise<void> => Promise.resolve()),
+  consume: vi.fn((_address: string): Promise<Date> => Promise.resolve(RESERVED_ANCHOR)),
 });
 
 type Harness<T> = {
@@ -116,6 +123,13 @@ const withManager = <T>(
     repository: FakeRepository;
     slots: ReturnType<typeof fakeSlots>;
     handler: (address: string) => Promise<T>;
+    /**
+     * Defaults to an observable that is already `true`. Pass one that never emits to
+     * model a wallet that cannot reach the node — `withLatestFrom` drops every tick
+     * until its other source emits, so `rx.of`/`BehaviorSubject` cannot reach that
+     * case at all (#595).
+     */
+    canPickTasks?: rx.Observable<boolean>;
   },
   body: (harness: Harness<T>) => Promise<void>,
 ): Promise<void> => {
@@ -127,7 +141,7 @@ const withManager = <T>(
       config,
       asRepository(setup.repository),
       setup.handler,
-      rx.of(true),
+      setup.canPickTasks ?? rx.of(true),
       setup.slots,
     ),
     Resource.use((manager) =>
@@ -307,6 +321,46 @@ describe("TaskManager rate-limit slot recovery", () => {
         },
       );
     });
+
+    // A throw and a no-row-matched must not look the same. A driver can fail *after*
+    // the UPDATE commits, and treating that as "the sweep already refunded" would
+    // skip a refund the sweep can no longer make either — the row is no longer
+    // `in_progress`. Retrying is what tells the two apart (#595).
+    it("retries the finalize before deciding the sweep already refunded", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      picksOnce(repository);
+      // First write throws; the retry shows the row was still ours to transition.
+      repository.finalizeIfInProgress
+        .mockRejectedValueOnce(new Error("connection reset"))
+        .mockResolvedValue(taskRow({ status: "failure" }));
+
+      await withManager(
+        { repository, slots, handler: () => Promise.reject(new Error("insufficient funds")) },
+        (harness) =>
+          harness.tick(() => {
+            expect(repository.finalizeIfInProgress).toHaveBeenCalledTimes(2);
+            expect(slots.refund).toHaveBeenCalledExactlyOnceWith(ADDRESS, REGISTERED_AT);
+          }),
+      );
+    });
+
+    it("leaves the slot to the sweep when the finalize outcome stays unknown", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      picksOnce(repository);
+      repository.finalizeIfInProgress.mockRejectedValue(new Error("connection reset"));
+
+      await withManager(
+        { repository, slots, handler: () => Promise.reject(new Error("insufficient funds")) },
+        (harness) =>
+          harness.tick(() => {
+            expect(harness.logged("Could not determine whether the final task status")).toBe(true);
+            // Refunding here could double-refund; the sweep is the safe owner.
+            expect(slots.refund).not.toHaveBeenCalled();
+          }),
+      );
+    });
   });
 
   describe("the timeout sweep", () => {
@@ -330,6 +384,52 @@ describe("TaskManager rate-limit slot recovery", () => {
         }),
       );
     });
+
+    // The wallet-state observable emits nothing until the wallet reaches the node, so
+    // a restart during an outage leaves `$canPickTasks` silent — not `false`. Without
+    // a seeded value `withLatestFrom` would drop every tick and the sweep would never
+    // run, which is the #595 lockout at its worst rather than its edge (#595).
+    it("still refunds when the wallet state never emits at all", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      repository.failTimedOutTasks
+        .mockResolvedValueOnce([{ address: ADDRESS, created_at: REGISTERED_AT }])
+        .mockResolvedValue([]);
+
+      await withManager(
+        {
+          repository,
+          slots,
+          handler: () => Promise.resolve("tx-1"),
+          canPickTasks: new rx.Subject<boolean>(),
+        },
+        (harness) =>
+          harness.tick(() => {
+            expect(slots.refund).toHaveBeenCalledExactlyOnceWith(ADDRESS, REGISTERED_AT);
+          }),
+      );
+    });
+
+    it("does not pick tasks while the wallet state never emits", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      repository.pick.mockResolvedValue(taskRow({ status: "in_progress" }));
+
+      await withManager(
+        {
+          repository,
+          slots,
+          handler: () => Promise.resolve("tx-1"),
+          canPickTasks: new rx.Subject<boolean>(),
+        },
+        async (harness) => {
+          await harness.tick(() => {
+            expect(repository.failTimedOutTasks).toHaveBeenCalled();
+          });
+          expect(repository.pick).not.toHaveBeenCalled();
+        },
+      );
+    });
   });
 
   describe("registerTask", () => {
@@ -346,8 +446,9 @@ describe("TaskManager rate-limit slot recovery", () => {
 
           expect(slots.consume).toHaveBeenCalledExactlyOnceWith(ADDRESS);
           // Compensate the reservation: there is no task left to fail and refund it.
-          expect(slots.refund).toHaveBeenCalledTimes(1);
-          expect(slots.refund.mock.calls[0][0]).toBe(ADDRESS);
+          // The anchor must be the one the reservation returned — refunding against
+          // an app-clock date silently no-ops whenever the clocks straddle midnight.
+          expect(slots.refund).toHaveBeenCalledExactlyOnceWith(ADDRESS, RESERVED_ANCHOR);
         },
       );
     });

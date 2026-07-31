@@ -211,14 +211,14 @@ const parseTaskState = (state: string | null): unknown => {
 export type RateLimitSlots = {
   /** Hand back the slot `address` reserved at registration. */
   refund: (address: string, registeredAt: Date) => Promise<void>;
-  /** Spend one of `address`'s daily slots. */
-  consume: (address: string) => Promise<void>;
+  /** Spend one of `address`'s daily slots, returning the window anchor it landed in. */
+  consume: (address: string) => Promise<Date>;
 };
 
 /** Slot hooks for callers that don't rate-limit at all, such as unit tests. */
 export const noRateLimitSlots: RateLimitSlots = {
   refund: () => Promise.resolve(),
-  consume: () => Promise.resolve(),
+  consume: () => Promise.resolve(new Date()),
 };
 
 export class TaskManager<T> {
@@ -243,7 +243,12 @@ export class TaskManager<T> {
 
           const subscription = taskTriggers$
             .pipe(
-              rx.withLatestFrom($canPickTasks),
+              // `startWith` matters as much as not filtering: `withLatestFrom` drops
+              // every tick until its other source emits, and `$canPickTasks` is built
+              // from wallet state, which emits nothing at all if the node is
+              // unreachable. Without a seed, a restart during an outage would sweep
+              // never — the worst case rather than the edge case (#595).
+              rx.withLatestFrom($canPickTasks.pipe(rx.startWith(false))),
               rx.mergeMap(([_, canPickTasks]) => {
                 // The sweep runs on every tick, *not* gated on `canPickTasks`: an
                 // unsynced or underfunded wallet is precisely when drips strand, so
@@ -349,43 +354,95 @@ export class TaskManager<T> {
         // drip that ran past the 5-minute timeout was already failed *and
         // refunded* by the bulk sweep, and `finalizeIfInProgress` then matches
         // no row (#595).
-        const finalized = await this.taskRepository
-          .finalizeIfInProgress(pickedTask.id, {
-            status: response.status,
-            end_time: endTime.toJSDate(),
-            state: JSON.stringify(
-              response.status === TaskStatuses.success ? response.value : response.error,
-            ),
-          })
-          .catch((err: unknown) => {
-            logger.error(
-              { err, id: pickedTask.id, finalStatus: response.status },
-              "Failed to persist final task status — task may appear stuck",
-            );
-            return undefined;
-          });
+        const finalState: UpdateITask = {
+          status: response.status,
+          end_time: endTime.toJSDate(),
+          state: JSON.stringify(
+            response.status === TaskStatuses.success ? response.value : response.error,
+          ),
+        };
+        const finalized = await this.attemptFinalize(pickedTask.id, finalState);
 
-        if (finalized === undefined) {
-          if (response.status === TaskStatuses.success) {
-            await this.settleLateSuccess(pickedTask, response.value, endTime, logger);
-          } else {
-            // The sweep already failed *and* refunded this task; refunding again
-            // here would hand back a second slot.
-            logger.info({ duration }, `Task already finalized after ${duration.toHuman()}`);
+        if (response.status === TaskStatuses.success) {
+          if (finalized._tag === "settled") {
+            taskSuccessCount.inc();
+            logger.info({ duration }, `Task finished in ${duration.toHuman()}`);
+            return response;
           }
+          // Delivered but not recorded as such — recover the row and the slot.
+          await this.settleLateSuccess(pickedTask, finalState, logger);
           return response;
         }
 
-        if (response.status === TaskStatuses.success) {
-          taskSuccessCount.inc();
-        } else {
+        if (finalized._tag === "settled") {
           taskFailureCount.inc();
           await this.refundFailedTask(pickedTask.address, pickedTask.created_at, logger);
+          logger.info({ duration }, `Task finished in ${duration.toHuman()}`);
+          return response;
         }
 
-        logger.info({ duration }, `Task finished in ${duration.toHuman()}`);
+        if (finalized._tag === "alreadySettled") {
+          // The sweep already failed *and* refunded this task; refunding again
+          // here would hand back a second slot.
+          logger.info({ duration }, `Task already finalized after ${duration.toHuman()}`);
+          return response;
+        }
+
+        // The write threw, so we do not yet know who owns the refund. Retry once:
+        // that is the only way to tell "the sweep beat us" from "our UPDATE landed
+        // but the driver died", and the latter leaves a `failure` row the sweep will
+        // never revisit — a burned slot, which is bug #595 itself.
+        const retried = await this.attemptFinalize(pickedTask.id, finalState);
+
+        if (retried._tag === "settled") {
+          taskFailureCount.inc();
+          await this.refundFailedTask(pickedTask.address, pickedTask.created_at, logger);
+          return response;
+        }
+
+        if (retried._tag === "alreadySettled") {
+          logger.info({ duration }, `Task already finalized after ${duration.toHuman()}`);
+          return response;
+        }
+
+        // Still unknown. Refunding risks a double refund, so leave it to the sweep
+        // and shout, because only an operator can reconcile the row now.
+        logger.error(
+          { err: retried.err, id: pickedTask.id },
+          "Could not determine whether the final task status persisted — slot left to the sweep",
+        );
         return response;
       });
+  }
+
+  /**
+   * Write a task's final status, reporting *which* of three things happened rather
+   * than collapsing two of them into one `undefined` (#595):
+   *
+   * - `settled` — this call moved the row out of `in_progress`, so this call owns
+   *   the slot decision.
+   * - `alreadySettled` — no `in_progress` row matched, so the sweep got there first
+   *   and has already refunded.
+   * - `indeterminate` — the write threw, and a driver can fail *after* its UPDATE
+   *   commits. Reading that as `alreadySettled` would skip a refund the sweep can no
+   *   longer make either, because the row is no longer `in_progress`.
+   */
+  private async attemptFinalize(
+    id: string,
+    finalState: UpdateITask,
+  ): Promise<
+    | { _tag: "settled"; task: ITask }
+    | { _tag: "alreadySettled" }
+    | { _tag: "indeterminate"; err: unknown }
+  > {
+    return this.taskRepository
+      .finalizeIfInProgress(id, finalState)
+      .then((task) =>
+        task === undefined
+          ? ({ _tag: "alreadySettled" } as const)
+          : ({ _tag: "settled", task } as const),
+      )
+      .catch((err: unknown) => ({ _tag: "indeterminate", err }) as const);
   }
 
   /**
@@ -423,16 +480,9 @@ export class TaskManager<T> {
    */
   private async settleLateSuccess(
     pickedTask: ITask,
-    value: T,
-    endTime: DateTime,
+    finalState: UpdateITask,
     logger: pino.Logger,
   ): Promise<void> {
-    const finalState = {
-      status: TaskStatuses.success,
-      end_time: endTime.toJSDate(),
-      state: JSON.stringify(value),
-    };
-
     const reclaimed = await this.taskRepository
       .succeedIfFailed(pickedTask.id, finalState)
       .catch((err: unknown) => {
@@ -504,8 +554,7 @@ export class TaskManager<T> {
     // *before* creating, so a failed reservation leaves no task to dispense; the
     // reverse order would 500 the request and still drip. Separate repositories mean
     // no shared transaction, so a failed create compensates instead (#595).
-    const registeredAt = new Date();
-    await this.slots.consume(address);
+    const registeredAt = await this.slots.consume(address);
 
     try {
       await this.taskRepository.create({
