@@ -1,3 +1,4 @@
+# checkov:skip=CKV_DOCKER_2: healthchecks are defined at the orchestrator level (compose files / deployment probes)
 FROM node:24.11.1
 
 LABEL org.opencontainers.image.source="https://github.com/midnight-ntwrk/artifacts"

@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           always-auth: true
           registry-url: https://npm.pkg.github.com/
@@ -27,7 +27,7 @@ jobs:
           yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_READ }}"
 
       - name: Dependencies cache restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
             ./.yarn/cache
@@ -41,7 +41,7 @@ jobs:
         run: "yarn install --immutable"
 
       - name: Dependencies cache save
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         if: always()
         with:
           path: |
@@ -50,7 +50,7 @@ jobs:
           key: yarn-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Turbo cache restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ./turbo_cache
           key: turbo-${{ github.ref_name }}-${{ github.run_id }}
@@ -64,7 +64,7 @@ jobs:
           yarn build:markdown-docs
 
       - name: Turbo cache save
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         if: always()
         with:
           path: ./turbo_cache

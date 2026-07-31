@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   scan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -27,6 +27,11 @@ jobs:
 
       - name: Scan code
         id: scan
-        uses: midnightntwrk/upload-sarif-github-action@07dad711370cc5985885ebcf07cb8c9264bc4167
+        # This pin includes the caller-workspace fix: older revisions scanned
+        # the action checkout itself, producing findings for its dependencies.
+        uses: midnightntwrk/upload-sarif-github-action@0ec83cec2d2703f682c85392b19e3f8db7e85434
         with:
           fail_severity: "high"
+          # Checks supported by Scorecard's local mode; unset means all checks,
+          # and locally-unsupported ones score -1, which the gate reads as high.
+          scorecard_checks: Binary-Artifacts,Dangerous-Workflow,Dependency-Update-Tool,License,Pinned-Dependencies,Security-Policy,Token-Permissions,Vulnerabilities
