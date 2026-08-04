@@ -1,6 +1,6 @@
 {
   "name": "@midnight-ntwrk/faucet-auth",
-  "version": "0.14.0-rc.0",
+  "version": "0.14.0-rc.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
