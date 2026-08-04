@@ -177,12 +177,10 @@ describe.todo("Task Manager", () => {
         }),
       ),
       Task.tap((results) => {
-        const expectedResults = tasks.map(
-          ([expectedFail]): CompletedResponse<unknown> => ({
-            status: "failure",
-            error: expectedFail,
-          }),
-        );
+        const expectedResults = tasks.map(([expectedFail]): CompletedResponse<unknown> => ({
+          status: "failure",
+          error: expectedFail,
+        }));
         expect(results).toEqual(expectedResults);
       }),
       Task.unsafeRun,
@@ -237,12 +235,10 @@ describe.todo("Task Manager", () => {
         }),
       ),
       Task.tap((results) => {
-        const expectedResults = tasks.map(
-          ([expectedFail]): CompletedResponse<unknown> => ({
-            status: "failure",
-            error: expectedFail,
-          }),
-        );
+        const expectedResults = tasks.map(([expectedFail]): CompletedResponse<unknown> => ({
+          status: "failure",
+          error: expectedFail,
+        }));
         expect(results).toEqual(expectedResults);
       }),
       Task.unsafeRun,

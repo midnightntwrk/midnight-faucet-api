@@ -62,25 +62,23 @@ const collectingLogger = () => {
 };
 
 const fakeRepository = () => ({
-  failTimedOutTasks: vi.fn(
-    (): Promise<Array<Pick<TaskType, "address" | "created_at">>> => Promise.resolve([]),
+  failTimedOutTasks: vi.fn((): Promise<Array<Pick<TaskType, "address" | "created_at">>> =>
+    Promise.resolve([]),
   ),
   pick: vi.fn((): Promise<TaskType | undefined> => Promise.resolve(undefined)),
   getById: vi.fn((_id: string): Promise<TaskType | undefined> => Promise.resolve(undefined)),
-  getByAddress: vi.fn(
-    (_address: string): Promise<TaskType | undefined> => Promise.resolve(undefined),
+  getByAddress: vi.fn((_address: string): Promise<TaskType | undefined> =>
+    Promise.resolve(undefined),
   ),
-  create: vi.fn(
-    (_task: { address: string; id: string; amount?: bigint }): Promise<TaskType> =>
-      Promise.resolve(taskRow({ status: "scheduled" })),
+  create: vi.fn((_task: { address: string; id: string; amount?: bigint }): Promise<TaskType> =>
+    Promise.resolve(taskRow({ status: "scheduled" })),
   ),
   finalizeIfInProgress: vi.fn(
     (_id: string, _task: Partial<TaskType>): Promise<TaskType | undefined> =>
       Promise.resolve(taskRow()),
   ),
-  succeedIfFailed: vi.fn(
-    (_id: string, _task: Partial<TaskType>): Promise<TaskType | undefined> =>
-      Promise.resolve(undefined),
+  succeedIfFailed: vi.fn((_id: string, _task: Partial<TaskType>): Promise<TaskType | undefined> =>
+    Promise.resolve(undefined),
   ),
 });
 

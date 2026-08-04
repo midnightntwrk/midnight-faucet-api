@@ -120,42 +120,40 @@ export class HealthService<TKeys extends string> {
   doChecks(key: TKeys): Promise<CheckResult> {
     return pipe(
       rx.from(Object.entries(this.checks[key])),
-      rx.mergeMap(
-        async ([name, check]: [string, Check]): Promise<[string, CheckStatus]> => [
-          name,
-          await pipe(
-            rx.defer(() => check()),
-            // Safety net for misbehaving inline checks. Background-cached
-            // checks resolve immediately. Observable-based readiness checks
-            // are gated by upstream `auditTime` (250ms) on the wallet state
-            // stream, so the first emission can take that long; subsequent
-            // checks read the shareReplay-cached value instantly. Anything
-            // that takes longer than this bound is, by definition, broken.
-            rx.timeout(500),
-            rx.materialize(),
-            rx.map((notification: rx.ObservableNotification<CheckStatus>) => {
-              if (notification.kind === "N") {
-                this.logger.trace(
-                  { checkName: name, result: notification.value },
-                  `Check finished: ${name}: ${notification.value}`,
-                );
-                return notification.value;
-              } else {
-                this.logger.error(
-                  {
-                    checkName: name,
-                    result:
-                      notification.kind === "E" ? notification.error : "Completed without value",
-                  },
-                  `Check failed: ${name}`,
-                );
-                return "not_ok";
-              }
-            }),
-            (x) => rx.firstValueFrom(x),
-          ),
-        ],
-      ),
+      rx.mergeMap(async ([name, check]: [string, Check]): Promise<[string, CheckStatus]> => [
+        name,
+        await pipe(
+          rx.defer(() => check()),
+          // Safety net for misbehaving inline checks. Background-cached
+          // checks resolve immediately. Observable-based readiness checks
+          // are gated by upstream `auditTime` (250ms) on the wallet state
+          // stream, so the first emission can take that long; subsequent
+          // checks read the shareReplay-cached value instantly. Anything
+          // that takes longer than this bound is, by definition, broken.
+          rx.timeout(500),
+          rx.materialize(),
+          rx.map((notification: rx.ObservableNotification<CheckStatus>) => {
+            if (notification.kind === "N") {
+              this.logger.trace(
+                { checkName: name, result: notification.value },
+                `Check finished: ${name}: ${notification.value}`,
+              );
+              return notification.value;
+            } else {
+              this.logger.error(
+                {
+                  checkName: name,
+                  result:
+                    notification.kind === "E" ? notification.error : "Completed without value",
+                },
+                `Check failed: ${name}`,
+              );
+              return "not_ok";
+            }
+          }),
+          (x) => rx.firstValueFrom(x),
+        ),
+      ]),
       rx.reduce((acc, [name, status]) => {
         return { ...acc, [name]: status };
       }, {}),

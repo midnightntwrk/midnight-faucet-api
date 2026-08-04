@@ -450,12 +450,7 @@ export const getConstants = (networkId: NetworkId.NetworkId) => {
 };
 
 export type MidnightNetwork =
-  | "undeployed"
-  | "preview"
-  | "preprod"
-  | "devnet"
-  | "qanet"
-  | "stagenet";
+  "undeployed" | "preview" | "preprod" | "devnet" | "qanet" | "stagenet";
 
 export const waitForBalanceIncrease = async (
   wallet: WalletFacade,
