@@ -1,6 +1,6 @@
 {
   "name": "@midnight-ntwrk/faucet-server",
-  "version": "0.14.0-rc.1",
+  "version": "0.14.0-rc.2",
   "description": "Midnight faucet server",
   "type": "module",
   "main": "./dist/index.js",
