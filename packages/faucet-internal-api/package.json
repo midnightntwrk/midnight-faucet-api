@@ -1,6 +1,6 @@
 {
   "name": "@midnight-ntwrk/faucet-internal-api",
-  "version": "0.14.0-rc.0",
+  "version": "0.14.0-rc.1",
   "description": "Midnight faucet library",
   "type": "module",
   "main": "./dist/index.js",
