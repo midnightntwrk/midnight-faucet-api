@@ -16,7 +16,7 @@
     "diff": "^4.0.4",
     "bn.js": "^5.2.3",
     "js-yaml": "^4.1.1",
-    "undici": "^7.24.0",
+    "undici": "^7.29.0",
     "lodash": "^4.18.1",
     "@babel/runtime": "^7.29.6",
     "@babel/runtime-corejs3": "^7.29.6",
