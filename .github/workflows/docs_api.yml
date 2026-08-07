@@ -103,4 +103,5 @@ jobs:
         if: steps.set_update.outputs.UPDATE == 'true'
         env:
           GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
-        run: gh pr create --base main --head "${{ steps.set_update.outputs.NEW_BRANCH }}" --title "API documentation update" --body "Update API documentation - created by Midnight CI Github Action"
+          PR_HEAD: ${{ steps.set_update.outputs.NEW_BRANCH }}
+        run: gh pr create --base main --head "$PR_HEAD" --title "API documentation update" --body "Update API documentation - created by Midnight CI Github Action"
