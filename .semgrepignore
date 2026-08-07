@@ -3,3 +3,4 @@
 docker-compose.yml
 packages/faucet/test-compose.yml
 scripts/run-benchmark.mjs
+tests/docker-compose-dynamic.yml
