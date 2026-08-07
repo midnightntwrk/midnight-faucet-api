@@ -1,4 +1,4 @@
-FROM node:24.18.0@sha256:5711a0d445a1af54af9589066c646df387d1831a608226f4cd694fc59e745059
+FROM node:26.5.1@sha256:a9875b5ccb02aa527cf7f2297b16ae425a0ff3da2f7d87fce3df41f04ffa0524
 
 LABEL org.opencontainers.image.source="https://github.com/midnight-ntwrk/artifacts"
 
