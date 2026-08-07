@@ -20,7 +20,7 @@ jobs:
       packages: write
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/CI.yml
+    uses: ./.github/workflows/ci.yml
 
   publish:
     needs: 'check'
@@ -31,4 +31,4 @@ jobs:
       packages: write
       checks: write
       pull-requests: write
-    uses: ./.github/workflows/CD.yml
+    uses: ./.github/workflows/cd.yml
