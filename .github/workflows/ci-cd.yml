@@ -13,22 +13,20 @@ permissions: {}
 
 jobs:
   check:
-    secrets: inherit
+    secrets:
+      MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
     permissions:
-      id-token: write
       contents: read
-      packages: write
+      packages: read
       checks: write
       pull-requests: write
     uses: ./.github/workflows/ci.yml
 
   publish:
     needs: 'check'
-    secrets: inherit
+    secrets:
+      MIDNIGHTCI_PACKAGES_WRITE: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
     permissions:
-      id-token: write
       contents: read
       packages: write
-      checks: write
-      pull-requests: write
     uses: ./.github/workflows/cd.yml

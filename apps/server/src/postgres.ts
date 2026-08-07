@@ -35,7 +35,9 @@ export const runMigrations = async (
     logger.info("Running migrations");
 
     await knex.migrate.latest({
-      directory: path.resolve(baseDir(resolveMethod), "..", "dist", "migrations"), // Path built that way ensures that they are properly loaded from tests too
+      // Every segment is internal and fixed; no request-controlled path reaches
+      // the migration loader.
+      directory: path.resolve(baseDir(resolveMethod), "..", "dist", "migrations"), // nosemgrep
       extension: ".js",
       loadExtensions: [".js"],
     });

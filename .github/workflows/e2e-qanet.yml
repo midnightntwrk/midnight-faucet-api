@@ -12,9 +12,8 @@ jobs:
   test:
     name: Faucet E2E Test
     permissions:
-      id-token: write
       contents: read
-      packages: write
+      packages: read
       checks: write
       pull-requests: write
     uses: ./.github/workflows/e2e-test.yml
@@ -25,4 +24,7 @@ jobs:
       # f27b171 is the last commit on the v8 stack (@midnight-ntwrk/ledger-v8). Revert to
       # main once the environments are upgraded to ledger v9.
       branch: f27b17138c42a9f931f31b1ad04b240705007137
-    secrets: inherit
+    secrets:
+      MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+      TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
+      VISITOR_PASSWORD: ${{ secrets.VISITOR_PASSWORD }}

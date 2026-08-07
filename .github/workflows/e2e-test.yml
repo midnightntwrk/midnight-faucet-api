@@ -1,8 +1,6 @@
 name: Faucet E2E Test
 
 env:
-  GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-  MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
   DISPLAY: ":99.0"
   SYNC_CACHE: ${{ github.workspace }}/tests/src/e2e/.sync_cache
 
@@ -63,10 +61,6 @@ on:
         required: false
         default: "main"
     secrets:
-      GH_TOKEN:
-        required: true
-      GH_USERNAME:
-        required: true
       MIDNIGHTCI_PACKAGES_READ:
         required: true
       TURNSTILE_HEADER:
@@ -79,9 +73,8 @@ jobs:
     name: Faucet E2E Test
     runs-on: ubuntu-latest-8-core-x64
     permissions:
-      id-token: write # This is required for requesting the JWT
       contents: read # This is required for actions/checkout
-      packages: write # This is required for using GH docker registry
+      packages: read # This is required for using GH docker registry
       checks: write # This is needed to upload test results
       pull-requests: write # This is needed to upload test results
 
@@ -89,6 +82,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.branch }}
+          persist-credentials: false
 
       # - name: Determine the latest run ID with appropriate artifact
       #   continue-on-error: true
@@ -115,7 +109,7 @@ jobs:
           scope: "@midnight-ntwrk"
           node-version-file: ".nvmrc"
         env:
-          NODE_AUTH_TOKEN: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Enable Corepack
         run: corepack enable
@@ -125,9 +119,11 @@ jobs:
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
-          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Configure yarn
+        env:
+          GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
         run: |
           # The @midnight-ntwrk scope's deps span two registries: most are pinned to
           # GitHub Packages archiveUrls in the lockfile, but three v8-stack deps
@@ -151,7 +147,7 @@ jobs:
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
-          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Start XVFB
         run: |

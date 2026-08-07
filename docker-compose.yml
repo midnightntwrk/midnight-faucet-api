@@ -17,7 +17,7 @@ services:
       PRINT_CONFIG: "true"
       MAX_CONCURRENT_TASKS: 1
       THIRD_PARTY_ALLOWED_ORIGINS: "http://localhost:5300"
-      THIRD_PARTY_API_KEY: "test-api-key-12345" # checkov:skip=CKV_SECRET_6 local test fixture, not a real credential
+      THIRD_PARTY_API_KEY: "test" # Local test fixture, not a real credential.
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY must be set}
       JWT_SIGN_SECRET: ${JWT_SIGN_SECRET:?JWT_SIGN_SECRET must be set}
     healthcheck:

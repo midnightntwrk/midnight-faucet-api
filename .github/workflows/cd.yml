@@ -2,6 +2,9 @@ name: CD
 
 on:
   workflow_call:
+    secrets:
+      MIDNIGHTCI_PACKAGES_WRITE:
+        required: true
   workflow_dispatch:
     inputs:
       ref:
@@ -16,11 +19,8 @@ jobs:
     name: Build packages, push to docker registry and npm registry
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # This is required for requesting the JWT
       contents: read # This is required for actions/checkout
       packages: write # This is required for using GH docker registry
-      checks: write # This is needed to upload test results
-      pull-requests: write # This is needed to upload test results
     # if: ${{ github.event_name != 'schedule' && (github.ref_name == 'main' || contains(github.event.head_commit.message, '[do_publish]') || contains(github.event.ref, 'tags') || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Checkout midnight-faucet repository
@@ -28,6 +28,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -105,7 +106,9 @@ jobs:
 
       - name: Bump versions
         if: ${{!contains(github.event.ref, 'refs/tags/') }} # When a tag is created, we want to use the version that is being saved in package.json
-        run: yarn workspaces foreach --all version ${{ steps.vars.outputs.target_version }}
+        env:
+          TARGET_VERSION: ${{ steps.vars.outputs.target_version }}
+        run: yarn workspaces foreach --all version "$TARGET_VERSION"
 
       - name: Publish prerelease packages
         if: ${{ !startsWith(github.ref, 'refs/tags/') }} # When a tag is created, we want to use the version that is being saved in package.json
@@ -124,8 +127,10 @@ jobs:
 
       # TODO build and push latest only for builds from main branch
       - name: Create multiplatform image and push
+        env:
+          DOCKER_TAG: ${{ steps.vars.outputs.docker_tag }}
         run: |
           docker buildx build \
           --platform linux/arm64,linux/amd64 \
-          -t ghcr.io/midnight-ntwrk/midnight-faucet:${{ steps.vars.outputs.docker_tag }} \
+          -t "ghcr.io/midnight-ntwrk/midnight-faucet:${DOCKER_TAG}" \
           --push .

@@ -974,7 +974,8 @@ describe("Faucet Server", () => {
         pipe(
           from(filesToRead),
           mergeMap(async (filePath) => {
-            const contents = await fs.readFile(path.resolve(`${config.uiPath}/assets`, filePath));
+            // Test-only fixture paths come from the test's generated asset list.
+            const contents = await fs.readFile(path.resolve(`${config.uiPath}/assets`, filePath)); // nosemgrep
             return { filePath, contents };
           }),
           gatherResults,
