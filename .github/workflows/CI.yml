@@ -115,7 +115,7 @@ jobs:
         with:
           name: Vitest Tests Report
           path: |
-            !(node_modules)/**/report/test-report.xml
+            !(node_modules)/**/reports/report/test-report.xml
           reporter: java-junit
 
       - name: Publish Test Summary
@@ -124,9 +124,9 @@ jobs:
         with:
           check_name: Vitest Tests Results
           files: |
-            ./packages/**/report/test-report.xml
-            ./apps/**/report/test-report.xml
-            !(node_modules)/**/report/test-report.xml
+            ./packages/**/reports/report/test-report.xml
+            ./apps/**/reports/report/test-report.xml
+            !(node_modules)/**/reports/report/test-report.xml
 
       - name: Aggregate coverage reports
         run: |
