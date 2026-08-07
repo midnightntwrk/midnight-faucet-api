@@ -13,9 +13,6 @@ jobs:
   check:
     name: Build & Test
     runs-on: ubuntu-latest-8-core-x64
-    env:
-      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-      JWT_SIGN_SECRET: ${{ secrets.JWT_SIGN_SECRET }}
     permissions:
       id-token: write # This is required for requesting the JWT
       contents: read # This is required for actions/checkout
@@ -81,7 +78,18 @@ jobs:
             turbo-${{ github.ref_name }}
             turbo-main
 
-      - name: Verify secret env vars
+      - name: Generate test-only secrets
+        run: |
+          encryption_key=$(openssl rand -hex 32)
+          jwt_sign_secret=$(openssl rand -hex 32)
+          echo "::add-mask::$encryption_key"
+          echo "::add-mask::$jwt_sign_secret"
+          {
+            echo "ENCRYPTION_KEY=$encryption_key"
+            echo "JWT_SIGN_SECRET=$jwt_sign_secret"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify test secret env vars
         run: |
           echo "ENCRYPTION_KEY length: ${#ENCRYPTION_KEY}"
           echo "JWT_SIGN_SECRET length: ${#JWT_SIGN_SECRET}"
@@ -91,9 +99,6 @@ jobs:
           fi
 
       - name: Run checks
-        env:
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-          JWT_SIGN_SECRET: ${{ secrets.JWT_SIGN_SECRET }}
         run: |
           npx turbo check --cache-dir ./turbo_cache --concurrency 1
 
