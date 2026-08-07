@@ -114,10 +114,7 @@ jobs:
         if: success() || failure()
         with:
           name: Vitest Tests Report
-          path: |
-            packages/**/reports/report/test-report.xml
-            apps/**/reports/report/test-report.xml
-            tests/**/reports/report/test-report.xml
+          path: packages/**/reports/report/test-report.xml,apps/**/reports/report/test-report.xml,tests/**/reports/report/test-report.xml
           reporter: java-junit
 
       - name: Publish Test Summary
