@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a faucet feature or enhancement.
+title: "feat: "
+labels: ["status:untriaged", "component:faucet"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can you not do today, and why does it matter?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Engineering urgency; maintainers may adjust this during triage.
+      options:
+        - P3 - Medium
+        - P2 - High
+        - P1 - Critical
+        - P0 - Blocking
+        - P4 - Low
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or API you would like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true

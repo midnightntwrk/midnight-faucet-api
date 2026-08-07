@@ -19,7 +19,7 @@ import knexLib from "knex";
 import { Duration, DateTime, Settings } from "luxon";
 import * as nodeCrypto from "node:crypto";
 import * as fs from "node:fs/promises";
-import * as path from "path";
+import { pathToFileURL } from "node:url";
 import pino from "pino";
 import pinoPretty from "pino-pretty";
 import {
@@ -969,17 +969,23 @@ describe("Faucet Server", () => {
         (x) => firstValueFrom(x),
       );
 
-    const readFiles = (filesToRead: string[]): Task<Record<string, string>> =>
-      Task.lift(() =>
+    const readFiles = (filesToRead: string[]): Task<Record<string, string>> => {
+      const assetsRoot = new URL("assets/", pathToFileURL(`${config.uiPath}/`));
+      return Task.lift(() =>
         pipe(
           from(filesToRead),
           mergeMap(async (filePath) => {
-            const contents = await fs.readFile(path.resolve(`${config.uiPath}/assets`, filePath));
+            const fileUrl = new URL(filePath, assetsRoot);
+            if (!fileUrl.href.startsWith(assetsRoot.href)) {
+              throw new Error(`Asset path escapes configured directory: ${filePath}`);
+            }
+            const contents = await fs.readFile(fileUrl);
             return { filePath, contents };
           }),
           gatherResults,
         ),
       );
+    };
 
     const fetchFiles = (files: string[]): Task<Record<string, string>> =>
       Task.lift(() => {

@@ -63,7 +63,7 @@ describe("Third-Party API", () => {
       thirdPartyApi: {
         allowedOrigins: ["https://partner.com", "https://allowed.example.com"],
         maxAmount: 1000,
-        apiKey: "test-api-key-12345",
+        apiKey: "test",
       },
     };
   };
@@ -279,7 +279,7 @@ describe("Third-Party API", () => {
   });
 
   const allowedOrigin = "https://partner.com";
-  const validApiKey = "test-api-key-12345";
+  const validApiKey = "test";
 
   // Helper to mock healthService connectivity check (services not running in tests)
   const withMockedConnectivity = (root: CompositionRoot): CompositionRoot => {

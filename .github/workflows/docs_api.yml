@@ -11,6 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -77,14 +79,15 @@ jobs:
             echo "Adding new..."
             git config --global user.email "midnight-ci@users.noreply.github.com"
             git config --global user.name "Midnight CI GitHub Action"
-            BRANCH=api-docs/merge-prs/`date +'%Y-%m-%dT%H%M%S'`
-            git checkout -b $BRANCH
-            git push -u origin $BRANCH
-            echo "UPDATE=true" >> $GITHUB_OUTPUT
-            echo "NEW_BRANCH=$BRANCH" >> $GITHUB_OUTPUT
+            BRANCH="api-docs/merge-prs/$(date +'%Y-%m-%dT%H%M%S')"
+            git checkout -b "$BRANCH"
+            gh auth setup-git
+            git push -u origin "$BRANCH"
+            echo "UPDATE=true" >> "$GITHUB_OUTPUT"
+            echo "NEW_BRANCH=$BRANCH" >> "$GITHUB_OUTPUT"
           else
             echo "Nothing to update"
-            echo "UPDATE=false" >> $GITHUB_OUTPUT
+            echo "UPDATE=false" >> "$GITHUB_OUTPUT"
           fi
         env:
           GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
@@ -103,4 +106,5 @@ jobs:
         if: steps.set_update.outputs.UPDATE == 'true'
         env:
           GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
-        run: gh pr create --base main --head ${{ steps.set_update.outputs.NEW_BRANCH }} --title "API documentation update" --body "Update API documentation - created by Midnight CI Github Action"
+          PR_HEAD: ${{ steps.set_update.outputs.NEW_BRANCH }}
+        run: gh pr create --base main --head "$PR_HEAD" --title "API documentation update" --body "Update API documentation - created by Midnight CI Github Action"

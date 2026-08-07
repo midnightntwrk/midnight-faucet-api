@@ -12,12 +12,14 @@ jobs:
   test:
     name: Faucet Smoke Test
     permissions:
-      id-token: write
       contents: read
-      packages: write
+      packages: read
       checks: write
       pull-requests: write
     uses: ./.github/workflows/smoke-test.yml
     with:
       network: devnet
-    secrets: inherit
+    secrets:
+      MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+      TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
+      THIRD_PARTY_API_KEY: ${{ secrets.THIRD_PARTY_API_KEY }}

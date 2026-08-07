@@ -337,7 +337,7 @@ describe("Third-Party API Smoke Tests", () => {
       expect(response.status).toBe(200);
       expect(response.data.dripId).toBe(dripId);
       expect(["PENDING", "CONFIRMED", "FAILED"]).toContain(response.data.status);
-      console.log(`Drip status for ${dripId}:`, response.data);
+      console.log("Drip status:", { dripId, response: response.data });
     }, 20_000);
 
     test(
