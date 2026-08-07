@@ -126,10 +126,13 @@ jobs:
       - name: Aggregate coverage reports
         run: |
           mkdir -p coverage/workspaces
+          # The command is interpreted by each workspace shell; expansion in
+          # this outer shell would copy from the wrong directory.
+          # shellcheck disable=SC2016,SC2046
           yarn workspaces foreach -Apv exec bash -c '[ ! -f coverage/coverage-final.json ] && exit 0 || cp coverage/coverage-final.json '$(pwd)'/coverage/workspaces/$(basename $(pwd))-coverage-final.json'
 
       - name: Merge report as ZIP
-        run: mv coverage coverage_$(date +"%Y%m%d%H%M%S")
+        run: mv coverage "coverage_$(date +"%Y%m%d%H%M%S")"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

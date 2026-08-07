@@ -1,0 +1,40 @@
+name: Documentation improvement
+description: Report documentation that is incorrect, missing, or unclear.
+title: "docs: "
+labels: ["documentation", "status:untriaged", "component:faucet"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Link to the page or provide a file path and line number.
+      placeholder: "README.md:42"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Engineering urgency; maintainers may adjust this during triage.
+      options:
+        - P3 - Medium
+        - P2 - High
+        - P1 - Critical
+        - P0 - Blocking
+        - P4 - Low
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement

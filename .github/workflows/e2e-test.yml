@@ -46,7 +46,7 @@ on:
       network:
         type: string
         description: Midnight network to use (qanet/preview/preprod/undeployed)
-        required: true
+        required: false
         default: "preprod"
       deployment:
         type: string
@@ -68,6 +68,10 @@ on:
       GH_USERNAME:
         required: true
       MIDNIGHTCI_PACKAGES_READ:
+        required: true
+      TURNSTILE_HEADER:
+        required: true
+      VISITOR_PASSWORD:
         required: true
 
 jobs:

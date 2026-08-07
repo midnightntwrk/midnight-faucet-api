@@ -1,0 +1,11 @@
+Midnight Faucet API
+Copyright (C) Midnight Foundation and contributors.
+
+This product is licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License. A copy of the
+License is included in the LICENSE file at the root of this repository, or is
+available at https://www.apache.org/licenses/LICENSE-2.0.
+
+Third-party component attributions are documented by their upstream packages
+and licenses. Distribution-specific notices are listed in
+THIRD_PARTY_NOTICES.md.

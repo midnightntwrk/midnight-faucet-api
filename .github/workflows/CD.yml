@@ -98,10 +98,10 @@ jobs:
           calculatedSha=$(git rev-parse --short "$GIT_SHA")
           currentVersion=$(jq -r .version package.json)
           targetVersion="$currentVersion-pre.$calculatedSha.$RUN_NUMBER"
-          echo "target_version=$targetVersion" >> $GITHUB_OUTPUT
+          echo "target_version=$targetVersion" >> "$GITHUB_OUTPUT"
 
           dockerTag=$(echo "$HEAD_REF" | tr '/' '-')
-          echo "docker_tag=$dockerTag" >> $GITHUB_OUTPUT
+          echo "docker_tag=$dockerTag" >> "$GITHUB_OUTPUT"
 
       - name: Bump versions
         if: ${{!contains(github.event.ref, 'refs/tags/') }} # When a tag is created, we want to use the version that is being saved in package.json

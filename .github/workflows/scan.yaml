@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   scan:
+    name: scan
     runs-on: ubuntu-24.04
     permissions:
       actions: read
@@ -27,8 +28,9 @@ jobs:
 
       - name: Scan code
         id: scan
-        # This pin includes the caller-workspace fix: older revisions scanned
-        # the action checkout itself, producing findings for its dependencies.
+        # The shared scanner includes trivy vulnerability scanning. This pin
+        # also includes the caller-workspace fix; older revisions scanned the
+        # action checkout itself and reported its dependencies.
         uses: midnightntwrk/upload-sarif-github-action@0ec83cec2d2703f682c85392b19e3f8db7e85434
         with:
           fail_severity: "high"

@@ -14,6 +14,7 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 - **Yarn**: 4.13.0+ (Berry with node-modules linker)
 - **Docker & Docker Compose**: For local development with full stack
 - **Git**: For version control
+- **pre-commit**: For the same repository checks enforced by CI
 
 ### Setup Development Environment
 
@@ -28,7 +29,12 @@ We are committed to providing a welcoming and inclusive environment. Please be r
    yarn install
    ```
 
-3. **Set up environment:**
+3. **Install the repository hooks:**
+   ```bash
+   pre-commit install
+   ```
+
+4. **Set up environment:**
    ```bash
    cp .env.example .env
    # Edit .env with your local configuration if needed
@@ -125,9 +131,12 @@ of truth (and the root `CLAUDE.md` imports it so coding agents pick it up automa
 Formatting and linting are automated. Before committing, run:
 
 ```bash
+pre-commit run --all-files
 yarn format
 yarn lint
 ```
+
+The `pre-commit` CI job runs the same hook configuration on every pull request, so contributors who have not installed the local hook receive the same validation before merge.
 
 ## Architecture & Patterns
 
@@ -158,7 +167,7 @@ import { mkRequestTokens } from "./FaucetImpl";
 describe("mkRequestTokens", () => {
   it("should throw InsufficientFundsError when balance is low", async () => {
     const faucet = await setupTestFaucet({ balance: 100n });
-    
+
     await expect(
       faucet.requestTokens("address", undefined, 1000n)
     ).rejects.toThrow(InsufficientFundsError);
@@ -182,7 +191,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 **Scopes:** `server`, `faucet`, `wallet`, `api`, `ui`, `db`, etc.
 
-**Subject:** 
+**Subject:**
 - Lowercase, no period
 - Imperative mood ("add" not "added")
 - Under 50 characters
@@ -195,6 +204,12 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/) format:
 **Footer** (optional):
 - Reference issues: `Fixes #123`, `Closes #456`
 - Breaking changes: `BREAKING CHANGE: description`
+
+### Developer Certificate of Origin
+
+Human contributors must certify that they have the right to submit their contribution by adding a `Signed-off-by` trailer with `git commit --signoff`. The sign-off represents the [Developer Certificate of Origin 1.1](https://developercertificate.org/).
+
+Automated coding agents must not add or impersonate a human DCO sign-off. AI-assisted changes must instead follow the repository's disclosure policy and identify the assisting tool without treating it as a copyright author.
 
 **Examples:**
 ```
@@ -219,28 +234,33 @@ history check fails.
 
 ### Before Opening a PR
 
-1. **Ensure tests pass:**
+1. **Run repository hooks:**
+   ```bash
+   pre-commit run --all-files
+   ```
+
+2. **Ensure tests pass:**
    ```bash
    yarn test
    ```
 
-2. **Type-check:**
+3. **Type-check:**
    ```bash
    yarn typecheck
    ```
 
-3. **Lint and format:**
+4. **Lint and format:**
    ```bash
    yarn lint
    yarn format
    ```
 
-4. **Run full check:**
+5. **Run full check:**
    ```bash
    yarn check  # build + lint + test
    ```
 
-5. **Test your changes locally** with `docker-compose up`
+6. **Test your changes locally** with `docker-compose up`
 
 ### Opening a Pull Request
 

@@ -26,4 +26,3 @@ jobs:
       # main once the environments are upgraded to ledger v9.
       branch: f27b17138c42a9f931f31b1ad04b240705007137
     secrets: inherit
-    
