@@ -1058,7 +1058,7 @@ __metadata:
     "@types/cors": "npm:^2.8.15"
     "@types/express": "npm:^5.0.0"
     "@types/jsonwebtoken": "npm:^9.0.4"
-    "@types/lodash": "npm:^4.14.200"
+    "@types/lodash": "npm:^4.17.25"
     "@types/passport-jwt": "npm:^4.0.1"
     "@types/passport-local": "npm:^1.0.37"
     convict: "npm:^6.2.5"
@@ -1086,7 +1086,7 @@ __metadata:
     quick-lru: "npm:^7.0.0"
     rxjs: "npm:^7.8.1"
     testcontainers: "npm:^12.0.4"
-    tsx: "npm:^4.20.6"
+    tsx: "npm:^4.23.5"
     typescript: "npm:^6.0.2"
     vitest: "npm:^4.1.10"
     yargs: "npm:^18.1.0"
@@ -1170,7 +1170,7 @@ __metadata:
     "@midnight-ntwrk/faucet-utils": "workspace:^"
     "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
-    "@types/lodash": "npm:^4.14.202"
+    "@types/lodash": "npm:^4.17.25"
     eslint: "npm:^10.8.0"
     fast-check: "npm:^4.9.0"
     lodash: "npm:^4.18.1"
@@ -2685,10 +2685,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:^4.14.200, @types/lodash@npm:^4.14.202":
-  version: 4.17.24
-  resolution: "@types/lodash@npm:4.17.24"
-  checksum: 10/0f2082565f60f9787eefc046edc38458054512be5a8b3584ef0bad5fd9e85d0ab55ec5a1fbfae1ed6ba015cf1f9e837d5fb4da1f99fc60b8f74b2a46146fb00f
+"@types/lodash@npm:^4.17.25":
+  version: 4.17.25
+  resolution: "@types/lodash@npm:4.17.25"
+  checksum: 10/f786e05664439cc8d327fd97c62c060d81b3c4ed52127d01fbc926139e1a669c1554bf3cd0dbb43f8fcc7d9b5c6c23c543cc36de8dc815c9f289ea852b26ebd6
   languageName: node
   linkType: hard
 
@@ -3555,14 +3555,14 @@ __metadata:
   linkType: hard
 
 "axios@npm:^1.16.0":
-  version: 1.18.1
-  resolution: "axios@npm:1.18.1"
+  version: 1.19.0
+  resolution: "axios@npm:1.19.0"
   dependencies:
     follow-redirects: "npm:^1.16.0"
-    form-data: "npm:^4.0.5"
+    form-data: "npm:^4.0.6"
     https-proxy-agent: "npm:^5.0.1"
     proxy-from-env: "npm:^2.1.0"
-  checksum: 10/c4cdced3ee0a9bf7dcae189fbc74a124aa079d4f04dbd995e602d39c1419476e8d021f87ee39ac8d8398e5a55e6d0b986238b3645f0d9177ac80de87c2a73f18
+  checksum: 10/d27e263b003f2dc1e6d0e2ab062dbc7c2b15668c25723e1e2072f139505c1fbd1f8cffef77d5ec05bb8e3cefa6fc5325c6446e747669fd95d85519529fa0db0b
   languageName: node
   linkType: hard
 
@@ -8037,9 +8037,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsx@npm:^4.20.6":
-  version: 4.23.1
-  resolution: "tsx@npm:4.23.1"
+"tsx@npm:^4.23.5":
+  version: 4.23.5
+  resolution: "tsx@npm:4.23.5"
   dependencies:
     esbuild: "npm:~0.28.0"
     fsevents: "npm:~2.3.3"
@@ -8048,7 +8048,7 @@ __metadata:
       optional: true
   bin:
     tsx: dist/cli.mjs
-  checksum: 10/01123a290130314507630f1d1cf8fa71f5e93305d5d8aa57ed012f68e3c1aef2e73f537fa6064b022cb4c813fcd0e286abd6b59db5442ece3c5105e09e10b922
+  checksum: 10/f0dfea2f4cd546c608e3da7e30c5b3949b77d001c601000af1c879fad3c317b793c701ea95a81c6b813718b5fa585f3ba756f8ff2fd07feefb3eee5553909296
   languageName: node
   linkType: hard
 
