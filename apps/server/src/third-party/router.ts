@@ -9,6 +9,7 @@ import { apiKeyMiddleware } from "./api-key-middleware.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { PostgresqlRateCountRepository } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
+import { PostgresqlStateSnapshotsRepository } from "../state-persistence/state-persistence-repository.js";
 import { HealthService } from "../health.js";
 import { thirdPartyHttpRequestTimer } from "../metrics/index.js";
 import { createDripRoutes, type DripRouteDeps } from "../api/drip-routes.js";
@@ -19,6 +20,7 @@ export interface ThirdPartyDeps {
   taskManager: TaskManager<unknown>;
   taskRepository: PostgresqlTaskRepository;
   rateCountRepository: PostgresqlRateCountRepository;
+  stateSnapshots: PostgresqlStateSnapshotsRepository;
   healthService: HealthService<"liveness" | "readiness" | "connectivity">;
   syncStuckDetector: SyncStuckDetector;
   logger: pino.Logger;
@@ -53,6 +55,7 @@ export const thirdPartyRouter = (deps: ThirdPartyDeps): express.Router => {
     taskManager: deps.taskManager,
     taskRepository: deps.taskRepository,
     rateCountRepository: deps.rateCountRepository,
+    stateSnapshots: deps.stateSnapshots,
     healthService: deps.healthService,
     syncStuckDetector: deps.syncStuckDetector,
     logger: deps.logger,
