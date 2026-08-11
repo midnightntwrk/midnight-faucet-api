@@ -2,7 +2,7 @@
 import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
 import knexLib, { Knex } from "knex";
 import { ConnectionOptions } from "node:tls";
-import path from "path";
+import { fileURLToPath } from "node:url";
 import pino from "pino";
 import { defer, delay, firstValueFrom, map, Observable, of, retry, throwError } from "rxjs";
 
@@ -15,27 +15,16 @@ export type PostgresqlConfig = Readonly<{
   ssl?: ConnectionOptions | boolean;
 }>;
 
-const baseDir = (resolveMethod: "esm" | "commonjs"): string => {
-  switch (resolveMethod) {
-    case "esm":
-      return path.resolve(new URL(import.meta.url).pathname, "..");
-    case "commonjs":
-      return __dirname;
-  }
-};
+const migrationsDirectory = fileURLToPath(new URL("../dist/migrations/", import.meta.url));
 
 export type MigrationResult = { status: "success" } | { status: "failure"; message: string };
 
-export const runMigrations = async (
-  knex: Knex,
-  logger: pino.Logger,
-  resolveMethod: "esm" | "commonjs" = "esm",
-): Promise<MigrationResult> => {
+export const runMigrations = async (knex: Knex, logger: pino.Logger): Promise<MigrationResult> => {
   try {
     logger.info("Running migrations");
 
     await knex.migrate.latest({
-      directory: path.resolve(baseDir(resolveMethod), "..", "dist", "migrations"), // Path built that way ensures that they are properly loaded from tests too
+      directory: migrationsDirectory,
       extension: ".js",
       loadExtensions: [".js"],
     });

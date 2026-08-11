@@ -1,0 +1,32 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - develop
+      - main
+    tags:
+      - '*'
+
+permissions: {}
+
+jobs:
+  check:
+    secrets:
+      MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+    permissions:
+      contents: read
+      packages: read
+      checks: write
+      pull-requests: write
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: 'check'
+    secrets:
+      MIDNIGHTCI_PACKAGES_WRITE: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/cd.yml

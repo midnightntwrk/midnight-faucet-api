@@ -107,7 +107,7 @@ Request a token drip to a wallet address.
 curl -X POST https://faucet.preview.midnight.network/v1/drips \
   -H "Content-Type: application/json" \
   -H "Origin: https://your-whitelisted-domain.com" \
-  -H "X-API-Key: your-api-key" \
+  -H "X-API-Key: $YOUR_API_KEY" \
   -d '{
     "recipientAddress": "mn_addr_undeployed17cnw4q78cjvyyu8mtkynd0pjtk9qjhhschwakjwwml4xflxcw0mswvqz9g",
     "amount": "1000"
@@ -165,7 +165,7 @@ Get the status of a drip request.
 ```bash
 curl https://faucet.preview.midnight.network/v1/drips/abc123-task-id \
   -H "Origin: https://your-whitelisted-domain.com" \
-  -H "X-API-Key: your-api-key"
+  -H "X-API-Key: $YOUR_API_KEY"
 ```
 
 ---
@@ -213,7 +213,7 @@ Check if the faucet service is ready to process drip requests.
 ```bash
 curl https://faucet.preview.midnight.network/v1/health \
   -H "Origin: https://your-whitelisted-domain.com" \
-  -H "X-API-Key: your-api-key"
+  -H "X-API-Key: $YOUR_API_KEY"
 ```
 
 ---

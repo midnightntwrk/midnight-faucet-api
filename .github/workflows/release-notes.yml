@@ -20,14 +20,15 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event.release.tag_name || github.ref }}
+          persist-credentials: false
 
       - name: Set up Node.js
         # No `cache:` input, so setup-node performs no caching here.
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4 # zizmor: ignore[cache-poisoning]
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v4 # zizmor: ignore[cache-poisoning]
         with:
           node-version-file: ".nvmrc"
 
@@ -38,17 +39,22 @@ jobs:
           node scripts/generate-release-notes.mjs --env "$RELEASE_ENV"
       - name: Update GitHub Release with generated notes
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          tag_name: ${{ github.event.release.tag_name }}
-          body_path: RELEASE_NOTES.md
-          prerelease: ${{ github.event.release.prerelease }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          gh release edit "$TAG_NAME" \
+            --notes-file RELEASE_NOTES.md \
+            --prerelease="$PRERELEASE"
 
       - name: Commit release notes
         if: github.event_name == 'release'
         env:
+          GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: |
+          gh auth setup-git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add RELEASE_NOTES.md
@@ -56,7 +62,7 @@ jobs:
           git push origin HEAD:main
 
       - name: Upload release notes artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-notes
           path: RELEASE_NOTES.md

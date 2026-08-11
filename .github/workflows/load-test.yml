@@ -1,9 +1,5 @@
 name: Faucet Load Test
 
-env:
-  GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-  MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-
 permissions: {}
 
 on:
@@ -30,32 +26,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # This is required for requesting the JWT
       contents: read # This is required for actions/checkout
-      packages: write # This is required for using GH docker registry
-      checks: write # This is needed to upload test results
-      pull-requests: write # This is needed to upload test results
+      packages: read # This is required for using GH docker registry
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           always-auth: true
           registry-url: https://npm.pkg.github.com/
           scope: "@midnight-ntwrk"
           node-version-file: ".nvmrc"
         env:
-          NODE_AUTH_TOKEN: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Log in to GitHub Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
-          password: ${{ env.MIDNIGHTCI_PACKAGES_READ }}
+          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Configure yarn
+        env:
+          GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
         run: |
           yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
 
