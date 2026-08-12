@@ -17,7 +17,7 @@
     "dev": "vite --mode=development --clearScreen false"
   },
   "dependencies": {
-    "@marsidev/react-turnstile": "^1.5.4",
+    "@marsidev/react-turnstile": "^1.5.5",
     "@midnight-ntwrk/faucet-client": "workspace:^",
     "@midnight-ntwrk/faucet-internal-api": "workspace:^",
     "@types/react": "^18.2.34",

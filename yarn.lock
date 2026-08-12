@@ -979,13 +979,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@marsidev/react-turnstile@npm:^1.5.4":
-  version: 1.5.4
-  resolution: "@marsidev/react-turnstile@npm:1.5.4"
+"@marsidev/react-turnstile@npm:^1.5.5":
+  version: 1.5.5
+  resolution: "@marsidev/react-turnstile@npm:1.5.5"
   peerDependencies:
     react: ^17.0.2 || ^18.0.0 || ^19.0
     react-dom: ^17.0.2 || ^18.0.0 || ^19.0
-  checksum: 10/346b6df679ecbd9d1f0f69fd58fa6a04b131146a00d1a329a0d486a5ddbe995b8a39e7570e8a29f2415ea91993afc96ba32227e6aabeab0437ab3fd49b6ef821
+  checksum: 10/7cb5c1f81c9c07ee2751109abfb2b43c1dd0ebbbd2cbfaf969d77f09beae5bc523609a4a15e5219374565a8800e40ec9bccda62aab2b279f7bef8fa0716228aa
   languageName: node
   linkType: hard
 
@@ -1016,7 +1016,7 @@ __metadata:
     eslint: "npm:^10.8.0"
     fast-check: "npm:^4.9.0"
     luxon: "npm:^3.4.3"
-    testcontainers: "npm:^12.0.4"
+    testcontainers: "npm:^12.1.0"
     typescript: "npm:^6.0.2"
   peerDependencies:
     fp-ts: ^2.16.0
@@ -1032,7 +1032,7 @@ __metadata:
     "@types/luxon": "npm:^3.7.2"
     eslint: "npm:^10.8.0"
     fast-check: "npm:^4.9.0"
-    testcontainers: "npm:^12.0.4"
+    testcontainers: "npm:^12.1.0"
     typescript: "npm:^6.0.2"
   peerDependencies:
     fp-ts: ^2.16.0
@@ -1058,7 +1058,7 @@ __metadata:
     "@types/cors": "npm:^2.8.15"
     "@types/express": "npm:^5.0.0"
     "@types/jsonwebtoken": "npm:^9.0.4"
-    "@types/lodash": "npm:^4.14.200"
+    "@types/lodash": "npm:^4.17.25"
     "@types/passport-jwt": "npm:^4.0.1"
     "@types/passport-local": "npm:^1.0.37"
     convict: "npm:^6.2.5"
@@ -1085,8 +1085,8 @@ __metadata:
     prom-client: "npm:^15.1.2"
     quick-lru: "npm:^7.0.0"
     rxjs: "npm:^7.8.1"
-    testcontainers: "npm:^12.0.4"
-    tsx: "npm:^4.20.6"
+    testcontainers: "npm:^12.1.0"
+    tsx: "npm:^4.23.7"
     typescript: "npm:^6.0.2"
     vitest: "npm:^4.1.10"
     yargs: "npm:^18.1.0"
@@ -1113,7 +1113,7 @@ __metadata:
     pino: "npm:^8.14.1"
     pino-pretty: "npm:^13.1.3"
     rxjs: "npm:^7.5.5"
-    testcontainers: "npm:^12.0.4"
+    testcontainers: "npm:^12.1.0"
     ts-node: "npm:^10.9.2"
     typescript: "npm:^6.0.2"
     vitest: "npm:^4.1.10"
@@ -1124,7 +1124,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@midnight-ntwrk/faucet-ui@workspace:apps/ui"
   dependencies:
-    "@marsidev/react-turnstile": "npm:^1.5.4"
+    "@marsidev/react-turnstile": "npm:^1.5.5"
     "@midnight-ntwrk/faucet-client": "workspace:^"
     "@midnight-ntwrk/faucet-internal-api": "workspace:^"
     "@types/react": "npm:^18.2.34"
@@ -1170,12 +1170,12 @@ __metadata:
     "@midnight-ntwrk/faucet-utils": "workspace:^"
     "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
-    "@types/lodash": "npm:^4.14.202"
+    "@types/lodash": "npm:^4.17.25"
     eslint: "npm:^10.8.0"
     fast-check: "npm:^4.9.0"
     lodash: "npm:^4.18.1"
     pino-pretty: "npm:^13.1.3"
-    testcontainers: "npm:^12.0.4"
+    testcontainers: "npm:^12.1.0"
     typescript: "npm:^6.0.2"
     vitest: "npm:^4.1.10"
   peerDependencies:
@@ -2685,10 +2685,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:^4.14.200, @types/lodash@npm:^4.14.202":
-  version: 4.17.24
-  resolution: "@types/lodash@npm:4.17.24"
-  checksum: 10/0f2082565f60f9787eefc046edc38458054512be5a8b3584ef0bad5fd9e85d0ab55ec5a1fbfae1ed6ba015cf1f9e837d5fb4da1f99fc60b8f74b2a46146fb00f
+"@types/lodash@npm:^4.17.25":
+  version: 4.17.25
+  resolution: "@types/lodash@npm:4.17.25"
+  checksum: 10/f786e05664439cc8d327fd97c62c060d81b3c4ed52127d01fbc926139e1a669c1554bf3cd0dbb43f8fcc7d9b5c6c23c543cc36de8dc815c9f289ea852b26ebd6
   languageName: node
   linkType: hard
 
@@ -3555,14 +3555,14 @@ __metadata:
   linkType: hard
 
 "axios@npm:^1.16.0":
-  version: 1.18.1
-  resolution: "axios@npm:1.18.1"
+  version: 1.19.0
+  resolution: "axios@npm:1.19.0"
   dependencies:
     follow-redirects: "npm:^1.16.0"
-    form-data: "npm:^4.0.5"
+    form-data: "npm:^4.0.6"
     https-proxy-agent: "npm:^5.0.1"
     proxy-from-env: "npm:^2.1.0"
-  checksum: 10/c4cdced3ee0a9bf7dcae189fbc74a124aa079d4f04dbd995e602d39c1419476e8d021f87ee39ac8d8398e5a55e6d0b986238b3645f0d9177ac80de87c2a73f18
+  checksum: 10/d27e263b003f2dc1e6d0e2ab062dbc7c2b15668c25723e1e2072f139505c1fbd1f8cffef77d5ec05bb8e3cefa6fc5325c6446e747669fd95d85519529fa0db0b
   languageName: node
   linkType: hard
 
@@ -4213,9 +4213,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dockerode@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "dockerode@npm:5.0.0"
+"dockerode@npm:^5.0.1":
+  version: 5.0.1
+  resolution: "dockerode@npm:5.0.1"
   dependencies:
     "@balena/dockerignore": "npm:^1.0.2"
     "@grpc/grpc-js": "npm:^1.11.1"
@@ -4223,7 +4223,7 @@ __metadata:
     docker-modem: "npm:^5.0.7"
     protobufjs: "npm:^7.3.2"
     tar-fs: "npm:^2.1.4"
-  checksum: 10/1480304e8300745c2606519f74d42ef1c1d804b8289023841e165031e70816909727f95ae7b2ce2cc3789168cb8f57b246c6f339c7f6551e574c1ad1f1307499
+  checksum: 10/8809c7f6b2d5bcec06589cb7f3f677656f96ad1c9b46b2bb6f3487964730b3e9ce59d2809cb356a80c3ff0625c1d01ca25d02586be92104b8b8c3d793b03df13
   languageName: node
   linkType: hard
 
@@ -7849,9 +7849,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"testcontainers@npm:^12.0.4":
-  version: 12.0.4
-  resolution: "testcontainers@npm:12.0.4"
+"testcontainers@npm:^12.1.0":
+  version: 12.1.0
+  resolution: "testcontainers@npm:12.1.0"
   dependencies:
     "@balena/dockerignore": "npm:^1.0.2"
     "@types/dockerode": "npm:^4.0.1"
@@ -7860,15 +7860,15 @@ __metadata:
     byline: "npm:^5.0.0"
     debug: "npm:^4.4.3"
     docker-compose: "npm:^1.4.2"
-    dockerode: "npm:^5.0.0"
+    dockerode: "npm:^5.0.1"
     get-port: "npm:^5.1.1"
     proper-lockfile: "npm:^4.1.2"
     properties-reader: "npm:^3.0.1"
     ssh-remote-port-forward: "npm:^1.0.4"
-    tar-fs: "npm:^3.1.2"
+    tar-fs: "npm:^3.1.3"
     tmp: "npm:^0.2.7"
-    undici: "npm:^8.5.0"
-  checksum: 10/a63752b69014306311be2f0919c6acb4e3f7ded88bbf73962cc369c643f44023eeb0f0afc4093b98fe61f972bc85e97c46eda44b536b2b53c47ac879f2801022
+    undici: "npm:^8.9.0"
+  checksum: 10/8695f49cac89a80a94ac49e01f38ed46d60b3bd12b6b5f0d44dc76c72bb6ef667cfd2315f69720d4553572c93fd034a25116ca4ad6764b7028b0731e078cb3d4
   languageName: node
   linkType: hard
 
@@ -8037,9 +8037,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsx@npm:^4.20.6":
-  version: 4.23.1
-  resolution: "tsx@npm:4.23.1"
+"tsx@npm:^4.23.7":
+  version: 4.23.7
+  resolution: "tsx@npm:4.23.7"
   dependencies:
     esbuild: "npm:~0.28.0"
     fsevents: "npm:~2.3.3"
@@ -8048,7 +8048,7 @@ __metadata:
       optional: true
   bin:
     tsx: dist/cli.mjs
-  checksum: 10/01123a290130314507630f1d1cf8fa71f5e93305d5d8aa57ed012f68e3c1aef2e73f537fa6064b022cb4c813fcd0e286abd6b59db5442ece3c5105e09e10b922
+  checksum: 10/f3dd161e80f1615c8158cc8babcf7cb0666b0fb957620aa1e492d91965aca07c87ba7d1f6d46c2e50237081e5221a66b50381d900002f55577cc11b83b139fda
   languageName: node
   linkType: hard
 
