@@ -659,6 +659,68 @@ describe("Third-Party API", () => {
         Task.unsafeRun,
       );
     });
+
+    // The partner route mounts the same drip handlers as the public one, so the
+    // refund reaches it for free — but only for as long as that stays true.
+    it("does not consume the daily rate limit when the dispense fails", () => {
+      const receiver = getRandomBech32mAddress();
+      // The fake faucet rejects for any address other than the one it was built
+      // for, which is the failure this needs: a valid request that registers and
+      // whose drip then fails.
+      const { faucet } = prepareFakeFaucet(config, getRandomBech32mAddress());
+      const limitedConfig = {
+        ...config,
+        rateLimiting: {
+          ...config.rateLimiting,
+          maxDailyRequests: 1,
+        },
+      };
+      const baseUrl = `http://${limitedConfig.host}:${limitedConfig.port}/v1`;
+      const partnerHeaders = {
+        "Content-Type": "application/json",
+        Origin: allowedOrigin,
+        "X-API-Key": validApiKey,
+      };
+
+      const requestDrip = () =>
+        fetch(`${baseUrl}/drips`, {
+          method: "POST",
+          headers: partnerHeaders,
+          body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
+        });
+
+      const pollUntilSettled = async (dripId: string, attempts = 60): Promise<string> => {
+        const status = await fetch(`${baseUrl}/drips/${dripId}`, { headers: partnerHeaders })
+          .then((res) => res.json())
+          .then((body) => body.status as string);
+        if (status === "CONFIRMED" || status === "FAILED" || attempts <= 1) {
+          return status;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        return pollUntilSettled(dripId, attempts - 1);
+      };
+
+      return pipe(
+        defaultRoot(limitedConfig, () => faucet),
+        Resource.flatMap((root) => prepareServer(limitedConfig, root)),
+        Resource.use(() =>
+          Task.lift(async () => {
+            const first = await requestDrip();
+            expect(first.status).toBe(200);
+            const { dripId } = await first.json();
+
+            expect(await pollUntilSettled(dripId)).toBe("FAILED");
+
+            // Nothing was dispensed, so the partner's daily allowance is intact.
+            return requestDrip();
+          }),
+        ),
+        Task.tap((retry) => {
+          expect(retry.status).toBe(200);
+        }),
+        Task.unsafeRun,
+      );
+    });
   });
 
   describe("GET /v1/drips/:dripId", () => {

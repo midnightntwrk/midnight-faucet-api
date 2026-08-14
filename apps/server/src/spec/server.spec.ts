@@ -409,6 +409,16 @@ describe("Faucet Server", () => {
     expect(await readRateCount(knex, address)).toBe(expected);
   };
 
+  /**
+   * Drop tasks earlier tests left unfinished.
+   *
+   * Every test shares one database, and a test that deliberately hangs a dispense
+   * leaves its task behind. A later test that needs its own drip *picked* would
+   * otherwise wait for workers those leftovers are still holding.
+   */
+  const clearPendingTasks = (knex: ReturnType<typeof knexLib>) =>
+    knex("tasks").whereIn("status", ["scheduled", "in_progress"]).delete();
+
   /** Age a picked task past the in-progress timeout so the real sweep strands it. */
   const strandTask = (knex: ReturnType<typeof knexLib>, id: string) =>
     knex("tasks")
@@ -642,6 +652,44 @@ describe("Faucet Server", () => {
     );
   });
 
+  // A refund path that works once is not enough: the requester whose drip keeps
+  // failing is exactly the one who retries, and each attempt has to be given back.
+  it("keeps refunding across repeated failures in the same day", () => {
+    const receiver = getRandomBech32mAddress();
+    const failingFaucet = stubFaucet(() =>
+      Promise.reject(new Error("Transaction submission error")),
+    );
+    const limitedConfig = {
+      ...config,
+      rateLimiting: { ...config.rateLimiting, maxDailyRequests: 1 },
+    };
+    const faucetUrl = `http://${limitedConfig.host}:${limitedConfig.port}/api`;
+
+    const failOnce = async () => {
+      const res = await postDrip(faucetUrl, receiver);
+      expect(res.status).toBe(200);
+      const { dripId } = await res.json();
+      expect(await waitForFinalStatus(checkDripStatus(faucetUrl), dripId)).toBe("FAILED");
+    };
+
+    return pipe(
+      defaultRoot(limitedConfig, () => Resource.of(failingFaucet)),
+      Resource.flatMap((root) => prepareServer(limitedConfig, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await failOnce();
+            await failOnce();
+
+            await expectSettledRateCount(knex, receiver, 0);
+            expect((await postDrip(faucetUrl, receiver)).status).toBe(200);
+          }),
+        ),
+      ),
+      Task.unsafeRun,
+    );
+  });
+
   // Regression for #595 (timeout/restart path): a task left `in_progress` and
   // failed by the bulk timeout sweep — not by executeTask — must still refund
   // the slot it reserved. Reproduces the most common trigger (a restart mid-drip).
@@ -677,6 +725,92 @@ describe("Faucet Server", () => {
       Task.tap((count) => {
         expect(count).toBe(0);
       }),
+      Task.unsafeRun,
+    );
+  });
+
+  /** Seed a slot reserved today plus the orphaned task a restart mid-drip leaves. */
+  const seedStrandedDrip = async (knex: ReturnType<typeof knexLib>, address: string) => {
+    await knex("rate_counts").insert({
+      address,
+      count: 1,
+      // Anchored to the start of today, so the refund's window check compares two
+      // dates from the same day however close to midnight the suite runs.
+      updated_at: DateTime.now().startOf("day").toJSDate(),
+    });
+    await knex("tasks").insert({
+      id: nodeCrypto.randomUUID(),
+      address,
+      status: "in_progress",
+      start_time: new Date(Date.now() - 10 * 60 * 1000),
+      created_at: new Date(),
+      amount: null,
+    });
+  };
+
+  // The refund is only worth anything if the requester can then use it, which is
+  // one more step than reading the counter back to zero.
+  it("lets a requester retry the same day once the sweep refunds their stranded drip", () => {
+    const receiver = getRandomBech32mAddress();
+    const limitedConfig = {
+      ...config,
+      rateLimiting: { ...config.rateLimiting, maxDailyRequests: 1 },
+    };
+    const faucetUrl = `http://${limitedConfig.host}:${limitedConfig.port}/api`;
+    const workingFaucet = stubFaucet(() =>
+      Promise.resolve({
+        transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
+        timeToNextRequest: Duration.fromMillis(0),
+      }),
+    );
+
+    return pipe(
+      defaultRoot(limitedConfig, () => Resource.of(workingFaucet)),
+      Resource.flatMap((root) => prepareServer(limitedConfig, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await seedStrandedDrip(knex, receiver);
+            expect(await pollRateCount(knex, receiver, 0)).toBe(0);
+
+            const retry = await postDrip(faucetUrl, receiver);
+            expect(retry.status).toBe(200);
+            const { dripId } = await retry.json();
+            expect(await waitForFinalStatus(checkDripStatus(faucetUrl), dripId)).toBe("CONFIRMED");
+          }),
+        ),
+      ),
+      Task.unsafeRun,
+    );
+  });
+
+  // The counter's `updated_at` is the day the window is anchored to. Moving it
+  // while refunding would drag the window forward off the back of a failure,
+  // which for a requester near midnight silently postpones their reset.
+  it("does not move the daily window when it refunds a stranded slot", () => {
+    const receiver = getRandomBech32mAddress();
+    const idleFaucet = stubFaucet(() => Promise.reject(new Error("unused")));
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(idleFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await seedStrandedDrip(knex, receiver);
+            const before = await knex<{ address: string; updated_at: Date }>("rate_counts")
+              .where({ address: receiver })
+              .first();
+
+            expect(await pollRateCount(knex, receiver, 0)).toBe(0);
+
+            const after = await knex<{ address: string; updated_at: Date }>("rate_counts")
+              .where({ address: receiver })
+              .first();
+            expect(after?.updated_at.getTime()).toBe(before?.updated_at.getTime());
+          }),
+        ),
+      ),
       Task.unsafeRun,
     );
   });
@@ -729,6 +863,48 @@ describe("Faucet Server", () => {
     tasks: { ...config.tasks, maxConcurrentTasks: 2 },
   });
 
+  /**
+   * Known defect, kept as a failing expectation so it reports itself the moment
+   * registration becomes atomic — flip this back to `it` and delete this comment
+   * then.
+   *
+   * `registerTask` checks for a live task and then reserves and creates, with
+   * nothing holding the address in between. Duplicates that arrive within that
+   * window — a double-clicked button, a client retry — all read "nothing in
+   * flight", so each one reserves a slot *and* schedules its own dispense. The
+   * requester loses several of their daily requests and receives several drips.
+   *
+   * Reserving on the create path only, which is what the sequential duplicate
+   * coverage above pins, fixes the double-submit that arrives as two round trips.
+   * It cannot fix the one that arrives at once.
+   */
+  it.fails("does not consume extra slots for simultaneous duplicate requests", () => {
+    const receiver = getRandomBech32mAddress();
+    const hangingFaucet = stubFaucet(() => new Promise<TokenResponse>(() => {}));
+    const faucetUrl = `http://${config.host}:${config.port}/api`;
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(hangingFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            const responses = await Promise.all(
+              Array.from({ length: 3 }, () => postDrip(faucetUrl, receiver)),
+            );
+            responses.forEach((res) => expect(res.status).toBe(200));
+
+            return readRateCount(knex, receiver);
+          }),
+        ),
+      ),
+      Task.tap((count) => {
+        expect(count).toBe(1);
+      }),
+      Task.unsafeRun,
+    );
+  });
+
   // Regression for #595 (double-refund): a slow drip can be failed *and refunded*
   // by the timeout sweep while its dispense is still in flight. When the dispense
   // then also reports failure, executeTask must NOT refund the slot a second time
@@ -750,6 +926,8 @@ describe("Faucet Server", () => {
         Resource.flatMap((root) => prepareServer(racing, root)),
         Resource.use(() =>
           Task.lift(async () => {
+            await clearPendingTasks(knex);
+
             // Registration reserves one slot (count = 1) and schedules the task.
             const res = await postDrip(faucetUrl, receiver);
             expect(res.status).toBe(200);
@@ -799,6 +977,8 @@ describe("Faucet Server", () => {
         Resource.flatMap((root) => prepareServer(racing, root)),
         Resource.use(() =>
           Task.lift(async () => {
+            await clearPendingTasks(knex);
+
             const res = await postDrip(faucetUrl, receiver);
             expect(res.status).toBe(200);
             const { dripId } = await res.json();

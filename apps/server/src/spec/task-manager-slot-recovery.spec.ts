@@ -487,6 +487,25 @@ describe("TaskManager rate-limit slot recovery", () => {
       );
     });
 
+    it("refunds the rest of a batch when one refund fails", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      const addresses = [ADDRESS, `${ADDRESS}-second`, `${ADDRESS}-third`];
+      repository.failTimedOutTasks
+        .mockResolvedValueOnce(addresses.map((address) => ({ address, created_at: REGISTERED_AT })))
+        .mockResolvedValue([]);
+      // One address's refund fails. The sweep has already failed all three rows,
+      // so abandoning the batch here would burn the remaining slots for good.
+      slots.refund.mockRejectedValueOnce(new Error("rate count table unavailable"));
+
+      await withManager({ repository, slots, handler: () => Promise.resolve("tx-1") }, (harness) =>
+        harness.tick(() => {
+          expect(slots.refund).toHaveBeenCalledTimes(addresses.length);
+          expect(harness.logged("Failed to refund rate-limit slot")).toBe(true);
+        }),
+      );
+    });
+
     // The wallet-state observable emits nothing until the wallet reaches the node, so
     // a restart during an outage leaves `$canPickTasks` silent — not `false`. Without
     // a seeded value `withLatestFrom` would drop every tick and the sweep would never
@@ -567,6 +586,96 @@ describe("TaskManager rate-limit slot recovery", () => {
 
           expect(slots.consume).not.toHaveBeenCalled();
           expect(repository.create).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("dedupes onto a task that is queued but not yet picked", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      // A wallet that cannot pick leaves tasks `scheduled` for as long as the
+      // outage lasts, which is when a requester is most likely to resubmit.
+      repository.getByAddress.mockResolvedValue(taskRow({ status: "scheduled" }));
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.registerTask(ADDRESS)).toBe(TASK_ID);
+
+          expect(slots.consume).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("reserves a slot for a request following a settled task", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      // Nothing is in flight, so this is a new drip and must cost a slot —
+      // otherwise a requester's second request of the day would be free.
+      repository.getByAddress.mockResolvedValue(taskRow({ status: "success" }));
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.registerTask(ADDRESS)).not.toBe(TASK_ID);
+
+          expect(slots.consume).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(repository.create).toHaveBeenCalledTimes(1);
+        },
+      );
+    });
+
+    it("schedules nothing when the reservation itself fails", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      const failure = new Error("rate count table unavailable");
+      slots.consume.mockRejectedValue(failure);
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          await expect(harness.manager.registerTask(ADDRESS)).rejects.toThrow(failure);
+
+          // Reserving before creating is what keeps this safe: with no task there
+          // is nothing to dispense, and nothing was reserved to hand back.
+          expect(repository.create).not.toHaveBeenCalled();
+          expect(slots.refund).not.toHaveBeenCalled();
+        },
+      );
+    });
+  });
+
+  describe("getStatus", () => {
+    it("reports a generic failure when the stored state is not a message", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      repository.getById.mockResolvedValue(
+        taskRow({ status: "failure", state: JSON.stringify({ code: 500 }) }),
+      );
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.getStatus(TASK_ID)).toEqual({
+            status: "failure",
+            error: "Task failed",
+          });
+        },
+      );
+    });
+
+    it("reports a failure for a task it cannot find", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      repository.getById.mockResolvedValue(undefined);
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.getStatus(TASK_ID)).toEqual({
+            status: "failure",
+            error: `Could not find Task with id ${TASK_ID}`,
+          });
         },
       );
     });
