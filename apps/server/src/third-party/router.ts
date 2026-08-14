@@ -7,7 +7,6 @@ import { ThirdPartyApiConfig } from "../config.js";
 import { originWhitelistMiddleware } from "./origin-whitelist.js";
 import { apiKeyMiddleware } from "./api-key-middleware.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
-import { PostgresqlRateCountRepository } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { PostgresqlStateSnapshotsRepository } from "../state-persistence/state-persistence-repository.js";
 import { HealthService } from "../health.js";
@@ -19,13 +18,11 @@ export interface ThirdPartyDeps {
   config: ThirdPartyApiConfig;
   taskManager: TaskManager<unknown>;
   taskRepository: PostgresqlTaskRepository;
-  rateCountRepository: PostgresqlRateCountRepository;
   stateSnapshots: PostgresqlStateSnapshotsRepository;
   healthService: HealthService<"liveness" | "readiness" | "connectivity">;
   syncStuckDetector: SyncStuckDetector;
   logger: pino.Logger;
   networkId: NetworkId.NetworkId;
-  maxDailyRequests: number;
 }
 
 export const thirdPartyRouter = (deps: ThirdPartyDeps): express.Router => {
@@ -54,13 +51,11 @@ export const thirdPartyRouter = (deps: ThirdPartyDeps): express.Router => {
   const dripDeps: DripRouteDeps = {
     taskManager: deps.taskManager,
     taskRepository: deps.taskRepository,
-    rateCountRepository: deps.rateCountRepository,
     stateSnapshots: deps.stateSnapshots,
     healthService: deps.healthService,
     syncStuckDetector: deps.syncStuckDetector,
     logger: deps.logger,
     networkId: deps.networkId,
-    maxDailyRequests: deps.maxDailyRequests,
     maxAmount: deps.config.maxAmount,
   };
   router.use(createDripRoutes(dripDeps));
