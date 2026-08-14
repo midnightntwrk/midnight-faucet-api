@@ -381,6 +381,11 @@ describe("Faucet Server", () => {
     return pollTaskStatus(knex, id, target, { attempts: attempts - 1, delayMs });
   };
 
+  /**
+   * How many slots `address` has spent today. No row means none were ever
+   * reserved, which reads as zero — reporting `NaN` instead would turn a missing
+   * row into "expected NaN to be 0" and hide what actually went wrong.
+   */
   const readRateCount = async (
     knex: ReturnType<typeof knexLib>,
     address: string,
@@ -388,7 +393,7 @@ describe("Faucet Server", () => {
     knex<{ address: string; count: number }>("rate_counts")
       .where({ address })
       .first()
-      .then((row) => Number(row?.count));
+      .then((row) => (row === undefined ? 0 : Number(row.count)));
 
   /**
    * Assert a slot count reaches `expected` **and stays there**.
@@ -920,14 +925,16 @@ describe("Faucet Server", () => {
       Promise.reject<TokenResponse>(new Error("Transaction submission error")),
     );
 
-    return withKnex((knex) =>
-      pipe(
+    return withKnex(async (knex) => {
+      // Before the server exists, not once it is polling: a leftover picked in
+      // between would be handed the held dispense and never release its worker.
+      await clearPendingTasks(knex);
+
+      return pipe(
         defaultRoot(racing, () => Resource.of(stubFaucet(handler))),
         Resource.flatMap((root) => prepareServer(racing, root)),
         Resource.use(() =>
           Task.lift(async () => {
-            await clearPendingTasks(knex);
-
             // Registration reserves one slot (count = 1) and schedules the task.
             const res = await postDrip(faucetUrl, receiver);
             expect(res.status).toBe(200);
@@ -952,8 +959,8 @@ describe("Faucet Server", () => {
           }),
         ),
         Task.unsafeRun,
-      ),
-    );
+      );
+    });
   });
 
   // Regression for #595 (over-refund on a late success): the sweep can fail *and
@@ -971,14 +978,14 @@ describe("Faucet Server", () => {
       }),
     );
 
-    return withKnex((knex) =>
-      pipe(
+    return withKnex(async (knex) => {
+      await clearPendingTasks(knex);
+
+      return pipe(
         defaultRoot(racing, () => Resource.of(stubFaucet(handler))),
         Resource.flatMap((root) => prepareServer(racing, root)),
         Resource.use(() =>
           Task.lift(async () => {
-            await clearPendingTasks(knex);
-
             const res = await postDrip(faucetUrl, receiver);
             expect(res.status).toBe(200);
             const { dripId } = await res.json();
@@ -1001,8 +1008,8 @@ describe("Faucet Server", () => {
           }),
         ),
         Task.unsafeRun,
-      ),
-    );
+      );
+    });
   });
 
   // Regression for #595: the sweep must run even when the wallet cannot pick tasks.
