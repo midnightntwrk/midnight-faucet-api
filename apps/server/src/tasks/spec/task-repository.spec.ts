@@ -351,28 +351,24 @@ describe("Task Repository", () => {
      * Known defect, kept as a failing expectation so it reports itself the moment
      * the query is fixed — flip this back to `it` and delete this comment then.
      *
-     * `getByAddress` intends to skip completed tasks, but the status filter
-     * compares the column against a Postgres array literal, which no status ever
-     * equals, so the predicate is true for every row. With no `ORDER BY` the
-     * physically-first row wins, which for a returning requester is their oldest
-     * completed drip.
+     * `getByAddress` means to skip completed tasks, but the status filter compares
+     * the column against a Postgres array literal, which no status ever equals, so
+     * the predicate holds for every row and a settled task comes back as though it
+     * were live. (`"succeeded"` is not a status either; the value is `success`.)
      *
-     * `TaskManager.registerTask` reads that row's status to decide whether a
-     * request is a duplicate of one already in flight. Handed a `success` row it
-     * concludes there is nothing in flight, so a double-submit reserves a second
-     * daily slot and schedules a second dispense — the very case reserving on the
-     * create path is meant to prevent. It only holds today for addresses with no
-     * history, which is what the duplicate-request coverage in `server.spec.ts`
-     * exercises.
+     * On its own that is survivable, because `TaskManager.registerTask` re-reads
+     * the status. It turns harmful once an address has both history and something
+     * in flight: the query has no `ORDER BY`, so the completed row can win, and
+     * registration then sees no live task, reserves a second daily slot and
+     * schedules a second dispense — the case reserving on the create path exists to
+     * prevent. Pinned on the filter rather than on that pairing, because which row
+     * an unordered scan returns first is not something a test may rely on.
      */
-    it.fails("returns the live task for an address that also has history", async () => {
+    it.fails("ignores an address whose only task has completed", async () => {
       const address = createAddress();
-      await insertTask({ address, status: "success", createdMinutesAgo: 24 * 60 });
-      const liveId = await insertTask({ address, status: "scheduled", createdMinutesAgo: 1 });
+      await insertTask({ address, status: "success" });
 
-      const found = await repository().getByAddress(address);
-
-      expect({ id: found?.id, status: found?.status }).toEqual({ id: liveId, status: "scheduled" });
+      expect(await repository().getByAddress(address)).toBeUndefined();
     });
   });
 });

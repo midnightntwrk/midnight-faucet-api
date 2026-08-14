@@ -135,9 +135,14 @@ export function runRateCountsRepositorySuite<T>(context: RateCountsRepositorySpe
           Resource.use((repo) =>
             Task.lift(async () => {
               const address = createAddress();
-              // The day-rollover path resets before the first reservation of the
-              // new day, so it routinely resets a row it just created — which is
-              // already at zero and must not be written again.
+              // The day-rollover path resets before the first reservation of a new
+              // day, so it routinely resets an address with no row at all and has
+              // to report a usable zeroed row rather than failing on the absence.
+              //
+              // Whether it skips the redundant write is deliberately not asserted:
+              // `knex.fn.now()` is Postgres `now()`, the transaction timestamp, so
+              // a write inside the same transaction stores the value the insert
+              // already put there. The saved write is not observable from here.
               expect(await repo.reset(address)).toEqual(
                 expect.objectContaining({ address, count: 0 }),
               );
