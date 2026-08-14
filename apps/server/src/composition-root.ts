@@ -135,6 +135,11 @@ export const defaultRoot = (
         {
           refund: (address: string, registeredAt: Date) =>
             stateContext.rateCountRepository.decrement(address, registeredAt),
+          reserve: (address: string) =>
+            stateContext.rateCountRepository.tryReserve(
+              address,
+              config.rateLimiting.maxDailyRequests,
+            ),
           consume: (address: string) => stateContext.rateCountRepository.increment(address),
         },
       );

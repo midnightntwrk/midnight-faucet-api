@@ -12,13 +12,11 @@ import * as express from "express";
 import { either } from "fp-ts";
 import * as t from "io-ts";
 import { PathReporter } from "io-ts/lib/PathReporter.js";
-import { DateTime } from "luxon";
 import pino from "pino";
 import { TaskManager, TaskStatuses } from "../TaskManager.js";
-import { RateLimitError } from "../rate-limiting/rate-limiting.js";
+import { RateLimitError } from "../rate-limiting/rate-limit-error.js";
 import { verifyAddress, InvalidAddressError } from "../helpers/verify-address.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
-import { PostgresqlRateCountRepository } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { PostgresqlStateSnapshotsRepository } from "../state-persistence/state-persistence-repository.js";
 import { HealthService } from "../health.js";
@@ -69,13 +67,11 @@ const mapTaskStatusToDripStatus = (taskStatus: string): "PENDING" | "CONFIRMED" 
 export interface DripRouteDeps {
   taskManager: TaskManager<unknown>;
   taskRepository: PostgresqlTaskRepository;
-  rateCountRepository: PostgresqlRateCountRepository;
   stateSnapshots: PostgresqlStateSnapshotsRepository;
   healthService: HealthService<"liveness" | "readiness" | "connectivity">;
   syncStuckDetector: SyncStuckDetector;
   logger: pino.Logger;
   networkId: NetworkId.NetworkId;
-  maxDailyRequests: number;
   maxAmount: number;
 }
 
@@ -148,19 +144,6 @@ export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
   // worst case is a second no-op clear of an already empty table.
   const clearStateForRestart = mkClearStateForRestart(deps.stateSnapshots, deps.logger);
 
-  const validateRateLimit = async (address: string) => {
-    const rateCount = await deps.rateCountRepository.get(address);
-    const now = DateTime.now().startOf("day");
-    const updated = DateTime.fromJSDate(rateCount.updated_at).startOf("day");
-    if (now <= updated) {
-      if (rateCount.count >= deps.maxDailyRequests) {
-        throw RateLimitError.in24Hours();
-      }
-      return;
-    }
-    await deps.rateCountRepository.reset(address);
-  };
-
   const validateAmount = (amount: bigint): void => {
     if (amount <= 0n || amount > BigInt(deps.maxAmount)) {
       throw new ValidationError(`Invalid amount. Must be between 1 and ${deps.maxAmount}`);
@@ -175,16 +158,22 @@ export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
       Task.flatMapPromise(async (request) => {
         validateAmount(request.amount);
         verifyAddress({ unshieldedAddress: request.recipientAddress, networkId: deps.networkId });
-        await validateRateLimit(request.recipientAddress);
         return request;
       }),
       Task.flatMapPromise(async (request) => {
-        // registerTask reserves the rate-limit slot on the create path (and only
-        // there, so deduped duplicates don't each consume one — #595).
-        return deps.taskManager.registerTask(
+        // registerTask owns the daily limit end to end: it reserves the slot on the
+        // create path only (so deduped duplicates don't each spend one — #595) and
+        // checks the limit inside that same reservation, which is what stops
+        // concurrent requests for one address from all passing a check none of them
+        // has paid for yet.
+        const registered = await deps.taskManager.registerTask(
           request.recipientAddress,
           request.amount * TNIGHT_UNIT,
         );
+        if (registered._tag === "rateLimited") {
+          throw RateLimitError.in24Hours();
+        }
+        return registered.taskId;
       }),
       Task.flatMap((dripId) =>
         Task.delay(() => {

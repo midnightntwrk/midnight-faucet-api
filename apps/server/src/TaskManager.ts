@@ -7,6 +7,7 @@ import pino from "pino";
 import * as rx from "rxjs";
 import { taskQueueTimer, taskTimer, taskSuccessCount, taskFailureCount } from "./metrics/index.js";
 import { PostgresqlTaskRepository } from "./tasks/task-repository.js";
+import type { SlotReservation } from "./rate-counts/rate-counts-repository.js";
 
 /**
  * Represents a unique identifier for a task.
@@ -203,23 +204,42 @@ const parseTaskState = (state: string | null): unknown => {
 /**
  * How the task lifecycle moves a requester's daily rate-limit slot (#595).
  *
- * Both halves are required together: a manager that consumes slots but cannot
- * refund them is the bug this pair exists to prevent, so it must not be
- * constructible. Passing {@link noRateLimitSlots} is the only way to opt out, and
- * it has to be spelled out at the call site rather than defaulted in.
+ * All three are required together: a manager that spends slots but cannot refund
+ * them is the bug this group exists to prevent, so it must not be constructible.
+ * Passing {@link noRateLimitSlots} is the only way to opt out, and it has to be
+ * spelled out at the call site rather than defaulted in.
+ *
+ * `reserve` and `consume` are separate because only one of them may be refused.
+ * A new request has to lose to the daily limit; re-charging a slot for tokens that
+ * already left the wallet must not, or the requester keeps both the tokens and the
+ * allowance.
  */
 export type RateLimitSlots = {
   /** Hand back the slot `address` reserved at registration. */
   refund: (address: string, registeredAt: Date) => Promise<void>;
-  /** Spend one of `address`'s daily slots, returning the window anchor it landed in. */
+  /** Take one of `address`'s daily slots, unless the limit is already spent. */
+  reserve: (address: string) => Promise<SlotReservation>;
+  /** Spend a slot regardless of the limit, returning the window anchor it landed in. */
   consume: (address: string) => Promise<Date>;
 };
 
 /** Slot hooks for callers that don't rate-limit at all, such as unit tests. */
 export const noRateLimitSlots: RateLimitSlots = {
   refund: () => Promise.resolve(),
+  reserve: () => Promise.resolve({ _tag: "reserved", registeredAt: new Date() }),
   consume: () => Promise.resolve(new Date()),
 };
+
+/**
+ * What {@link TaskManager.registerTask} did with a request. `rateLimited` is an
+ * expected outcome rather than a failure, so it is reported rather than thrown —
+ * and keeping the three apart lets a caller tell a fresh task from one it was
+ * deduplicated onto without inspecting the database.
+ */
+export type RegisterTaskResult =
+  | { readonly _tag: "registered"; readonly taskId: string }
+  | { readonly _tag: "deduplicated"; readonly taskId: string }
+  | { readonly _tag: "rateLimited" };
 
 export class TaskManager<T> {
   taskSubject$: rx.Subject<void>;
@@ -534,27 +554,34 @@ export class TaskManager<T> {
    *
    * @param address The address the task should send tokens to.
    * @param amount Optional amount for the drip (for third-party API).
-   * @returns For a given @param address, if an associated task is in-progress, then the identifier of that
-   * task; otherwise the identifier of a newly scheduled task.
+   * @returns `deduplicated` with the identifier of the in-flight task for `address`
+   * if there is one, `rateLimited` if the address has no daily slot left, otherwise
+   * `registered` with the identifier of a newly scheduled task.
    */
-  async registerTask(address: string, amount?: bigint): Promise<string> {
+  async registerTask(address: string, amount?: bigint): Promise<RegisterTaskResult> {
     const repositoryTask = await this.taskRepository.getByAddress(address);
     if (
       repositoryTask !== undefined &&
       (repositoryTask.status === TaskStatuses.scheduled ||
         repositoryTask.status === TaskStatuses.in_progress)
     ) {
-      return repositoryTask.id;
+      return { _tag: "deduplicated", taskId: repositoryTask.id };
     }
 
     const taskId = TaskId.generate().value;
 
-    // Reserve on the create path only — the dedup path above must not consume, or a
-    // double-submit burns a slot per POST while the one task refunds once. Reserve
-    // *before* creating, so a failed reservation leaves no task to dispense; the
-    // reverse order would 500 the request and still drip. Separate repositories mean
-    // no shared transaction, so a failed create compensates instead (#595).
-    const registeredAt = await this.slots.consume(address);
+    // Reserve on the create path only — the dedup path above must not reserve, or a
+    // double-submit burns a slot per POST while the one task refunds once. Reserving
+    // is also where the daily limit is enforced: it checks and charges in a single
+    // statement, so concurrent requests for one address cannot all pass a check that
+    // none of them has paid for yet. Reserve *before* creating, so a refused or
+    // failed reservation leaves no task to dispense; the reverse order would reject
+    // the request and still drip. Separate repositories mean no shared transaction,
+    // so a failed create compensates instead (#595).
+    const reservation = await this.slots.reserve(address);
+    if (reservation._tag === "denied") {
+      return { _tag: "rateLimited" };
+    }
 
     try {
       await this.taskRepository.create({
@@ -563,13 +590,13 @@ export class TaskManager<T> {
         amount,
       });
     } catch (err) {
-      await this.refundFailedTask(address, registeredAt, this.logger);
+      await this.refundFailedTask(address, reservation.registeredAt, this.logger);
       throw err;
     }
 
     this.logger.info(`Scheduled task with id ${taskId}${amount ? ` for amount ${amount}` : ""}`);
 
-    return taskId;
+    return { _tag: "registered", taskId };
   }
 
   /**

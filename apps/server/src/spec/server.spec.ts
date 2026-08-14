@@ -240,7 +240,6 @@ describe("Faucet Server", () => {
       knexResource(config.db, logger),
       Resource.mapPromise(async (knex) => {
         await knex("users").delete();
-        await knex("user_action_times").delete();
         return new PostgresqlUserRepository(knex);
       }),
       Resource.map((u) => prepareAuthContext(config, u, logger)),

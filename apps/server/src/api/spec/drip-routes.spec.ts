@@ -31,7 +31,6 @@ const makeDeps = (opts: {
   // Only /health is exercised here, so the request-path dependencies are unused.
   taskManager: {} as DripRouteDeps["taskManager"],
   taskRepository: {} as DripRouteDeps["taskRepository"],
-  rateCountRepository: {} as DripRouteDeps["rateCountRepository"],
   // Type cast required because: the route only ever calls `truncate`, and
   // constructing a real repository would need a live knex connection.
   stateSnapshots: opts.stateSnapshots as unknown as PostgresqlStateSnapshotsRepository,
@@ -46,7 +45,6 @@ const makeDeps = (opts: {
   },
   logger,
   networkId: NetworkId.NetworkId.Undeployed,
-  maxDailyRequests: 1,
   maxAmount: 1000,
 });
 
