@@ -40,7 +40,7 @@ export const up = async (knex: Knex) => {
     [JSON.stringify("Superseded by an earlier request for the same address")],
   );
 
-  return knex.raw(`CREATE UNIQUE INDEX ${INDEX_NAME} ON tasks (address) WHERE ${ACTIVE}`);
+  await knex.raw(`CREATE UNIQUE INDEX ${INDEX_NAME} ON tasks (address) WHERE ${ACTIVE}`);
 };
 
 /** Only the index is reversible; the superseded tasks stay failed. */

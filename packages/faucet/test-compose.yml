@@ -1,13 +1,13 @@
 services:
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:8.1.0"
+    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0-rc.3"
     container_name: "faucet-test-proof-server"
     ports:
       - 6300
     environment:
       RUST_BACKTRACE: "full"
   indexer:
-    image: "ghcr.io/midnight-ntwrk/indexer-standalone:3.0.0-alpha.23"
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.4.0-pre-alpha.15-l91r3-n2r3-bridge-and-events-epics-blockhash-dust-f06af4b4"
     container_name: "faucet-test-indexer"
     ports:
       - "8088:8088"
@@ -27,7 +27,7 @@ services:
       node:
         condition: service_started
   node:
-    image: "ghcr.io/midnight-ntwrk/midnight-node:1.0.0"
+    image: "ghcr.io/midnight-ntwrk/midnight-node:2.0.0-rc.3"
     container_name: "faucet-test-node"
     ports:
       - "9944:9944"
