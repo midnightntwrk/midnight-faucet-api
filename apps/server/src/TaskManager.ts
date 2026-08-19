@@ -186,6 +186,23 @@ const formatError = (
   return parts.length > 0 ? option.some(parts.join(": ")) : option.none;
 };
 
+/** Postgres `unique_violation`, raised by `tasks_active_address_unique`. */
+const UNIQUE_VIOLATION = "23505";
+
+const DatabaseError = t.type({ code: t.string });
+
+/**
+ * Whether a thrown value is the driver reporting a broken unique constraint, which
+ * is how a lost race to register an address arrives. Decoded rather than cast: the
+ * value comes from `catch`, so it is `unknown` and may be anything at all.
+ */
+const isUniqueViolation = (error: unknown): boolean =>
+  pipe(
+    DatabaseError.decode(error),
+    either.map(({ code }) => code === UNIQUE_VIOLATION),
+    either.getOrElse(() => false),
+  );
+
 /**
  * Decode a persisted task `state` column into `unknown`.
  *
@@ -590,7 +607,24 @@ export class TaskManager<T> {
         amount,
       });
     } catch (err) {
+      // Either way this request created nothing, so the slot it reserved goes back.
       await this.refundFailedTask(address, reservation.registeredAt, this.logger);
+
+      // A concurrent request won the race to be this address's one active task —
+      // `tasks_active_address_unique` is what turns the dedup above from a check
+      // into a constraint. That is the deduplicated outcome, not a failure, so long
+      // as the winner is actually there to hand back.
+      if (isUniqueViolation(err)) {
+        const winner = await this.taskRepository.getByAddress(address);
+        if (winner !== undefined) {
+          this.logger.info(
+            { address, taskId: winner.id },
+            "Concurrent request already registered this address — deduplicated onto it",
+          );
+          return { _tag: "deduplicated", taskId: winner.id };
+        }
+      }
+
       throw err;
     }
 

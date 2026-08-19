@@ -330,11 +330,14 @@ export function runRateCountsRepositorySuite<T>(context: RateCountsRepositorySpe
               await exec(() => repo.tryReserve(address, NO_PRACTICAL_LIMIT)),
               await exec(() => repo.increment(address)),
             ];
-            for (let idx = 1; idx < ops.length; idx += 1) {
-              expect(ops[idx - 1].updated_at.getMilliseconds()).toBeLessThan(
-                ops[idx].updated_at.getMilliseconds(),
-              );
-            }
+            // Compare epoch time, not getMilliseconds(): that returns only the sub-second field,
+            // which collides between close writes and runs backwards across a second boundary
+            // (.900 -> .100). The bound is non-strict because consecutive writes can share a
+            // millisecond — Date truncates Postgres' microsecond precision.
+            const updateTimes = ops.map((op) => op.updated_at.getTime());
+            updateTimes.slice(1).forEach((current, idx) => {
+              expect(updateTimes[idx]).toBeLessThanOrEqual(current);
+            });
           }),
         ),
         Task.unsafeRun,

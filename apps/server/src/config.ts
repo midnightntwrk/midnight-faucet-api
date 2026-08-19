@@ -384,7 +384,6 @@ const configSources = [
 export const loadConfig = (): ServerConfig => {
   const initialConfig = convict(schema);
 
-  console.log("Initializing configuration");
   const config = configSources
     .reduce((prev, source) => {
       switch (source.type) {
