@@ -1,6 +1,7 @@
 name: Bug report
 description: Report incorrect or unexpected faucet behavior.
 title: "bug: "
+type: Bug
 labels: ["status:untriaged", "component:faucet"]
 body:
   - type: markdown
@@ -14,21 +15,6 @@ body:
       label: Version or commit
       description: Which version, tag, or commit are you running?
       placeholder: "v0.14.0 or commit SHA"
-    validations:
-      required: true
-
-  - type: dropdown
-    id: priority
-    attributes:
-      label: Priority
-      description: Engineering urgency; maintainers may adjust this during triage.
-      options:
-        - P3 - Medium
-        - P2 - High
-        - P1 - Critical
-        - P0 - Blocking
-        - P4 - Low
-      default: 0
     validations:
       required: true
 
