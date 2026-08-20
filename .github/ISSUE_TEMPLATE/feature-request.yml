@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a faucet feature or enhancement.
+description: Propose a midnight-faucet-api feature or enhancement.
 title: "feat: "
 type: Feature
 labels: ["status:untriaged", "component:faucet"]

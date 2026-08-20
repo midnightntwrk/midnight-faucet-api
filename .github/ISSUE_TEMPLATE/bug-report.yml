@@ -1,5 +1,5 @@
 name: Bug report
-description: Report incorrect or unexpected faucet behavior.
+description: Report incorrect or unexpected midnight-faucet-api behaviour.
 title: "bug: "
 type: Bug
 labels: ["status:untriaged", "component:faucet"]
