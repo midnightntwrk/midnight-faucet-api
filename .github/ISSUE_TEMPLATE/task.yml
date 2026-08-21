@@ -1,29 +1,30 @@
-name: Feature request
-description: Propose a midnight-faucet-api feature or enhancement.
-title: "feat: "
-type: Feature
+name: Task
+description: A unit of work that isn't a bug or a new feature.
+title: "task: "
+type: Task
 labels: ["status:untriaged", "component:faucet"]
 body:
   - type: textarea
-    id: problem
+    id: summary
     attributes:
-      label: Problem
-      description: What can you not do today, and why does it matter?
+      label: Summary
+      description: What needs to be done?
     validations:
       required: true
 
   - type: textarea
-    id: proposal
+    id: acceptance
     attributes:
-      label: Proposed solution
-      description: Describe the behavior or API you would like to see.
+      label: Acceptance criteria
+      description: Concrete, verifiable outcomes.
     validations:
       required: true
 
   - type: textarea
-    id: alternatives
+    id: context
     attributes:
-      label: Alternatives considered
+      label: Context / notes
+      description: Links to related issues, PRs, docs, or dependencies.
 
   - type: checkboxes
     id: checks

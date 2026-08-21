@@ -35,14 +35,14 @@
     "dist/"
   ],
   "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.2",
-    "css-loader": "^7.1.4",
-    "eslint": "^10.8.0",
-    "fast-check": "^4.9.0",
-    "mini-css-extract-plugin": "^2.7.6",
-    "ts-loader": "^9.5.0",
-    "typescript": "^6.0.2",
-    "vite": "^8.2.0",
-    "vite-plugin-wasm": "^3.5.0"
+    "@vitejs/plugin-react": "5.2.0",
+    "css-loader": "7.1.4",
+    "eslint": "10.8.0",
+    "fast-check": "4.9.0",
+    "mini-css-extract-plugin": "2.10.2",
+    "ts-loader": "9.6.2",
+    "typescript": "6.0.3",
+    "vite": "8.2.2",
+    "vite-plugin-wasm": "3.6.0"
   }
 }
