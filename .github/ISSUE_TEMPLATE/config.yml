@@ -3,9 +3,6 @@ contact_links:
   - name: Questions and discussion
     url: https://github.com/midnightntwrk/midnight-faucet-api/discussions
     about: Ask usage questions in Discussions instead of opening an issue.
-  - name: Security vulnerability
-    url: https://github.com/midnightntwrk/midnight-faucet-api/security/advisories/new
-    about: Report security issues privately; never open a public issue.
   - name: Code of conduct concerns
     url: mailto:legal@midnight.foundation
     about: Report code of conduct violations privately.
