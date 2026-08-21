@@ -348,27 +348,47 @@ describe("Task Repository", () => {
     });
 
     /**
-     * Known defect, kept as a failing expectation so it reports itself the moment
-     * the query is fixed — flip this back to `it` and delete this comment then.
-     *
-     * `getByAddress` means to skip completed tasks, but the status filter compares
-     * the column against a Postgres array literal, which no status ever equals, so
-     * the predicate holds for every row and a settled task comes back as though it
-     * were live. (`"succeeded"` is not a status either; the value is `success`.)
-     *
-     * On its own that is survivable, because `TaskManager.registerTask` re-reads
-     * the status. It turns harmful once an address has both history and something
-     * in flight: the query has no `ORDER BY`, so the completed row can win, and
-     * registration then sees no live task, reserves a second daily slot and
-     * schedules a second dispense — the case reserving on the create path exists to
-     * prevent. Pinned on the filter rather than on that pairing, because which row
-     * an unordered scan returns first is not something a test may rely on.
+     * Regression for #617, fixed in #619. The filter used to exclude the settled
+     * statuses as `andWhereNot("status", ["failure", "succeeded"])`, which knex
+     * compiles to a comparison against the literal `'{"failure","succeeded"}'` — a
+     * value no status ever equals, so the predicate held for every row and a settled
+     * task came back as though it were active. (`"succeeded"` was not a status
+     * either; the value is `success`.) Selecting `ACTIVE_STATUSES` positively is
+     * what closed it.
      */
-    it.fails("ignores an address whose only task has completed", async () => {
-      const address = createAddress();
-      await insertTask({ address, status: "success" });
+    it.each(["success", "failure"] as const)(
+      "ignores an address whose only task %s",
+      async (status) => {
+        const address = createAddress();
+        await insertTask({ address, status });
 
-      expect(await repository().getByAddress(address)).toBeUndefined();
+        expect(await repository().getByAddress(address)).toBeUndefined();
+      },
+    );
+
+    /**
+     * The pairing #617 was reported for. `registerTask` reads this row to decide
+     * whether a request duplicates one in flight, so handing it an old settled task
+     * is what let a duplicate reserve a second daily slot.
+     */
+    it("finds the active task for an address that has already been served", async () => {
+      const address = createAddress();
+      await insertTask({ address, status: "success", createdMinutesAgo: 120 });
+      await insertTask({ address, status: "failure", createdMinutesAgo: 60 });
+      const activeId = await insertTask({ address, status: "in_progress" });
+
+      const found = await repository().getByAddress(address);
+
+      expect({ id: found?.id, status: found?.status }).toEqual({
+        id: activeId,
+        status: "in_progress",
+      });
+    });
+
+    it("ignores tasks belonging to other addresses", async () => {
+      await insertTask({ address: createAddress(), status: "scheduled" });
+
+      expect(await repository().getByAddress(createAddress())).toBeUndefined();
     });
   });
 });
