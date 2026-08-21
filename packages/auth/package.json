@@ -22,9 +22,9 @@
     "dist/"
   ],
   "devDependencies": {
-    "eslint": "^10.8.0",
-    "fast-check": "^4.9.0",
-    "typescript": "^6.0.2"
+    "eslint": "10.8.0",
+    "fast-check": "4.9.0",
+    "typescript": "6.0.3"
   },
   "dependencies": {
     "@midnight-ntwrk/faucet-utils": "workspace:^",
