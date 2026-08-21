@@ -44,7 +44,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Log in to GitHub Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        uses: docker/login-action@af63523ba5f55733d817da0fdb813e660152c72c
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
