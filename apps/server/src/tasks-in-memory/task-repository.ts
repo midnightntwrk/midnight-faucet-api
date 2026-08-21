@@ -11,7 +11,8 @@ import {
   TaskStatuses,
   UpdateITask,
 } from "../TaskManager.js";
-import { IN_PROGRESS_TIMEOUT_MINUTES } from "../tasks/task-timeouts.js";
+import { ACTIVE_STATUSES } from "../tasks/task-repository.js";
+import { IN_PROGRESS_TIMEOUT_MINUTES, SCHEDULED_TIMEOUT_MINUTES } from "../tasks/task-timeouts.js";
 
 export class InMemoryTaskRepository implements TaskRepository {
   MAX_TASK_AGE = Duration.fromObject({ days: 1 });
@@ -56,17 +57,20 @@ export class InMemoryTaskRepository implements TaskRepository {
     return undefined;
   };
 
-  getByAddress = async (address: string): Promise<ITask | undefined> => {
-    const task = Array.from(this.#tasks.values()).find(
-      (innerTask) => innerTask.address === address,
-    );
-
-    if (task) {
-      return task;
-    }
-
-    return undefined;
-  };
+  /**
+   * Mirrors {@link "../tasks/task-repository".PostgresqlTaskRepository.getByAddress}:
+   * the oldest task `address` is still waiting on.
+   *
+   * Filtering on {@link ACTIVE_STATUSES} is the point. Matching on address alone
+   * returned the first row in insertion order whatever its status, so a repeat
+   * requester's finished drip shadowed their live one — the same defect the SQL
+   * predicate had, which meant a test written against this fake reproduced the bug
+   * and passed (#622).
+   */
+  getByAddress = async (address: string): Promise<ITask | undefined> =>
+    Array.from(this.#tasks.values())
+      .filter((task) => task.address === address && ACTIVE_STATUSES.includes(task.status))
+      .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())[0];
 
   getById = async (id: TaskId): Promise<ITask | undefined> => {
     const task = this.#tasks.get(id.value);
@@ -78,13 +82,25 @@ export class InMemoryTaskRepository implements TaskRepository {
     return undefined;
   };
 
+  /**
+   * Mirrors the SQL sweep, including the `scheduled` arm and its longer window: a
+   * queue entry nothing drains pins its address just as an orphaned `in_progress`
+   * task does (#622).
+   */
   failTimedOutTasks = async (): Promise<Array<Pick<ITask, "address" | "created_at">>> => {
-    const timedOut = Array.from(this.#tasks.values()).filter(
-      (task) =>
-        task.status === TaskStatuses.in_progress &&
-        task.start_time < subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES),
+    const timedOut = Array.from(this.#tasks.values()).filter((task) =>
+      task.status === TaskStatuses.in_progress
+        ? task.start_time < subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES)
+        : task.status === TaskStatuses.scheduled &&
+          task.created_at < subMinutes(Date.now(), SCHEDULED_TIMEOUT_MINUTES),
     );
-    timedOut.forEach((task) => this.#tasks.set(task.id, { ...task, status: "failure" }));
+    timedOut.forEach((task) =>
+      this.#tasks.set(task.id, {
+        ...task,
+        status: "failure",
+        state: JSON.stringify("Token request failed due to timeout"),
+      }),
+    );
     return timedOut.map(({ address, created_at }) => ({ address, created_at }));
   };
 

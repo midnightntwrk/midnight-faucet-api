@@ -820,6 +820,96 @@ describe("Faucet Server", () => {
     );
   });
 
+  // Regression for #622: an address pinned by a stranded `scheduled` task. The sweep
+  // only ever looked at `in_progress`, on the reasoning that `pick` would eventually
+  // run anything queued — but while no wallet can pick, nothing does, and since
+  // migration 009 that one unfinished row is what stops the address requesting
+  // again. The requester was left holding a burned slot on a task that would never
+  // run, polling `PENDING` forever.
+  it("fails and refunds a scheduled task no wallet ever picked up (#622)", () => {
+    const receiver = getRandomBech32mAddress();
+    const strandedId = nodeCrypto.randomUUID();
+    // No wallet able to pick, so the queued task genuinely never advances.
+    const brokeFaucet: Faucet = {
+      ...stubFaucet(() => Promise.reject(new Error("unused"))),
+      state$: unpickableState(),
+    };
+    const faucetUrl = `http://${config.host}:${config.port}/api`;
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(brokeFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            // A slot reserved today, as registration would.
+            await knex("rate_counts").insert({ address: receiver, count: 1 });
+            // Queued well past the scheduled timeout and never picked.
+            await knex("tasks").insert({
+              id: strandedId,
+              address: receiver,
+              status: "scheduled",
+              created_at: new Date(Date.now() - 90 * 60 * 1000),
+              amount: null,
+            });
+
+            const count = await pollRateCount(knex, receiver, 0);
+            const swept = await knex<{ id: string; status: string }>("tasks")
+              .where({ id: strandedId })
+              .first();
+            // The refund is only half the fix: the pin has to lift too, so a retry
+            // must produce a *new* task rather than dedupe onto the dead one.
+            const retry = await postDrip(faucetUrl, receiver);
+            const { dripId } = await retry.json();
+
+            return { count, status: swept?.status, retryStatus: retry.status, dripId };
+          }),
+        ),
+      ),
+      Task.tap(({ count, status, retryStatus, dripId }) => {
+        expect(status).toBe("failure");
+        expect(count).toBe(0);
+        expect(retryStatus).toBe(200);
+        expect(dripId).not.toBe(strandedId);
+      }),
+      Task.unsafeRun,
+    );
+  });
+
+  // Regression for #622: `start_time` is nullable, and `NULL < timestamp` is NULL, so
+  // comparing the column directly excluded exactly the rows most likely to be stuck —
+  // an `in_progress` task that got there without going through `pick`.
+  it("fails an in-progress task whose start_time is null (#622)", () => {
+    const receiver = getRandomBech32mAddress();
+    const failingFaucet = stubFaucet(() => Promise.reject(new Error("unused")));
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(failingFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await knex("rate_counts").insert({ address: receiver, count: 1 });
+            await knex("tasks").insert({
+              id: nodeCrypto.randomUUID(),
+              address: receiver,
+              status: "in_progress",
+              start_time: null,
+              created_at: new Date(Date.now() - 10 * 60 * 1000),
+              amount: null,
+            });
+
+            return pollRateCount(knex, receiver, 0);
+          }),
+        ),
+      ),
+      Task.tap((count) => {
+        expect(count).toBe(0);
+      }),
+      Task.unsafeRun,
+    );
+  });
+
   it("responds with rate limit error once exhausted", () => {
     const receiver = getRandomBech32mAddress();
     const { preparedResponse, faucet } = prepareFakeFaucet(config, receiver);

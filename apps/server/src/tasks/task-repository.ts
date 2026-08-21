@@ -7,7 +7,7 @@ import pino from "pino";
 import * as t from "io-ts";
 import * as td from "io-ts-types";
 import { subMinutes } from "date-fns";
-import { IN_PROGRESS_TIMEOUT_MINUTES } from "./task-timeouts.js";
+import { IN_PROGRESS_TIMEOUT_MINUTES, SCHEDULED_TIMEOUT_MINUTES } from "./task-timeouts.js";
 
 export const TABLE_NAME = "tasks";
 
@@ -121,11 +121,41 @@ export class PostgresqlTaskRepository {
     }
   }
 
+  /**
+   * Fail every task that has outlived its status's timeout, returning the rows so
+   * the caller can refund the slot each one reserved.
+   *
+   * Sweeps both active statuses. `scheduled` was previously left alone on the
+   * grounds that `pick` would eventually run it, but since migration 009 an
+   * unfinished row is what blocks its address from requesting again, and nothing
+   * bounds "eventually" while no wallet can pick — so a stranded queue entry pinned
+   * the requester indefinitely (#622).
+   *
+   * `coalesce(start_time, created_at)` because `start_time` is nullable: a row that
+   * reached `in_progress` outside {@link pick} (a legacy schema, a manual write) can
+   * hold NULL, and `NULL < timestamp` is NULL, so comparing the column directly
+   * excluded exactly the rows most likely to be stuck.
+   *
+   * The disjunction is parenthesised inside the raw fragment because knex splices
+   * `whereRaw` in unbracketed: as `... AND a OR b`, precedence would regroup it into
+   * `(... AND a) OR b` and let the second arm escape every other predicate.
+   */
   async failTimedOutTasks(): Promise<Array<Pick<TaskType, "address" | "created_at">>> {
     return this.Tasks()
-      .update({ status: "failure", state: JSON.stringify("Token request failed due to timeout") })
-      .where("status", "in_progress")
-      .where("start_time", "<", subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES))
+      .update({
+        status: "failure",
+        state: JSON.stringify("Token request failed due to timeout"),
+        end_time: this.knex.fn.now(),
+      })
+      .whereIn("status", [...ACTIVE_STATUSES])
+      .whereRaw(
+        `((status = 'in_progress' AND coalesce(start_time, created_at) < ?)
+           OR (status = 'scheduled' AND created_at < ?))`,
+        [
+          subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES),
+          subMinutes(Date.now(), SCHEDULED_TIMEOUT_MINUTES),
+        ],
+      )
       .returning(["address", "created_at"]);
   }
 
