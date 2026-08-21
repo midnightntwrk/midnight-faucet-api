@@ -1061,7 +1061,7 @@ __metadata:
     "@midnight-ntwrk/faucet-internal-api": "workspace:^"
     "@midnight-ntwrk/faucet-ui": "workspace:^"
     "@midnight-ntwrk/faucet-utils": "workspace:^"
-    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
+    "@midnightntwrk/wallet-sdk": "npm:2.0.0-canary.20260702133504-1f7aaca"
     "@testcontainers/postgresql": "npm:^11.14.0"
     "@types/convict": "npm:^6.1.5"
     "@types/cors": "npm:^2.8.15"
@@ -1073,6 +1073,7 @@ __metadata:
     convict: "npm:^6.2.5"
     cors: "npm:^2.8.5"
     date-fns: "npm:^4.1.0"
+    dotenv: "npm:^16.6.1"
     eslint: "npm:^10.5.0"
     express: "npm:^5.0.0"
     fast-check: "npm:^4.8.0"
@@ -1400,7 +1401,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnightntwrk/wallet-sdk@npm:^2.0.0-beta.2":
+"@midnightntwrk/wallet-sdk@npm:2.0.0-canary.20260702133504-1f7aaca, @midnightntwrk/wallet-sdk@npm:^2.0.0-beta.2":
   version: 2.0.0-canary.20260702133504-1f7aaca
   resolution: "@midnightntwrk/wallet-sdk@npm:2.0.0-canary.20260702133504-1f7aaca"
   dependencies:
@@ -4339,7 +4340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.3.1":
+"dotenv@npm:^16.3.1, dotenv@npm:^16.6.1":
   version: 16.6.1
   resolution: "dotenv@npm:16.6.1"
   checksum: 10/1d1897144344447ffe62aa1a6d664f4cd2e0784e0aff787eeeec1940ded32f8e4b5b506d665134fc87157baa086fce07ec6383970a2b6d2e7985beaed6a4cc14
@@ -6376,11 +6377,11 @@ __metadata:
   linkType: hard
 
 "nanoid@npm:^3.3.8":
-  version: 3.3.15
-  resolution: "nanoid@npm:3.3.15"
+  version: 3.3.18
+  resolution: "nanoid@npm:3.3.18"
   bin:
     nanoid: bin/nanoid.cjs
-  checksum: 10/13c74a5208d455286f7af46f42ac9f3d7b821b8a719aff8dbd5ad3fb80399c0c63cdd1e92d046ea576e403bec05262fbb7e116beb4cfcd5b5483550372bd94b1
+  checksum: 10/1b3b4fdac831b92b56d1dbe8b1e63a372432faf86ea383134e3b53141ef8108a60b7f84343b5cefecac9550bb74edf8164da93ea07d1c4f757039bc75d8a5d9e
   languageName: node
   linkType: hard
 

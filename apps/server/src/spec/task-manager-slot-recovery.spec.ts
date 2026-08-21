@@ -3,6 +3,7 @@ import pino from "pino";
 import * as rx from "rxjs";
 import { vi } from "vitest";
 import { RateLimitSlots, TaskManager, TaskManagerConfig } from "../TaskManager.js";
+import type { SlotReservation } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository, TaskType } from "../tasks/task-repository.js";
 
 /**
@@ -96,7 +97,7 @@ const asRepository = (fake: FakeRepository): PostgresqlTaskRepository =>
   fake as unknown as PostgresqlTaskRepository;
 
 /**
- * `consume` resolves a distinct anchor rather than `new Date()`, so a test can prove
+ * `reserve` resolves a distinct anchor rather than `new Date()`, so a test can prove
  * a compensating refund was given the anchor the reservation actually wrote instead
  * of an app-clock guess (#595).
  */
@@ -104,6 +105,9 @@ const RESERVED_ANCHOR = new Date("2026-07-31T12:00:00.000Z");
 
 const fakeSlots = () => ({
   refund: vi.fn((_address: string, _registeredAt: Date): Promise<void> => Promise.resolve()),
+  reserve: vi.fn((_address: string): Promise<SlotReservation> =>
+    Promise.resolve({ _tag: "reserved", registeredAt: RESERVED_ANCHOR }),
+  ),
   consume: vi.fn((_address: string): Promise<Date> => Promise.resolve(RESERVED_ANCHOR)),
 });
 
@@ -565,7 +569,7 @@ describe("TaskManager rate-limit slot recovery", () => {
         async (harness) => {
           await expect(harness.manager.registerTask(ADDRESS)).rejects.toThrow(failure);
 
-          expect(slots.consume).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(slots.reserve).toHaveBeenCalledExactlyOnceWith(ADDRESS);
           // Compensate the reservation: there is no task left to fail and refund it.
           // The anchor must be the one the reservation returned — refunding against
           // an app-clock date silently no-ops whenever the clocks straddle midnight.
@@ -582,9 +586,12 @@ describe("TaskManager rate-limit slot recovery", () => {
       await withManager(
         { repository, slots, handler: () => Promise.resolve("tx-1") },
         async (harness) => {
-          expect(await harness.manager.registerTask(ADDRESS)).toBe(TASK_ID);
+          expect(await harness.manager.registerTask(ADDRESS)).toEqual({
+            _tag: "deduplicated",
+            taskId: TASK_ID,
+          });
 
-          expect(slots.consume).not.toHaveBeenCalled();
+          expect(slots.reserve).not.toHaveBeenCalled();
           expect(repository.create).not.toHaveBeenCalled();
         },
       );
@@ -600,9 +607,12 @@ describe("TaskManager rate-limit slot recovery", () => {
       await withManager(
         { repository, slots, handler: () => Promise.resolve("tx-1") },
         async (harness) => {
-          expect(await harness.manager.registerTask(ADDRESS)).toBe(TASK_ID);
+          expect(await harness.manager.registerTask(ADDRESS)).toEqual({
+            _tag: "deduplicated",
+            taskId: TASK_ID,
+          });
 
-          expect(slots.consume).not.toHaveBeenCalled();
+          expect(slots.reserve).not.toHaveBeenCalled();
         },
       );
     });
@@ -611,16 +621,63 @@ describe("TaskManager rate-limit slot recovery", () => {
       const repository = fakeRepository();
       const slots = fakeSlots();
       // Nothing is in flight, so this is a new drip and must cost a slot —
-      // otherwise a requester's second request of the day would be free.
+      // otherwise a requester's second request of the day would be free. The
+      // settled row also drives the status guard `registerTask` keeps on top of
+      // `getByAddress`, which selects the active statuses on its own.
       repository.getByAddress.mockResolvedValue(taskRow({ status: "success" }));
 
       await withManager(
         { repository, slots, handler: () => Promise.resolve("tx-1") },
         async (harness) => {
-          expect(await harness.manager.registerTask(ADDRESS)).not.toBe(TASK_ID);
+          expect(await harness.manager.registerTask(ADDRESS)).toMatchObject({
+            _tag: "registered",
+          });
 
-          expect(slots.consume).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(slots.reserve).toHaveBeenCalledExactlyOnceWith(ADDRESS);
           expect(repository.create).toHaveBeenCalledTimes(1);
+        },
+      );
+    });
+
+    it("reports a refused reservation instead of scheduling a task", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      slots.reserve.mockResolvedValue({ _tag: "denied" });
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.registerTask(ADDRESS)).toEqual({ _tag: "rateLimited" });
+
+          // Nothing to dispense and nothing to refund: the reservation was refused,
+          // so no slot was ever taken.
+          expect(repository.create).not.toHaveBeenCalled();
+          expect(slots.refund).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("returns the id of the task it scheduled", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          const registered = await harness.manager.registerTask(ADDRESS);
+          if (registered._tag !== "registered") {
+            throw new Error(`Expected the task to be registered, got ${registered._tag}`);
+          }
+
+          // The id handed back must be the one persisted, or the caller polls the
+          // status of a task that does not exist.
+          expect(repository.create).toHaveBeenCalledExactlyOnceWith({
+            id: registered.taskId,
+            address: ADDRESS,
+            amount: undefined,
+          });
+          expect(slots.reserve).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(slots.refund).not.toHaveBeenCalled();
         },
       );
     });
@@ -629,7 +686,7 @@ describe("TaskManager rate-limit slot recovery", () => {
       const repository = fakeRepository();
       const slots = fakeSlots();
       const failure = new Error("rate count table unavailable");
-      slots.consume.mockRejectedValue(failure);
+      slots.reserve.mockRejectedValue(failure);
 
       await withManager(
         { repository, slots, handler: () => Promise.resolve("tx-1") },

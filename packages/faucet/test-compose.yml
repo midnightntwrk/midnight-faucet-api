@@ -1,13 +1,13 @@
 services:
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:8.1.0"
+    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0-rc.3"
     container_name: "faucet-test-proof-server"
     ports:
       - 6300
     environment:
       RUST_BACKTRACE: "full"
   indexer:
-    image: "ghcr.io/midnight-ntwrk/indexer-standalone:3.0.0-alpha.23"
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.4.0-pre-alpha.15-l91r3-n2r3-bridge-and-events-epics-blockhash-dust-f06af4b4"
     container_name: "faucet-test-indexer"
     ports:
       - "8088:8088"
@@ -16,26 +16,43 @@ services:
       APP__INFRA__SECRET: "303132333435363738393031323334353637383930313233343536373839303132"
       APP__INFRA__NODE__URL: "ws://node:9944"
       APP__APPLICATION__NETWORK_ID: "undeployed"
-    healthcheck:
-      test: ["CMD-SHELL", "cat /var/run/indexer-standalone/running"]
-      start_interval: "5s"
-      interval: "5s"
-      timeout: "2s"
-      retries: 2
-      start_period: 5s
+      # 4.x credentials each storage backend separately and refuses to boot when any
+      # of these is unset. Literals rather than ${...} because testcontainers starts
+      # this file with no env file and CI exports no INDEXER_* vars; these mirror the
+      # local defaults in .env.example.
+      # kics-scan ignore-line
+      APP__INFRA__STORAGE__PASSWORD: "indexer" # checkov:skip=CKV_SECRET_6 local test database, not a real credential
+      # kics-scan ignore-line
+      APP__INFRA__PUB_SUB__PASSWORD: "indexer" # checkov:skip=CKV_SECRET_6 local test database, not a real credential
+      # kics-scan ignore-line
+      APP__INFRA__LEDGER_STATE_STORAGE__PASSWORD: "indexer" # checkov:skip=CKV_SECRET_6 local test database, not a real credential
+      APP__INFRA__SPO_NODE__URL: "ws://node:9944"
+      APP__INFRA__SPO_NODE__BLOCKFROST_ID: "faucet-test-dummy"
+    # No healthcheck: this image ships neither curl nor wget, so an in-container HTTP probe
+    # exits 127 on every attempt and the container is marked unhealthy. Readiness is gated
+    # from the host in faucet.spec.ts via Wait.forHttp("/ready", 8088). Do not substitute
+    # `cat /var/run/indexer-standalone/running` — the entrypoint touches that file before
+    # launching indexer-standalone, so it signals liveness, not readiness.
     depends_on:
       node:
-        condition: service_started
+        condition: service_healthy
   node:
-    image: "ghcr.io/midnight-ntwrk/midnight-node:1.0.0"
+    image: "ghcr.io/midnight-ntwrk/midnight-node:2.0.0-rc.3"
     container_name: "faucet-test-node"
     ports:
       - "9944:9944"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9944/health"]
+      # Ready means "producing blocks", not "port open" — the indexer gates on this
+      # and immediately subscribes. 2.x serves no /health endpoint.
+      test:
+        - "CMD-SHELL"
+        - >
+          curl -fs -H 'Content-Type: application/json' -d
+          '{"id":1,"jsonrpc":"2.0","method":"chain_getBlockHash","params":[1]}' http://localhost:9944 | grep -q
+          '"result":"0x'
       interval: 2s
       timeout: 5s
-      retries: 5
+      retries: 30
       start_period: 5s
     environment:
       CFG_PRESET: "dev"

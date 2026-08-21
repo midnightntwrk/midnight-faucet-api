@@ -35,6 +35,14 @@ export type StatusType = t.TypeOf<typeof Status>;
 
 export type TaskType = t.TypeOf<typeof Task>;
 
+/**
+ * The statuses a task can still dispense from, and so the ones an address may hold
+ * only one of. {@link PostgresqlTaskRepository.getByAddress} selects on these and
+ * the `tasks_active_address_unique` partial index (migration 009) enforces them, so
+ * the two cannot drift into disagreeing about what "already requesting" means.
+ */
+export const ACTIVE_STATUSES: readonly StatusType[] = ["scheduled", "in_progress"];
+
 export class PostgresqlTaskRepository {
   private readonly Tasks: () => Knex.QueryBuilder<TaskType, TaskType>;
 
@@ -56,10 +64,26 @@ export class PostgresqlTaskRepository {
       });
   }
 
+  /**
+   * The task `address` is still waiting on, if any — what {@link
+   * "../TaskManager".TaskManager.registerTask} deduplicates a repeat request onto.
+   *
+   * Selects the active statuses rather than excluding the finished ones. The
+   * previous `whereNot("status", ["failure", "succeeded"])` bound a Postgres array
+   * literal instead of a `NOT IN` list, so it compared a varchar column against the
+   * string `{"failure","succeeded"}` and excluded nothing; with no ordering behind
+   * `first()` it then returned an arbitrary row — in practice the oldest, and task
+   * rows are never deleted, so a repeat requester's completed first drip shadowed
+   * their live one and the dedup missed it every time.
+   *
+   * Ordered oldest-first to match {@link pick}, so if more than one active row does
+   * exist this returns the task that will actually run first.
+   */
   async getByAddress(address: string): Promise<TaskType | undefined> {
     return this.Tasks()
       .where("address", address)
-      .andWhereNot("status", ["failure", "succeeded"])
+      .whereIn("status", [...ACTIVE_STATUSES])
+      .orderBy("created_at", "asc")
       .first()
       .catch((error: Error) => {
         this.logger.error({ error }, "Error retrieving task snapshot data from DB");

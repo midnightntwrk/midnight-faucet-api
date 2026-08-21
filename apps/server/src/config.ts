@@ -2,13 +2,11 @@
 /* eslint-disable @typescript-eslint/no-base-to-string */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 import convict from "convict";
-import { hoursToMilliseconds, minutesToMilliseconds } from "date-fns";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { URL } from "node:url";
 import { availableFormats, availableLevels, LoggingConfig } from "./logging.js";
 import { PostgresqlConfig } from "./postgres.js";
-import { RateLimitConfig } from "./rate-limiting/rate-limiting.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { TaskManagerConfig } from "./TaskManager.js";
 
@@ -59,6 +57,13 @@ convict.addFormat({
     }
   },
 });
+
+export type RateLimitConfig = Readonly<{
+  /**
+   * The maximum daily number of requests per address.
+   */
+  maxDailyRequests: number;
+}>;
 
 export interface ThirdPartyApiConfig {
   allowedOrigins: string[];
@@ -276,20 +281,6 @@ export const schema = {
     },
   },
   rateLimiting: {
-    waitDuration: {
-      doc: "Number of milliseconds to wait until next token request is allowed, has to be a positive number",
-      format: Number,
-      default: hoursToMilliseconds(24),
-      env: "RATE_LIMIT_WAIT_DURATION",
-      arg: "rate-limit-wait-duration",
-    },
-    failureTimeout: {
-      doc: "Number of milliseconds that need to pass in order to treat a started action as failed (due to e.g. server error)",
-      format: Number,
-      default: minutesToMilliseconds(10),
-      env: "RATE_LIMITING_FAILURE_TIMEOUT",
-      arg: "rate-limiting-failure-timeout",
-    },
     maxDailyRequests: {
       doc: "Maximum daily number of requests per address",
       format: Number,
@@ -393,7 +384,6 @@ const configSources = [
 export const loadConfig = (): ServerConfig => {
   const initialConfig = convict(schema);
 
-  console.log("Initializing configuration");
   const config = configSources
     .reduce((prev, source) => {
       switch (source.type) {
@@ -453,8 +443,6 @@ export const loadConfig = (): ServerConfig => {
       provingServer: new URL(config.get("urls.provingServer")),
     },
     rateLimiting: {
-      waitDuration: config.get("rateLimiting.waitDuration"),
-      failureTimeout: config.get("rateLimiting.failureTimeout"),
       maxDailyRequests: config.get("rateLimiting.maxDailyRequests"),
     },
     logging: {

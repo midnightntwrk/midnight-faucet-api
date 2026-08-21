@@ -11,7 +11,6 @@ import { runtimeConfigMiddleware } from "./middleware.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { thirdPartyRouter } from "./third-party/router.js";
 import { createDripRoutes, type DripRouteDeps } from "./api/drip-routes.js";
-import { RateLimitConfig } from "./rate-limiting/rate-limiting.js";
 
 export const metricsAppRouter = (deps: CompositionRoot) => {
   const router: express.Router = express.Router();
@@ -43,7 +42,6 @@ export const metricsAppRouter = (deps: CompositionRoot) => {
 };
 
 export const apiRouter = (
-  rateLimitingConfig: RateLimitConfig,
   deps: CompositionRoot,
   captchaSecretKey: string,
   captchaHeader: string,
@@ -99,12 +97,11 @@ export const apiRouter = (
   const dripDeps: DripRouteDeps = {
     taskManager: deps.taskManager,
     taskRepository: deps.stateContext.taskRepository,
-    rateCountRepository: deps.stateContext.rateCountRepository,
+    stateSnapshots: deps.stateContext.stateSnapshots,
     healthService: deps.healthService,
     syncStuckDetector: deps.syncStuckDetector,
     logger: deps.logger,
     networkId,
-    maxDailyRequests: rateLimitingConfig.maxDailyRequests,
     maxAmount: Number(dropAmount / TNIGHT_UNIT),
   };
   router.use(createDripRoutes(dripDeps));
@@ -132,7 +129,6 @@ export const apiRouter = (
 
 export const appRouter = (config: ServerConfig, root: CompositionRoot): express.Router => {
   const api = apiRouter(
-    config.rateLimiting,
     root,
     config.turnstileKey,
     config.turnstileHeader,
@@ -143,12 +139,11 @@ export const appRouter = (config: ServerConfig, root: CompositionRoot): express.
     config: config.thirdPartyApi,
     taskManager: root.taskManager,
     taskRepository: root.stateContext.taskRepository,
-    rateCountRepository: root.stateContext.rateCountRepository,
+    stateSnapshots: root.stateContext.stateSnapshots,
     healthService: root.healthService,
     syncStuckDetector: root.syncStuckDetector,
     logger: root.logger,
     networkId: config.networkId,
-    maxDailyRequests: config.rateLimiting.maxDailyRequests,
   });
   const ui = express.static(config.uiPath);
 

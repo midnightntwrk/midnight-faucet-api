@@ -241,7 +241,6 @@ describe("Faucet Server", () => {
       knexResource(config.db, logger),
       Resource.mapPromise(async (knex) => {
         await knex("users").delete();
-        await knex("user_action_times").delete();
         return new PostgresqlUserRepository(knex);
       }),
       Resource.map((u) => prepareAuthContext(config, u, logger)),
@@ -869,21 +868,24 @@ describe("Faucet Server", () => {
   });
 
   /**
-   * Known defect, kept as a failing expectation so it reports itself the moment
-   * registration becomes atomic — flip this back to `it` and delete this comment
-   * then.
+   * Regression for #617, fixed in #619. `registerTask` reads for an active task and
+   * then reserves and creates, with nothing holding the address in between.
+   * Duplicates arriving within that window — a double-clicked button, a client
+   * retry — all read "nothing in flight", so each used to reserve a slot *and*
+   * schedule its own dispense: the requester lost several of their daily requests
+   * and received several drips.
    *
-   * `registerTask` checks for a live task and then reserves and creates, with
-   * nothing holding the address in between. Duplicates that arrive within that
-   * window — a double-clicked button, a client retry — all read "nothing in
-   * flight", so each one reserves a slot *and* schedules its own dispense. The
-   * requester loses several of their daily requests and receives several drips.
+   * Reserving on the create path only, which the sequential duplicate coverage above
+   * pins, fixes the double-submit arriving as two round trips. It cannot fix the one
+   * that arrives at once — that takes the `tasks_active_address_unique` index, which
+   * refuses the second insert so the loser can hand its slot back.
    *
-   * Reserving on the create path only, which is what the sequential duplicate
-   * coverage above pins, fixes the double-submit that arrives as two round trips.
-   * It cannot fix the one that arrives at once.
+   * This passing does not on its own prove the race was *exercised*: whether the
+   * three requests truly interleave depends on which wins a fresh pool connection
+   * (`min: 0`, so none are warm). The repository suite pins the constraint directly
+   * and does not depend on that timing.
    */
-  it.fails("does not consume extra slots for simultaneous duplicate requests", () => {
+  it("does not consume extra slots for simultaneous duplicate requests", () => {
     const receiver = getRandomBech32mAddress();
     const hangingFaucet = stubFaucet(() => new Promise<TokenResponse>(() => {}));
     const faucetUrl = `http://${config.host}:${config.port}/api`;

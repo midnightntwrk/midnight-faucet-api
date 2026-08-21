@@ -223,7 +223,6 @@ describe("Third-Party API", () => {
       knexResource(config.db, logger),
       Resource.mapPromise(async (knex) => {
         await knex("users").delete();
-        await knex("user_action_times").delete();
         await knex("rate_counts").delete();
         await knex("tasks").delete();
         return new PostgresqlUserRepository(knex);

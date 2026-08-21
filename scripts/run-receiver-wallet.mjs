@@ -18,8 +18,8 @@ const networkId = NetworkId.NetworkId.Undeployed;
 
 const configuration = {
   indexerClientConnection: {
-    indexerHttpUrl: `http://localhost:8088/api/v3/graphql`,
-    indexerWsUrl: `ws://localhost:8088/api/v3/graphql/ws`,
+    indexerHttpUrl: `http://localhost:8088/api/v4/graphql`,
+    indexerWsUrl: `ws://localhost:8088/api/v4/graphql/ws`,
   },
   provingServerUrl: new URL(`http://localhost:6300`),
   relayURL: new URL(`ws://127.0.0.1:9944`),
