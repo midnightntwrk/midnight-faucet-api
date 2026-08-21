@@ -33,7 +33,7 @@ jobs:
         # The shared scanner includes trivy vulnerability scanning. This pin
         # also includes the caller-workspace fix; older revisions scanned the
         # action checkout itself and reported its dependencies.
-        uses: midnightntwrk/upload-sarif-github-action@0ec83cec2d2703f682c85392b19e3f8db7e85434
+        uses: midnightntwrk/upload-sarif-github-action@e90808cc2a4bde5b3f14b1df426c2f142bc59a37
         with:
           fail_severity: "high"
           # Checks supported by Scorecard's local mode; unset means all checks,
