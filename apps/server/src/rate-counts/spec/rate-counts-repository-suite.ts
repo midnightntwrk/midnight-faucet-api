@@ -220,6 +220,24 @@ export function runRateCountsRepositorySuite<T>(context: RateCountsRepositorySpe
           Task.unsafeRun,
         );
       });
+
+      it("should return the window anchor it wrote", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+              // The anchor a caller has to keep in order to refund later must be the
+              // row's own `updated_at`, not an app-clock guess: `decrement` compares
+              // it against the stored value and refuses anything else (#595).
+              const anchor = await repo.increment(address);
+              const row = await rowOf(repo, address);
+              expect(anchor.getTime()).toBe(row.updated_at.getTime());
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
     });
 
     describe("decrement", () => {
@@ -308,6 +326,142 @@ export function runRateCountsRepositorySuite<T>(context: RateCountsRepositorySpe
               await repo.decrement(address, new Date());
               const after = await rowOf(repo, address);
               expect(after.updated_at.getTime()).toBe(before.updated_at.getTime());
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
+
+      it("should refund against the anchor the reservation returned", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+              // The production shape: keep what the reservation handed back and
+              // refund with it, rather than with a date the application made up.
+              const reservation = await repo.tryReserve(address, NO_PRACTICAL_LIMIT);
+              if (reservation._tag === "denied") {
+                throw new Error("Expected the first reservation to be granted");
+              }
+              await repo.tryReserve(address, NO_PRACTICAL_LIMIT);
+
+              await repo.decrement(address, reservation.registeredAt);
+
+              expect(await countOf(repo, address)).toBe(1);
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
+
+      it("should no-op when the slot belongs to a later window", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+              await repo.tryReserve(address, NO_PRACTICAL_LIMIT);
+              const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+              // A clock running ahead of the database must not be able to refund a
+              // slot the row does not hold yet.
+              await repo.decrement(address, tomorrow);
+
+              expect(await countOf(repo, address)).toBe(1);
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
+
+      it("should never take the count below zero", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+              const anchor = await repo.increment(address);
+
+              // A negative count would hand the address free requests the next day,
+              // since the rollover is what clears it back to zero.
+              await repo.decrement(address, anchor);
+              await repo.decrement(address, anchor);
+
+              expect(await countOf(repo, address)).toBe(0);
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
+    });
+
+    /**
+     * Reservations and refunds are read-modify-write, and both the drip route and
+     * the task manager can be running one for the same address at the same moment.
+     * Without a row lock on every read, one of the two updates is lost — either
+     * reverting a refund or handing out a slot that was never spent.
+     */
+    describe("concurrent access", () => {
+      const RACERS = 3;
+
+      it("should keep every reservation that races another", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+
+              await Promise.all(Array.from({ length: RACERS }, () => repo.increment(address)));
+
+              expect(await countOf(repo, address)).toBe(RACERS);
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
+
+      it("should apply refunds and reservations that race each other exactly once", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+              // Reserve enough up front that no interleaving reaches zero, so the
+              // count floor cannot absorb a lost update and hide it.
+              const anchors = await Promise.all(
+                Array.from({ length: RACERS }, () => repo.increment(address)),
+              );
+
+              await Promise.all([
+                ...Array.from({ length: RACERS }, () => repo.increment(address)),
+                ...anchors.map((anchor) => repo.decrement(address, anchor)),
+              ]);
+
+              expect(await countOf(repo, address)).toBe(RACERS);
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
+
+      it("should create a single row when concurrent callers race the insert", async () => {
+        return pipe(
+          context.instance(infrastructure),
+          Resource.use((repo) =>
+            Task.lift(async () => {
+              const address = createAddress();
+
+              // Both entry points get-or-create, which is the path a first request
+              // and the slot it spends take together on a never-seen address.
+              await Promise.all([
+                repo.increment(address),
+                repo.tryReserve(address, NO_PRACTICAL_LIMIT),
+              ]);
+
+              expect(await repo.find(address)).toEqual(
+                option.some(expect.objectContaining({ address, count: 2 })),
+              );
             }),
           ),
           Task.unsafeRun,
