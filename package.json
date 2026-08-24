@@ -90,6 +90,6 @@
     "tests"
   ],
   "dependencies": {
-    "@types/node": "^25.9.3"
+    "@types/node": "^26.2.0"
   }
 }

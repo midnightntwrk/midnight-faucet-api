@@ -1102,7 +1102,7 @@ __metadata:
     "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@playwright/test": "npm:^1.62.1"
-    "@types/node": "npm:^25.5.0"
+    "@types/node": "npm:^26.2.0"
     axios: "npm:^1.19.0"
     dotenv: "npm:^16.3.1"
     eslint: "npm:^10.8.1"
@@ -2724,12 +2724,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^25.5.0, @types/node@npm:^25.9.3":
-  version: 25.9.4
-  resolution: "@types/node@npm:25.9.4"
+"@types/node@npm:^26.2.0":
+  version: 26.2.0
+  resolution: "@types/node@npm:26.2.0"
   dependencies:
-    undici-types: "npm:>=7.24.0 <7.24.7"
-  checksum: 10/a58934de2e04a8e7fd8f95f7cae39cdd16bb28092f04024b929711b710139f31cb18b1126ab3ddbff570920bc97ea55bcde41f050a87df3073153a450eb37a7b
+    undici-types: "npm:~8.3.0"
+  checksum: 10/3829dd8c82e7d4858f3cc946ec9e5133c9fa39a0a9173874a6392230665121b42dac1b134e5e10ee132a5487293708c77df253cf41a125e9fd838cc3af72d700
   languageName: node
   linkType: hard
 
@@ -6011,7 +6011,7 @@ __metadata:
     "-": "npm:^0.0.1"
     "@eslint/js": "npm:10.0.1"
     "@turbo/gen": "npm:2.10.10"
-    "@types/node": "npm:^25.9.3"
+    "@types/node": "npm:^26.2.0"
     "@types/yargs": "npm:17.0.35"
     "@vitest/coverage-v8": "npm:4.1.10"
     "@vitest/eslint-plugin": "npm:1.6.27"
@@ -8173,13 +8173,6 @@ __metadata:
   version: 2.1.0
   resolution: "uc.micro@npm:2.1.0"
   checksum: 10/37197358242eb9afe367502d4638ac8c5838b78792ab218eafe48287b0ed28aaca268ec0392cc5729f6c90266744de32c06ae938549aee041fc93b0f9672d6b2
-  languageName: node
-  linkType: hard
-
-"undici-types@npm:>=7.24.0 <7.24.7":
-  version: 7.24.6
-  resolution: "undici-types@npm:7.24.6"
-  checksum: 10/defc9538b952e3c15b8526596c591f7c1f0c7605ad27a2b7feddbea7ef2e3003f3eda2cdb051a3cb1a2185e3893100fd9cb925c799db99d48131ea63b5233d10
   languageName: node
   linkType: hard
 
