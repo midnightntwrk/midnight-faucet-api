@@ -8,18 +8,7 @@ import {
 import { pipe, Resource } from "@midnight-ntwrk/faucet-utils";
 import { Duration } from "luxon";
 import pino from "pino";
-import {
-  auditTime,
-  firstValueFrom,
-  map,
-  Observable,
-  shareReplay,
-  Subject,
-  tap,
-  timeout,
-  filter,
-  concatMap,
-} from "rxjs";
+import { auditTime, firstValueFrom, map, Observable, shareReplay, Subject, tap } from "rxjs";
 import { FaucetWallet, WalletFactory } from "./WalletFactory.js";
 import { createKeystore, UnshieldedWalletState } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { ShieldedWalletState } from "@midnightntwrk/wallet-sdk-shielded";
@@ -28,6 +17,7 @@ import { DustSecretKey, ZswapSecretKeys, unshieldedToken } from "@midnightntwrk/
 import { WalletFacade, CombinedTokenTransfer } from "@midnightntwrk/wallet-sdk-facade";
 import * as ledger from "@midnightntwrk/ledger-v9";
 
+import { logTxFinalityOutcome, observeTxFinality } from "./observe-tx-finality.js";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
@@ -330,26 +320,16 @@ export const mkRequestTokens = (
         throw result.error;
       }
 
-      // Validate transaction in background without blocking response
-      firstValueFrom(
-        wallet.state().pipe(
-          concatMap(() => wallet.queryTxHistoryByHash(result.finalizedTxHash)),
-          filter((entry) => entry !== undefined && entry.status === "SUCCESS"),
-          timeout(30_000),
-        ),
+      // Watch for finality in the background without blocking the response. The
+      // drip is already submitted at this point, so nothing here can change its
+      // outcome — the only job is to report what the network did with it.
+      void observeTxFinality(
+        (hash) => wallet.queryTxHistoryByHash(hash),
+        result.finalizedTxHash,
+        requestLogger,
       )
-        .then(
-          () => {
-            requestLogger.debug("Transaction confirmed in history");
-          },
-          (historyError: unknown) => {
-            requestLogger.warn(
-              { err: historyError },
-              "Transaction history validation failed in background",
-            );
-          },
-        )
-        .catch((err) => {
+        .then((outcome) => logTxFinalityOutcome(requestLogger, outcome, result.finalizedTxHash))
+        .catch((err: unknown) => {
           requestLogger.error({ err }, "Unexpected error during background validation");
         });
 

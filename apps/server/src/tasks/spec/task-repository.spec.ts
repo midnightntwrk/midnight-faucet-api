@@ -3,7 +3,11 @@ import * as nodeCrypto from "node:crypto";
 import pino from "pino";
 import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/postgres.js";
 import { PostgresqlTaskRepository, StatusType, TABLE_NAME } from "../task-repository.js";
-import { IN_PROGRESS_TIMEOUT_MINUTES } from "../task-timeouts.js";
+import {
+  IN_PROGRESS_TIMEOUT_MINUTES,
+  QUEUE_STALLED_MINUTES,
+  SCHEDULED_TIMEOUT_MINUTES,
+} from "../task-timeouts.js";
 
 /**
  * The status-guarded writes in this repository are what make the rate-limit slot
@@ -53,12 +57,14 @@ describe("Task Repository", () => {
     address,
     status,
     startedMinutesAgo = 0,
-    createdMinutesAgo = startedMinutesAgo,
+    createdMinutesAgo = startedMinutesAgo ?? 0,
     state = "",
   }: {
     address: string;
     status: StatusType;
-    startedMinutesAgo?: number;
+    // `null` writes a NULL `start_time`, which the column permits but neither
+    // `create` nor `pick` produces — the case the sweep's `coalesce` guards.
+    startedMinutesAgo?: number | null;
     createdMinutesAgo?: number;
     state?: string;
   }): Promise<string> => {
@@ -71,12 +77,20 @@ describe("Task Repository", () => {
       status,
       state,
       picked_by: status === "scheduled" ? null : "faucet-test",
-      start_time: minutesAgo(startedMinutesAgo),
+      start_time: startedMinutesAgo === null ? null : minutesAgo(startedMinutesAgo),
       created_at: minutesAgo(createdMinutesAgo),
+      // Aged with the row, so a test can tell a sweep's write apart from the
+      // column default.
+      end_time: minutesAgo(createdMinutesAgo),
     });
 
     return id;
   };
+
+  const endTimeOf = async (id: string): Promise<Date | undefined> =>
+    repository()
+      .getById(id)
+      .then((task) => task?.end_time);
 
   const statusOf = async (id: string): Promise<string | undefined> =>
     repository()
@@ -245,6 +259,35 @@ describe("Task Repository", () => {
       expect(sweeps.flat()).toHaveLength(1);
     });
 
+    it("fails an in-progress task that never had a start_time", async () => {
+      // The column permits NULL and `NULL < timestamp` is NULL, so without the
+      // `coalesce` fallback such a row is invisible to every future sweep — stuck in
+      // a status nothing else clears.
+      const id = await insertTask({
+        address: createAddress(),
+        status: "in_progress",
+        startedMinutesAgo: null,
+        createdMinutesAgo: stranded(),
+      });
+
+      expect(await repository().failTimedOutTasks()).toHaveLength(1);
+      expect(await statusOf(id)).toBe("failure");
+    });
+
+    it("stamps end_time when it gives up on a task", async () => {
+      const id = await insertTask({
+        address: createAddress(),
+        status: "in_progress",
+        startedMinutesAgo: stranded(),
+      });
+      const before = await endTimeOf(id);
+
+      await repository().failTimedOutTasks();
+
+      const after = await endTimeOf(id);
+      expect(after?.getTime()).toBeGreaterThan(before!.getTime());
+    });
+
     it("leaves a task that has not yet timed out", async () => {
       const id = await insertTask({
         address: createAddress(),
@@ -256,14 +299,53 @@ describe("Task Repository", () => {
       expect(await statusOf(id)).toBe("in_progress");
     });
 
-    it("leaves a scheduled task alone however old it is", async () => {
-      // A scheduled task is not stranded — `pick` selects on that status, so any
-      // healthy instance still runs it. Sweeping it would refund a slot for a
-      // drip that is about to be dispensed.
+    it("fails a scheduled task nothing drained within its window", async () => {
+      // This used to be left alone however old it got, on the grounds that `pick`
+      // selects on `scheduled` so a healthy instance would still run it. That bounds
+      // the wait only while some instance *is* able to pick: with none, the row never
+      // advances, and since migration 009 it is also what stops its address
+      // requesting again — so the requester was pinned on a task that would never run
+      // (#622).
       const id = await insertTask({
         address: createAddress(),
         status: "scheduled",
-        startedMinutesAgo: stranded() * 10,
+        createdMinutesAgo: SCHEDULED_TIMEOUT_MINUTES + 5,
+      });
+
+      expect(await repository().failTimedOutTasks()).toHaveLength(1);
+      expect(await statusOf(id)).toBe("failure");
+      expect(await stateOf(id)).toBe(JSON.stringify(TIMED_OUT_MESSAGE));
+    });
+
+    it("leaves an over-age scheduled task queued while the poller is still picking", async () => {
+      // `pick` is oldest-first and runs one drip at a time, so under a burst the rows
+      // past the age threshold are exactly the ones about to be served. Age alone
+      // cannot tell that from a queue nothing is draining — recent pick activity can.
+      const id = await insertTask({
+        address: createAddress(),
+        status: "scheduled",
+        createdMinutesAgo: SCHEDULED_TIMEOUT_MINUTES + 5,
+      });
+      // A drip picked and completed a moment ago: the poller is plainly alive.
+      await insertTask({
+        address: createAddress(),
+        status: "success",
+        startedMinutesAgo: QUEUE_STALLED_MINUTES - 1,
+      });
+
+      expect(await repository().failTimedOutTasks()).toEqual([]);
+      expect(await statusOf(id)).toBe("scheduled");
+    });
+
+    it("leaves a scheduled task inside its window queued", async () => {
+      // The other half of the same contract, and the reason the window is an hour
+      // rather than the in-progress five minutes: a queued task is only stale if
+      // nothing is draining the queue, not merely because it is waiting its turn.
+      // Sweeping it sooner would refund a slot for a drip about to be dispensed.
+      const id = await insertTask({
+        address: createAddress(),
+        status: "scheduled",
+        createdMinutesAgo: SCHEDULED_TIMEOUT_MINUTES - 1,
       });
 
       expect(await repository().failTimedOutTasks()).toEqual([]);
