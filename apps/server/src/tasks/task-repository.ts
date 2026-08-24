@@ -7,7 +7,11 @@ import pino from "pino";
 import * as t from "io-ts";
 import * as td from "io-ts-types";
 import { subMinutes } from "date-fns";
-import { IN_PROGRESS_TIMEOUT_MINUTES } from "./task-timeouts.js";
+import {
+  IN_PROGRESS_TIMEOUT_MINUTES,
+  QUEUE_STALLED_MINUTES,
+  SCHEDULED_TIMEOUT_MINUTES,
+} from "./task-timeouts.js";
 
 export const TABLE_NAME = "tasks";
 
@@ -121,11 +125,58 @@ export class PostgresqlTaskRepository {
     }
   }
 
+  /**
+   * Fail every task that has outlived its status's timeout, returning the rows so
+   * the caller can refund the slot each one reserved.
+   *
+   * Sweeps both active statuses. `scheduled` was previously left alone on the
+   * grounds that `pick` would eventually run it, but since migration 009 an
+   * unfinished row is what blocks its address from requesting again, and nothing
+   * bounds "eventually" while no wallet can pick — so a stranded queue entry pinned
+   * the requester indefinitely (#622).
+   *
+   * The `scheduled` arm is gated on the queue being stalled as well as on the row
+   * being old, because age alone cannot tell the two apart: `pick` is oldest-first
+   * and runs one drip at a time, so under a burst the rows past the age threshold
+   * are exactly the ones about to be served. `NOT EXISTS (… picked_by IS NOT NULL
+   * AND start_time > …)` asks whether anything at all has been picked recently,
+   * which is what "nothing is draining the queue" actually means. `picked_by` is the
+   * discriminator rather than `start_time` alone: `create` leaves it NULL while
+   * migration 005 defaults `start_time` to `now()`, so every freshly queued row
+   * would otherwise look like recent activity.
+   *
+   * `coalesce(start_time, created_at)` guards a case the column permits but the
+   * normal paths do not produce: migration 005 defaults `start_time` to `now()` and
+   * {@link pick} always writes one, so only an explicit NULL write leaves it unset.
+   * It matters because `NULL < timestamp` is NULL, so a row that did reach
+   * `in_progress` without a `start_time` would be skipped by every future sweep —
+   * cheap belt-and-braces against a row this repository cannot itself create.
+   *
+   * The disjunction is parenthesised inside the raw fragment because knex splices
+   * `whereRaw` in unbracketed: as `... AND a OR b`, precedence would regroup it into
+   * `(... AND a) OR b` and let the second arm escape every other predicate.
+   */
   async failTimedOutTasks(): Promise<Array<Pick<TaskType, "address" | "created_at">>> {
     return this.Tasks()
-      .update({ status: "failure", state: JSON.stringify("Token request failed due to timeout") })
-      .where("status", "in_progress")
-      .where("start_time", "<", subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES))
+      .update({
+        status: "failure",
+        state: JSON.stringify("Token request failed due to timeout"),
+        end_time: this.knex.fn.now(),
+      })
+      .whereRaw(
+        `((status = 'in_progress' AND coalesce(start_time, created_at) < ?)
+           OR (status = 'scheduled' AND created_at < ?
+               AND NOT EXISTS (
+                 SELECT 1
+                   FROM ${TABLE_NAME}
+                  WHERE picked_by IS NOT NULL
+                    AND start_time > ?)))`,
+        [
+          subMinutes(Date.now(), IN_PROGRESS_TIMEOUT_MINUTES),
+          subMinutes(Date.now(), SCHEDULED_TIMEOUT_MINUTES),
+          subMinutes(Date.now(), QUEUE_STALLED_MINUTES),
+        ],
+      )
       .returning(["address", "created_at"]);
   }
 
