@@ -10,8 +10,8 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 
 ### Prerequisites
 
-- **Node.js**: 24.11.1+ (check `.nvmrc`)
-- **Yarn**: 4.13.0+ (Berry with node-modules linker)
+- **Node.js**: 24.18.0 (see `.nvmrc`)
+- **Yarn**: 4.18.0 (Berry; see `packageManager` in the root `package.json`)
 - **Docker & Docker Compose**: For local development with full stack
 - **Git**: For version control
 - **pre-commit**: For the same repository checks enforced by CI
@@ -20,8 +20,8 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/midnightntwrk/midnight-faucet.git
-   cd midnight-faucet
+   git clone https://github.com/midnightntwrk/midnight-faucet-api.git
+   cd midnight-faucet-api
    ```
 
 2. **Install dependencies:**
@@ -40,9 +40,9 @@ We are committed to providing a welcoming and inclusive environment. Please be r
    # Edit .env with your local configuration if needed
    ```
 
-4. **Run the full stack:**
+5. **Run the full stack:**
    ```bash
-   docker-compose up
+   docker compose up
    ```
 
    Or for UI development only:
@@ -113,7 +113,7 @@ yarn format
 # Unit tests
 yarn test
 
-# E2E tests (requires docker-compose running)
+# E2E tests (requires docker compose running)
 cd tests
 yarn e2e-test
 
@@ -260,13 +260,13 @@ history check fails.
    yarn check  # build + lint + test
    ```
 
-6. **Test your changes locally** with `docker-compose up`
+6. **Test your changes locally** with `docker compose up`
 
 ### Opening a Pull Request
 
 1. **Push your branch:**
    ```bash
-   git push origin feature/your-feature-name
+   git push origin feat/123-your-feature-name
    ```
 
 2. **Create a PR** with:
@@ -356,6 +356,5 @@ Great ideas are welcome! Please:
 - [SECURITY.md](./SECURITY.md) — Security policies
 - [THIRD_PARTY_API.md](./THIRD_PARTY_API.md) — Partner API docs
 - [Conventional Commits](https://www.conventionalcommits.org/)
-- [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
 
 Thank you for contributing! 🙏

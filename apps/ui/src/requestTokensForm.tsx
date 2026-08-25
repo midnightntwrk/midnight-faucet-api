@@ -79,7 +79,7 @@ export function RequestTokensForm(props: {
         />
         {props.submit.lastResult && (
           <p className={styles.confirmationMessage}>
-            Transaction submitted. You will shortly receive 5000 tNight in your wallet. This is the
+            Transaction submitted. You will shortly receive 1000 tNight in your wallet. This is the
             transaction ID: {props.submit.lastResult.transactionHash}
           </p>
         )}

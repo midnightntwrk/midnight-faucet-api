@@ -191,7 +191,7 @@ ${improvementsList}
 ${packagesTable}
 ---
 ### Links and references
-- GitHub Repository: [midnightntwrk/midnight-faucet](https://github.com/midnightntwrk/midnight-faucet)
+- GitHub Repository: [midnightntwrk/midnight-faucet-api](https://github.com/midnightntwrk/midnight-faucet-api)
 - Midnight Network Documentation: [docs.midnight.network](https://docs.midnight.network)
 - Wallet SDK: [midnightntwrk/midnight-wallet](https://github.com/midnightntwrk/midnight-wallet)
 ---
