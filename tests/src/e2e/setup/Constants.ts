@@ -6,7 +6,7 @@ export const qanetConstants = {
   ERROR_INVALID_ADDRESS: "Provided address is invalid",
 
   TEXT_TX_SUBMITTED:
-    "Transaction submitted. You will shortly receive 5000 tNight in your wallet. This is the transaction ID:",
+    "Transaction submitted. You will shortly receive 1000 tNight in your wallet. This is the transaction ID:",
 
   LINK_YOUTUBE: "https://www.youtube.com/channel/UCy3oZ64F3FOtjZ5sZGQNgkA",
 

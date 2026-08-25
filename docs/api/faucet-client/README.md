@@ -1,4 +1,4 @@
-**[@midnight-ntwrk/faucet-client v0.6.1](https://github.com/input-output-hk/midnight-faucet)** • Readme \| [API](modules.md)
+**[@midnight-ntwrk/faucet-client v0.6.1](https://github.com/midnightntwrk/midnight-faucet-api)** • Readme \| [API](modules.md)
 
 ***
 
@@ -11,10 +11,9 @@ be used to request tokens from the faucet.
 ## Example
 
 ```ts
-import { FaucetClient } from '@midnight-ntwrk/faucet-client';
+import { FaucetClient } from "@midnight-ntwrk/faucet-client";
 
-const client = FaucetClient("http://localhost:5300/api");
-const authToken = await client.login("<username>", "<password>");
-const initialized = client.init(authToken);
-const { transactionIdentifier } = initialized.requestTokens("<my wallet address>");
+const client = FaucetClient({ url: "http://localhost:5300/api" });
+const drip = await client.requestTokens("<my wallet address>", "<captcha-token>", "1000");
+console.log(drip.transactionHash);
 ```

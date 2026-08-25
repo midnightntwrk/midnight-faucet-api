@@ -14,7 +14,7 @@ Turborepo / Yarn-workspaces monorepo:
 | `packages/faucet`                | Core faucet logic (`FaucetImpl.ts`)                                         |
 | `packages/faucet-internal-api`   | io-ts codecs / shared API types (the source of truth for request/response) |
 | `packages/faucet-client`         | Client for the public API                                                  |
-| `packages/faucet-auth`           | Auth                                                                        |
+| `packages/auth`                  | Auth                                                                        |
 | `packages/faucet-utils`          | `Resource` / `Task` / `pipe` primitives used across the server             |
 
 The key files to read first are listed in the coding conventions imported below (under **Key files**).

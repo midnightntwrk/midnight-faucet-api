@@ -1,6 +1,6 @@
 # Third-Party Drip API
 
-This document describes the Third-Party API for requesting tDUST tokens from the Midnight Faucet. This API is designed for whitelisted partner integrations and does not require captcha verification.
+This document describes the Third-Party API for requesting tNight tokens from the Midnight Faucet. This API is designed for whitelisted partner integrations and does not require captcha verification.
 
 ## Base URLs
 
@@ -70,7 +70,7 @@ Request a token drip to a wallet address.
 | Field              | Type   | Required | Description                                                                            |
 | ------------------ | ------ | -------- | -------------------------------------------------------------------------------------- |
 | `recipientAddress` | string | Yes      | Recipient wallet address (Bech32m format, e.g., `mn_addr_...`)                         |
-| `amount`           | string | Yes      | Amount of tDUST to send (non-negative integer as string). Must be between 1 and the configured maximum (default: 1000). String type prevents floating-point precision loss with large denominations. |
+| `amount`           | string | Yes      | Amount of tNight to send (non-negative integer as string). Must be between 1 and the configured maximum (default: 1000). String type prevents floating-point precision loss with large denominations. |
 
 #### Response
 

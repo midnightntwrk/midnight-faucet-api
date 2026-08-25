@@ -13,6 +13,13 @@ A production-grade token faucet for the Midnight Network, built with TypeScript 
 
 ## Quick Start
 
+Clone the repository:
+
+```shell
+git clone https://github.com/midnightntwrk/midnight-faucet-api.git
+cd midnight-faucet-api
+```
+
 Both paths below — running the full stack with Docker, or the server/UI locally — need a `.env` at the repo root. Create it first:
 
 ```shell
@@ -109,7 +116,7 @@ Requires Cloudflare Turnstile captcha verification.
 Request a token drip.
 
 ```bash
-curl -X POST http://localhost:3000/api/drips \
+curl -X POST http://localhost:5300/api/drips \
   -H "Content-Type: application/json" \
   -H "X-Captcha-Token: <turnstile_token>" \
   -d '{
@@ -135,7 +142,7 @@ curl -X POST http://localhost:3000/api/drips \
 Poll for drip status.
 
 ```bash
-curl http://localhost:3000/api/drips/abc123-def456 \
+curl http://localhost:5300/api/drips/abc123-def456 \
   -H "X-Captcha-Token: <turnstile_token>"
 ```
 
@@ -261,10 +268,10 @@ docker run \
 ### Using Published Images
 
 ```bash
-docker pull ghcr.io/midnightntwrk/midnight-faucet:main
+docker pull ghcr.io/midnight-ntwrk/midnight-faucet:main
 docker run --net=host \
   -e NODE_URL='http://node:9944' \
-  ghcr.io/midnightntwrk/midnight-faucet:main
+  ghcr.io/midnight-ntwrk/midnight-faucet:main
 ```
 
 See [docker-compose.yml](./docker-compose.yml) for a complete example.
@@ -292,9 +299,9 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on:
 
 ## Release and Version Management
 
-We use Git Flow for releases:
+We work trunk-based off `main`. To publish a release:
 
-1. **Bump version** on `develop`:
+1. **Bump version** on `main`:
 
    ```bash
    yarn workspaces foreach version <major|minor|patch|pre> --immediate
@@ -309,13 +316,11 @@ We use Git Flow for releases:
 3. **Create GitHub release** with release notes
 
 4. **Tag creation** triggers CD to build and publish:
-   - Docker images to `ghcr.io/midnightntwrk/midnight-faucet`
+   - Docker images to `ghcr.io/midnight-ntwrk/midnight-faucet`
    - NPM packages to GitHub Packages
    - Release artifacts
 
-5. **After deploy**, merge release branch into `main`
-
-See [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/) for details.
+5. **After deploy**, merge any remaining release-branch fixes into `main`
 
 ## License
 
@@ -323,9 +328,9 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## Support
 
-- **Bug reports**: [GitHub Issues](https://github.com/midnightntwrk/midnight-faucet/issues)
+- **Bug reports**: [GitHub Issues](https://github.com/midnightntwrk/midnight-faucet-api/issues)
 - **Security issues**: See [SECURITY.md](./SECURITY.md)
-- **Questions**: GitHub Discussions or Midnight Discord
+- **Questions**: [GitHub Discussions](https://github.com/midnightntwrk/midnight-faucet-api/discussions) or Midnight Discord
 
 ## Useful References
 
