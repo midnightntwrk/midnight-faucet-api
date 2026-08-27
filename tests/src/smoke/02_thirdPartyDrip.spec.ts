@@ -12,15 +12,23 @@ interface HealthResponse {
   reason: string | null;
 }
 
-interface DripResponse {
+interface CreateDripResponse {
+  dripId: string;
+}
+
+interface DripStatusResponse {
   dripId: string;
   status: string;
   transactionHash: string | null;
-  error: string | null;
+  error: { code: string; message: string | null } | null;
 }
 
 interface ErrorResponse {
-  error: string;
+  error: { code: string; message: string | null };
+}
+
+interface DripInfoResponse {
+  dripAmount: string;
 }
 
 describe("Third-Party API Smoke Tests", () => {
@@ -29,7 +37,9 @@ describe("Third-Party API Smoke Tests", () => {
   const shieldedSecretKey = ledger.ZswapSecretKeys.fromSeed(utils.getShieldedSeed(seed));
   const dustSecretKey = ledger.DustSecretKey.fromSeed(utils.getDustSeed(seed));
   const unshieldedTokenRaw = ledger.unshieldedToken().raw;
-  const requestedDripAmount = "1000";
+  // The third-party API denominates amounts in the token's smallest unit, and
+  // this is the deployment's default drip (DROP_AMOUNT) expressed in it.
+  const requestedDripAmount = "5000000000";
   const timeout = 60 * 60 * 1000; // 60 minutes
 
   let wallet: WalletFacade;
@@ -38,8 +48,9 @@ describe("Third-Party API Smoke Tests", () => {
   let walletAddress: string;
   let dripId: string;
   let unshieldedBalanceInitial: bigint;
+  let network: string;
 
-  const origin = "http://localhost:5300";
+  const token = "tNIGHT";
   const apiKey = process.env.THIRD_PARTY_API_KEY ?? "";
 
   if (!apiKey) {
@@ -48,17 +59,32 @@ describe("Third-Party API Smoke Tests", () => {
     );
   }
 
+  // The API key is the credential; Google calls server-to-server and sends no
+  // Origin header, so the requests here don't either.
   const thirdPartyHeaders = {
-    Origin: origin,
     "X-API-Key": apiKey,
   };
 
+  const jsonHeaders = {
+    ...thirdPartyHeaders,
+    "Content-Type": "application/json",
+  };
+
   const acceptAllStatuses = { validateStatus: () => true };
+
+  const dripBody = (overrides: Record<string, unknown> = {}) => ({
+    recipientAddress: walletAddress,
+    network,
+    token,
+    amount: requestedDripAmount,
+    ...overrides,
+  });
 
   beforeAll(async () => {
     const fixture = getFixture();
     const walletConfig = fixture.getWalletConfig();
     networkId = walletConfig.networkId;
+    network = `midnight_${String(networkId).toLowerCase()}`;
     faucetUrl = fixture.getFaucetUrl();
     wallet = await utils.buildWalletFacade(seed, walletConfig);
     await wallet.start(shieldedSecretKey, dustSecretKey);
@@ -99,69 +125,68 @@ describe("Third-Party API Smoke Tests", () => {
       throw lastError;
     }, 60_000);
 
-    test("Health check returns 403 without Origin header", async () => {
-      const response = await axios.get(`${faucetUrl}/v1/health`, {
-        headers: { "X-API-Key": apiKey },
-        ...acceptAllStatuses,
-      });
-      expect(response.status).toBe(403);
-    }, 20_000);
-
-    test("Health check returns 403 for non-whitelisted Origin", async () => {
-      const response = await axios.get(`${faucetUrl}/v1/health`, {
-        headers: {
-          Origin: "https://unauthorized-domain.com",
-          "X-API-Key": apiKey,
-        },
-        ...acceptAllStatuses,
-      });
-      expect(response.status).toBe(403);
-    }, 20_000);
-
     test("Health check returns 401 without API key", async () => {
-      const response = await axios.get(`${faucetUrl}/v1/health`, {
-        headers: { Origin: origin },
+      const response = await axios.get<ErrorResponse>(`${faucetUrl}/v1/health`, {
         ...acceptAllStatuses,
       });
       expect(response.status).toBe(401);
+      expect(response.data.error.code).toBe("INVALID_API_KEY");
     }, 20_000);
 
-    test("Health check returns 403 with invalid API key", async () => {
-      const response = await axios.get(`${faucetUrl}/v1/health`, {
-        headers: {
-          Origin: origin,
-          "X-API-Key": "invalid-api-key",
-        },
+    test("Health check returns 401 with invalid API key", async () => {
+      const response = await axios.get<ErrorResponse>(`${faucetUrl}/v1/health`, {
+        headers: { "X-API-Key": "invalid-api-key" },
         ...acceptAllStatuses,
       });
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(401);
+      expect(response.data.error.code).toBe("INVALID_API_KEY");
+    }, 20_000);
+  });
+
+  describe("GET /v1/drip-info/:network/:token", () => {
+    test("Drip info reports the configured amount", async () => {
+      const response = await axios.get<DripInfoResponse>(
+        `${faucetUrl}/v1/drip-info/${network}/${token}`,
+        { headers: thirdPartyHeaders },
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.data.dripAmount).toMatch(/^[0-9]+$/);
+      console.log("Drip info:", response.data);
+    }, 20_000);
+
+    test("Drip info returns UNSUPPORTED_NETWORK for another network", async () => {
+      const response = await axios.get<ErrorResponse>(
+        `${faucetUrl}/v1/drip-info/ethereum_testnet/${token}`,
+        { headers: thirdPartyHeaders, ...acceptAllStatuses },
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("UNSUPPORTED_NETWORK");
+    }, 20_000);
+
+    test("Drip info returns UNSUPPORTED_TOKEN for another token", async () => {
+      const response = await axios.get<ErrorResponse>(`${faucetUrl}/v1/drip-info/${network}/ETH`, {
+        headers: thirdPartyHeaders,
+        ...acceptAllStatuses,
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("UNSUPPORTED_TOKEN");
     }, 20_000);
   });
 
   describe("POST /v1/drips", () => {
     test(
-      "Request drip returns dripId with PENDING status",
+      "Request drip returns the dripId alone",
       async () => {
-        const response = await axios.post<DripResponse>(
-          `${faucetUrl}/v1/drips`,
-          {
-            recipientAddress: walletAddress,
-            amount: requestedDripAmount,
-          },
-          {
-            headers: {
-              ...thirdPartyHeaders,
-              "Content-Type": "application/json",
-            },
-          },
-        );
+        const response = await axios.post<CreateDripResponse>(`${faucetUrl}/v1/drips`, dripBody(), {
+          headers: jsonHeaders,
+        });
 
         expect(response.status).toBe(200);
-        expect(response.data.dripId).toBeDefined();
         expect(typeof response.data.dripId).toBe("string");
-        expect(response.data.status).toBe("PENDING");
-        expect(response.data.transactionHash).toBeNull();
-        expect(response.data.error).toBeNull();
+        expect(Object.keys(response.data)).toEqual(["dripId"]);
 
         dripId = response.data.dripId;
         console.log(`Drip requested successfully, dripId=${dripId}`);
@@ -169,160 +194,108 @@ describe("Third-Party API Smoke Tests", () => {
       timeout,
     );
 
-    test("Request drip returns 403 without Origin header", async () => {
-      const response = await axios.post(
-        `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: requestedDripAmount },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-API-Key": apiKey,
-          },
-          ...acceptAllStatuses,
-        },
-      );
-      expect(response.status).toBe(403);
-    }, 20_000);
-
     test("Request drip returns 401 without API key", async () => {
-      const response = await axios.post(
-        `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: requestedDripAmount },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Origin: origin,
-          },
-          ...acceptAllStatuses,
-        },
-      );
+      const response = await axios.post<ErrorResponse>(`${faucetUrl}/v1/drips`, dripBody(), {
+        headers: { "Content-Type": "application/json" },
+        ...acceptAllStatuses,
+      });
       expect(response.status).toBe(401);
+      expect(response.data.error.code).toBe("INVALID_API_KEY");
     }, 20_000);
 
-    test("Request drip returns 400 for invalid address", async () => {
-      const response = await axios.post(
-        `${faucetUrl}/v1/drips`,
-        { recipientAddress: "invalid_address", amount: requestedDripAmount },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
-      );
-      expect(response.status).toBe(400);
-    }, 20_000);
-
-    test("Request drip returns 400 for invalid amount (zero)", async () => {
+    test("Request drip returns INVALID_ADDRESS for an invalid address", async () => {
       const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: "0" },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        dripBody({ recipientAddress: "invalid_address" }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
-      expect(response.data.error).toContain("Invalid amount");
+      expect(response.data.error.code).toBe("INVALID_ADDRESS");
     }, 20_000);
 
-    test("Request drip returns 400 for amount exceeding maximum", async () => {
+    test("Request drip returns UNSUPPORTED_NETWORK for another network", async () => {
       const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: "999999" },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        dripBody({ network: "ethereum_testnet" }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
-      expect(response.data.error).toContain("Invalid amount");
+      expect(response.data.error.code).toBe("UNSUPPORTED_NETWORK");
     }, 20_000);
 
-    test("Request drip returns 400 for amount just above the maximum", async () => {
-      // The third-party API limit (THIRD_PARTY_MAX_AMOUNT) defaults to 5000,
-      // which is distinct from the public route limit (dropAmount / TNIGHT_UNIT = 1000).
-      // 5001 is the smallest value that should be rejected on /v1/drips.
+    test("Request drip returns UNSUPPORTED_TOKEN for another token", async () => {
       const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: "5001" },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        dripBody({ token: "ETH" }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
-      expect(response.data.error).toContain("Invalid amount");
+      expect(response.data.error.code).toBe("UNSUPPORTED_TOKEN");
     }, 20_000);
 
-    test("Request drip returns 400 when using old 'address' field", async () => {
-      const response = await axios.post(
+    test("Request drip returns INVALID_REQUEST for a zero amount", async () => {
+      const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { address: walletAddress, amount: "1000" },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        dripBody({ amount: "0" }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("INVALID_REQUEST");
+      expect(response.data.error.message).toContain("Invalid amount");
     }, 20_000);
 
-    test("Request drip returns 400 for non-integer amount (decimal)", async () => {
-      const response = await axios.post(
+    test("Request drip returns INVALID_REQUEST for an amount above the maximum", async () => {
+      // THIRD_PARTY_MAX_AMOUNT defaults to DROP_AMOUNT, so one unit past the
+      // deployment's own drip is the smallest value that must be rejected.
+      const overMax = (BigInt(requestedDripAmount) + 1n).toString();
+      const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: "10.5" },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        dripBody({ amount: overMax }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("INVALID_REQUEST");
+      expect(response.data.error.message).toContain("Invalid amount");
     }, 20_000);
 
-    test("Request drip returns 400 for numeric amount", async () => {
-      const response = await axios.post(
+    test("Request drip returns INVALID_REQUEST for a decimal amount", async () => {
+      const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
-        { recipientAddress: walletAddress, amount: 1000 },
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        dripBody({ amount: "10.5" }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("INVALID_REQUEST");
     }, 20_000);
 
-    test("Request drip returns 400 for missing body fields", async () => {
-      const response = await axios.post(
+    test("Request drip returns INVALID_REQUEST for a numeric amount", async () => {
+      const response = await axios.post<ErrorResponse>(
+        `${faucetUrl}/v1/drips`,
+        dripBody({ amount: 1000 }),
+        { headers: jsonHeaders, ...acceptAllStatuses },
+      );
+      expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("INVALID_REQUEST");
+    }, 20_000);
+
+    test("Request drip returns INVALID_REQUEST when using the old 'address' field", async () => {
+      const response = await axios.post<ErrorResponse>(
+        `${faucetUrl}/v1/drips`,
+        { address: walletAddress, network, token, amount: requestedDripAmount },
+        { headers: jsonHeaders, ...acceptAllStatuses },
+      );
+      expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("INVALID_REQUEST");
+    }, 20_000);
+
+    test("Request drip returns INVALID_REQUEST for missing body fields", async () => {
+      const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
         {},
-        {
-          headers: {
-            ...thirdPartyHeaders,
-            "Content-Type": "application/json",
-          },
-          ...acceptAllStatuses,
-        },
+        { headers: jsonHeaders, ...acceptAllStatuses },
       );
       expect(response.status).toBe(400);
+      expect(response.data.error.code).toBe("INVALID_REQUEST");
     }, 20_000);
   });
 
@@ -330,7 +303,7 @@ describe("Third-Party API Smoke Tests", () => {
     test("Poll drip status returns valid response", async () => {
       expect(dripId).toBeDefined();
 
-      const response = await axios.get<DripResponse>(`${faucetUrl}/v1/drips/${dripId}`, {
+      const response = await axios.get<DripStatusResponse>(`${faucetUrl}/v1/drips/${dripId}`, {
         headers: thirdPartyHeaders,
       });
 
@@ -353,7 +326,7 @@ describe("Third-Party API Smoke Tests", () => {
 
         for (let i = 0; i < maxAttempts; i++) {
           await new Promise((t) => setTimeout(t, pollInterval));
-          const response = await axios.get<DripResponse>(`${faucetUrl}/v1/drips/${dripId}`, {
+          const response = await axios.get<DripStatusResponse>(`${faucetUrl}/v1/drips/${dripId}`, {
             headers: thirdPartyHeaders,
           });
 
@@ -381,20 +354,25 @@ describe("Third-Party API Smoke Tests", () => {
       timeout,
     );
 
-    test("Drip status returns 403 without Origin header", async () => {
-      const response = await axios.get(`${faucetUrl}/v1/drips/${dripId}`, {
-        headers: { "X-API-Key": apiKey },
-        ...acceptAllStatuses,
-      });
-      expect(response.status).toBe(403);
+    // The spec has the caller poll this endpoint, so it answers 200 with the
+    // failure in the body rather than an HTTP error.
+    test("Unknown dripId answers 200 with an error object", async () => {
+      const response = await axios.get<DripStatusResponse>(
+        `${faucetUrl}/v1/drips/00000000-0000-0000-0000-000000000000`,
+        { headers: thirdPartyHeaders, ...acceptAllStatuses },
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.data.status).toBe("FAILED");
+      expect(response.data.error?.code).toBe("INVALID_REQUEST");
     }, 20_000);
 
     test("Drip status returns 401 without API key", async () => {
-      const response = await axios.get(`${faucetUrl}/v1/drips/${dripId}`, {
-        headers: { Origin: origin },
+      const response = await axios.get<ErrorResponse>(`${faucetUrl}/v1/drips/${dripId}`, {
         ...acceptAllStatuses,
       });
       expect(response.status).toBe(401);
+      expect(response.data.error.code).toBe("INVALID_API_KEY");
     }, 20_000);
   });
 
@@ -402,7 +380,9 @@ describe("Third-Party API Smoke Tests", () => {
     test(
       "Verify that wallet balance was increased after drip",
       async () => {
-        const expectedAmount = BigInt(requestedDripAmount) * 3_000_000n;
+        // A lower bound: the dispensed amount is split across outputs, and
+        // integer division can shave a unit off the total.
+        const expectedAmount = (BigInt(requestedDripAmount) * 3n) / 5n;
         const finalBalance = await utils.waitForBalanceIncrease(
           wallet,
           unshieldedTokenRaw,
