@@ -67,7 +67,22 @@ export type RateLimitConfig = Readonly<{
 
 export interface ThirdPartyApiConfig {
   allowedOrigins: string[];
-  maxAmount: number;
+  /**
+   * Whether the `Origin` allow-list is enforced. Off by default — a
+   * server-to-server caller sends no `Origin` header at all.
+   */
+  requireOrigin: boolean;
+  /** The single `network` literal this deployment answers for. */
+  network: string;
+  /** The single `token` literal this deployment answers for. */
+  token: string;
+  /**
+   * Largest amount a single third-party request may ask for, in the token's
+   * smallest denomination — the unit the third-party API speaks throughout.
+   */
+  maxAmount: string;
+  /** Dispensed when a third-party request omits `amount`, same denomination. */
+  defaultAmount: string;
   apiKey: string;
 }
 
@@ -100,6 +115,18 @@ export interface ServerConfig {
   turnstileHeader: string;
   thirdPartyApi: ThirdPartyApiConfig;
 }
+
+/**
+ * Amounts crossing the third-party API are integer strings in the token's
+ * smallest denomination, kept as strings so a value beyond `Number.MAX_SAFE_INTEGER`
+ * survives the trip into `bigint` intact.
+ */
+const amountInSmallestDenomination = (value: string, name: string): string => {
+  if (!/^[0-9]+$/.test(value)) {
+    throw new Error(`Expected '${name}' to be a non-negative integer string, got '${value}'`);
+  }
+  return value;
+};
 
 export const schema = {
   host: {
@@ -357,12 +384,40 @@ export const schema = {
       env: "THIRD_PARTY_ALLOWED_ORIGINS",
       arg: "third-party-allowed-origins",
     },
+    requireOrigin: {
+      doc: "Enforce the origin allow-list on the third-party API (browser callers only)",
+      format: Boolean,
+      default: false,
+      env: "THIRD_PARTY_REQUIRE_ORIGIN",
+      arg: "third-party-require-origin",
+    },
+    network: {
+      doc: "Network literal the third-party API accepts. Defaults to 'midnight_<networkId>'",
+      format: String,
+      default: "",
+      env: "THIRD_PARTY_NETWORK",
+      arg: "third-party-network",
+    },
+    token: {
+      doc: "Token literal the third-party API accepts",
+      format: String,
+      default: "tNIGHT",
+      env: "THIRD_PARTY_TOKEN",
+      arg: "third-party-token",
+    },
     maxAmount: {
-      doc: "Maximum allowed drip amount",
-      format: "nat",
-      default: 5000,
+      doc: "Maximum allowed drip amount, in the smallest denomination. Defaults to 'dropAmount'",
+      format: String,
+      default: "",
       env: "THIRD_PARTY_MAX_AMOUNT",
       arg: "third-party-max-amount",
+    },
+    defaultAmount: {
+      doc: "Amount dispensed when a third-party request omits one, in the smallest denomination. Defaults to 'dropAmount'",
+      format: String,
+      default: "",
+      env: "THIRD_PARTY_DEFAULT_AMOUNT",
+      arg: "third-party-default-amount",
     },
     apiKey: {
       doc: "API key for third-party API authentication",
@@ -462,7 +517,19 @@ export const loadConfig = (): ServerConfig => {
         .split(",")
         .map((s: string) => s.trim())
         .filter((s: string) => s.length > 0),
-      maxAmount: config.get("thirdPartyApi.maxAmount"),
+      requireOrigin: config.get("thirdPartyApi.requireOrigin"),
+      network:
+        config.get("thirdPartyApi.network") ||
+        `midnight_${String(config.get("networkId")).toLowerCase()}`,
+      token: config.get("thirdPartyApi.token"),
+      maxAmount: amountInSmallestDenomination(
+        config.get("thirdPartyApi.maxAmount") || config.get("dropAmount"),
+        "thirdPartyApi.maxAmount",
+      ),
+      defaultAmount: amountInSmallestDenomination(
+        config.get("thirdPartyApi.defaultAmount") || config.get("dropAmount"),
+        "thirdPartyApi.defaultAmount",
+      ),
       apiKey: config.get("thirdPartyApi.apiKey"),
     },
   };

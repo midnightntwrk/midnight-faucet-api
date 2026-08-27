@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { calculateFaucetState, getFaucetState, WalletState } from "@midnight-ntwrk/faucet";
@@ -7,8 +6,6 @@ import { User, UserId } from "@midnight-ntwrk/faucet-auth";
 import {
   Faucet,
   FaucetState,
-  DripResponse,
-  DripHealthResponse,
   TokenResponse,
   WalletAddress,
 } from "@midnight-ntwrk/faucet-internal-api";
@@ -62,7 +59,11 @@ describe("Third-Party API", () => {
       },
       thirdPartyApi: {
         allowedOrigins: ["https://partner.com", "https://allowed.example.com"],
-        maxAmount: 1000,
+        requireOrigin: false,
+        network: "midnight_undeployed",
+        token: "tNIGHT",
+        maxAmount: "5000000000",
+        defaultAmount: "5000000",
         apiKey: "test-api-key-12345",
       },
     };
@@ -297,649 +298,504 @@ describe("Third-Party API", () => {
     };
   };
 
-  describe("Origin Whitelist", () => {
-    it("returns 403 when origin is not whitelisted", () => {
-      const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
+  const baseUrl = () => `http://${config.host}:${config.port}/v1`;
 
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: "https://unknown-origin.com",
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: 1000 }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(403);
-          expect(result.responseBody).toMatchObject({
-            error: "Origin not allowed",
-          });
-        }),
-        Task.unsafeRun,
+  const partnerHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-API-Key": validApiKey,
+  };
+
+  const withOrigin = (headers: Record<string, string>): Record<string, string> => ({
+    ...headers,
+    Origin: allowedOrigin,
+  });
+
+  /** A body the API accepts, before a test spoils one field of it. */
+  const validBody = (receiver: string, overrides: Record<string, unknown> = {}) => ({
+    recipientAddress: receiver,
+    network: config.thirdPartyApi.network,
+    token: config.thirdPartyApi.token,
+    amount: "1000",
+    ...overrides,
+  });
+
+  const post = (body: unknown, headers: Record<string, string> = partnerHeaders) =>
+    fetch(`${baseUrl()}/drips`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    }).then(async (response) => ({ response, body: await response.json() }));
+
+  const get = (path: string, headers: Record<string, string> = partnerHeaders) =>
+    fetch(`${baseUrl()}${path}`, { headers }).then(async (response) => ({
+      response,
+      body: await response.json(),
+    }));
+
+  type FaucetResource = Parameters<typeof defaultRoot>[1];
+
+  /**
+   * Runs `use` against a server built from `serverConfig`, with connectivity
+   * mocked — the indexer and node the real check dials are not running here.
+   */
+  const withServer = <A>(
+    serverConfig: ServerConfig,
+    faucet: FaucetResource,
+    use: () => Promise<A>,
+  ): Promise<A> =>
+    pipe(
+      defaultRoot(serverConfig, faucet),
+      Resource.map(withMockedConnectivity),
+      Resource.flatMap((root) => prepareServer(serverConfig, root)),
+      Resource.use(() => Task.lift(use)),
+      Task.unsafeRun,
+    );
+
+  const faucetFor = (receiver: string): FaucetResource => {
+    const { faucet } = prepareFakeFaucet(config, receiver);
+    return () => faucet;
+  };
+
+  /** A faucet whose wallet is in `state`, for the health-driven paths. */
+  const faucetInState = (state: WalletState): FaucetResource => {
+    const state$ = new BehaviorSubject<FaucetState>(calculateFaucetState(state));
+    const mockFaucet: Faucet = {
+      requestTokens(): Promise<TokenResponse> {
+        return Promise.resolve({
+          transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
+          timeToNextRequest: Duration.fromMillis(0),
+        });
+      },
+      dropAmount: "500",
+      address: getRandomBech32mAddress(),
+      state$,
+      syncErrors$: EMPTY,
+      serializeWalletState: () => ({
+        shielded: Promise.resolve(""),
+        unshielded: Promise.resolve(""),
+        dust: Promise.resolve(""),
+      }),
+    };
+    return () => Resource.of(mockFaucet);
+  };
+
+  const unsyncedState = () =>
+    ({
+      ...cachedState,
+      unshielded: {
+        ...cachedState.unshielded,
+        progress: {
+          ...cachedState.unshielded.progress,
+          // Readiness check fails when highestTransactionId - appliedId > 200n
+          highestTransactionId: 500n,
+          appliedId: 100n,
+          isStrictlyComplete: vi.fn().mockReturnValue(false),
+        },
+      },
+    }) as unknown as WalletState;
+
+  const lowBalanceState = () =>
+    ({
+      ...cachedState,
+      unshielded: {
+        address: unshieldedAddress,
+        availableCoins: [{ utxo: { value: 50n } }],
+        totalCoins: [{ utxo: { value: 50n } }],
+        pendingCoins: [],
+        balances: {
+          "0000000000000000000000000000000000000000000000000000000000000000": 50n,
+        },
+        progress: {
+          highestTransactionId: 100n,
+          appliedId: 100n,
+          isConnected: true,
+          isStrictlyComplete: vi.fn().mockReturnValue(true),
+          isCompleteWithin: vi.fn().mockReturnValue(true),
+        },
+      },
+    }) as unknown as WalletState;
+
+  const pollUntilSettled = async (dripId: string, attempts = 60): Promise<string> => {
+    const status = await get(`/drips/${dripId}`).then((result) => result.body.status as string);
+    if (status === "CONFIRMED" || status === "FAILED" || attempts <= 1) {
+      return status;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    return pollUntilSettled(dripId, attempts - 1);
+  };
+
+  describe("Authentication", () => {
+    it("returns 401 INVALID_API_KEY when the key is missing", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver), { "Content-Type": "application/json" }),
       );
+
+      expect(result.response.status).toBe(401);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_API_KEY" } });
     });
 
-    it("returns 403 when no origin header is provided", () => {
+    it("returns 401 INVALID_API_KEY when the key is wrong", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: 1000 }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(403);
-          expect(result.responseBody).toMatchObject({
-            error: "Origin not allowed",
-          });
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver), {
+          "Content-Type": "application/json",
+          "X-API-Key": "wrong-api-key",
         }),
-        Task.unsafeRun,
       );
+
+      expect(result.response.status).toBe(401);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_API_KEY" } });
     });
 
-    it("allows requests from whitelisted origins", () => {
+    // The integration this API exists for is server-to-server, and a backend
+    // sends no Origin header at all.
+    it("accepts a request with no Origin header", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
+      const result = await withServer(config, faucetFor(receiver), () => post(validBody(receiver)));
 
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(200);
-          expect(result.responseBody).toHaveProperty("dripId");
-          expect(result.responseBody).toHaveProperty("status", "PENDING");
-        }),
-        Task.unsafeRun,
-      );
+      expect(result.response.status).toBe(200);
+      expect(result.body).toHaveProperty("dripId");
     });
   });
 
-  describe("API Key Validation", () => {
-    it("returns 401 when API key is missing", () => {
-      const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(401);
-          expect(result.responseBody).toMatchObject({
-            error: "API key required",
-          });
-        }),
-        Task.unsafeRun,
-      );
+  describe("Origin allow-list (when enforced)", () => {
+    const strictConfig = (): ServerConfig => ({
+      ...config,
+      thirdPartyApi: { ...config.thirdPartyApi, requireOrigin: true },
     });
 
-    it("returns 403 when API key is invalid", () => {
+    it("rejects a request with no Origin header", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": "wrong-api-key",
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(403);
-          expect(result.responseBody).toMatchObject({
-            error: "Invalid API key",
-          });
-        }),
-        Task.unsafeRun,
+      const result = await withServer(strictConfig(), faucetFor(receiver), () =>
+        post(validBody(receiver)),
       );
+
+      expect(result.response.status).toBe(403);
+      expect(result.body).toMatchObject({ error: { code: "VERIFICATION_REJECTED" } });
+    });
+
+    it("rejects an origin outside the allow-list", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(strictConfig(), faucetFor(receiver), () =>
+        post(validBody(receiver), {
+          ...partnerHeaders,
+          Origin: "https://unknown-origin.com",
+        }),
+      );
+
+      expect(result.response.status).toBe(403);
+      expect(result.body).toMatchObject({ error: { code: "VERIFICATION_REJECTED" } });
+    });
+
+    it("allows an origin on the allow-list", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(strictConfig(), faucetFor(receiver), () =>
+        post(validBody(receiver), withOrigin(partnerHeaders)),
+      );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body).toHaveProperty("dripId");
     });
   });
 
   describe("POST /v1/drips", () => {
-    it("returns 400 for amount exceeding max", () => {
+    it("answers with the dripId alone", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
+      const result = await withServer(config, faucetFor(receiver), () => post(validBody(receiver)));
 
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "2000" }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(400);
-          expect(result.responseBody.error).toContain("Invalid amount");
-        }),
-        Task.unsafeRun,
-      );
+      expect(result.response.status).toBe(200);
+      expect(typeof result.body.dripId).toBe("string");
+      // The spec's success body is exactly `{ dripId }` — the status fields the
+      // public API returns here would be read as part of the contract.
+      expect(Object.keys(result.body)).toEqual(["dripId"]);
     });
 
-    it("returns 400 for zero or negative amount", () => {
+    it("accepts a request that omits the amount", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "0" }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(400);
-          expect(result.responseBody.error).toContain("Invalid amount");
-        }),
-        Task.unsafeRun,
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { amount: undefined })),
       );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body).toHaveProperty("dripId");
     });
 
-    it("returns 400 for invalid address format", () => {
-      const { faucet } = prepareFakeFaucet(config, getRandomBech32mAddress());
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({ recipientAddress: "invalid_address", amount: "1000" }),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(400);
-        }),
-        Task.unsafeRun,
-      );
-    });
-
-    it("returns 400 for missing fields", () => {
-      const { faucet } = prepareFakeFaucet(config, getRandomBech32mAddress());
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({}),
-            }).then((res) => res.json().then((body) => ({ response: res, responseBody: body }))),
-          ),
-        ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(400);
-        }),
-        Task.unsafeRun,
-      );
-    });
-
-    it("returns dripId and PENDING status on success", () => {
+    it("accepts a null amount", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-            }).then((res) => res.json()),
-          ),
-        ),
-        Task.tap((result: DripResponse) => {
-          expect(result.dripId).toBeDefined();
-          expect(typeof result.dripId).toBe("string");
-          expect(result.status).toBe("PENDING");
-          expect(result.transactionHash).toBeNull();
-          expect(result.error).toBeNull();
-        }),
-        Task.unsafeRun,
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { amount: null })),
       );
+
+      expect(result.response.status).toBe(200);
     });
 
-    it("returns 429 when rate limit is exceeded", () => {
+    it("accepts an opaque fulfillmentContext", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-      const limitedConfig = {
-        ...config,
-        rateLimiting: {
-          ...config.rateLimiting,
-          maxDailyRequests: 1,
-        },
-      };
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { fulfillmentContext: { receipt: "abc", nested: { ok: true } } })),
+      );
 
-      return pipe(
-        defaultRoot(limitedConfig, () => faucet),
-        Resource.flatMap((root) => prepareServer(limitedConfig, root)),
-        Resource.use(() =>
-          Task.lift(async () => {
-            // First request should succeed
-            const first = await fetch(
-              `http://${limitedConfig.host}:${limitedConfig.port}/v1/drips`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Origin: allowedOrigin,
-                  "X-API-Key": validApiKey,
-                },
-                body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-              },
-            );
-            expect(first.status).toBe(200);
-            const firstResult = await first.json();
+      expect(result.response.status).toBe(200);
+      expect(result.body).toHaveProperty("dripId");
+    });
 
-            // Wait for the first request to complete and poll its status
-            // Rate count is only incremented when status is polled as SUCCESS
-            const pollForCompletion = async (dripId: string, maxAttempts = 30): Promise<void> => {
-              for (let i = 0; i < maxAttempts; i++) {
-                const statusRes = await fetch(
-                  `http://${limitedConfig.host}:${limitedConfig.port}/v1/drips/${dripId}`,
-                  { headers: { Origin: allowedOrigin, "X-API-Key": validApiKey } },
-                );
-                const status = await statusRes.json();
-                if (status.status === "CONFIRMED" || status.status === "FAILED") {
-                  return;
-                }
-                await new Promise((resolve) => setTimeout(resolve, 200));
-              }
-            };
-
-            await pollForCompletion(firstResult.dripId);
-
-            // Second request should be rate limited
-            const second = await fetch(
-              `http://${limitedConfig.host}:${limitedConfig.port}/v1/drips`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Origin: allowedOrigin,
-                  "X-API-Key": validApiKey,
-                },
-                body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-              },
-            );
-            return { response: second, responseBody: await second.json() };
+    it("matches network and token case-insensitively", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(
+          validBody(receiver, {
+            network: config.thirdPartyApi.network.toUpperCase(),
+            token: config.thirdPartyApi.token.toUpperCase(),
           }),
         ),
-        Task.tap((result) => {
-          expect(result.response.status).toBe(429);
-        }),
-        Task.unsafeRun,
       );
+
+      expect(result.response.status).toBe(200);
     });
 
-    // The partner route mounts the same drip handlers as the public one, so the
-    // refund reaches it for free — but only for as long as that stays true.
-    it("does not consume the daily rate limit when the dispense fails", () => {
+    it("returns 400 UNSUPPORTED_NETWORK for another network", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { network: "ethereum_testnet" })),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "UNSUPPORTED_NETWORK" } });
+    });
+
+    it("returns 400 UNSUPPORTED_TOKEN for another token", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { token: "ETH" })),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "UNSUPPORTED_TOKEN" } });
+    });
+
+    it("returns 400 INVALID_ADDRESS for a malformed address", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        post(validBody("not-a-valid-address")),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_ADDRESS" } });
+    });
+
+    it("returns 400 INVALID_REQUEST when required fields are missing", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post({ recipientAddress: receiver }),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_REQUEST" } });
+    });
+
+    it("returns 400 INVALID_REQUEST for a non-numeric amount", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { amount: "not-a-number" })),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_REQUEST" } });
+    });
+
+    it("returns 400 INVALID_REQUEST for an amount above the maximum", async () => {
+      const receiver = getRandomBech32mAddress();
+      const overMax = (BigInt(config.thirdPartyApi.maxAmount) + 1n).toString();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { amount: overMax })),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_REQUEST" } });
+    });
+
+    it("returns 400 INVALID_REQUEST for a zero amount", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () =>
+        post(validBody(receiver, { amount: "0" })),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "INVALID_REQUEST" } });
+    });
+
+    // Answering a retry with the id of the drip already in flight keeps the call
+    // idempotent, and is what stops a double submit dispensing twice.
+    it("answers a duplicate in-flight request with the same dripId", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), async () => {
+        const first = await post(validBody(receiver));
+        const second = await post(validBody(receiver));
+        return { first, second };
+      });
+
+      expect(result.first.response.status).toBe(200);
+      expect(result.second.response.status).toBe(200);
+      expect(result.second.body.dripId).toBe(result.first.body.dripId);
+    });
+
+    it("returns 429 RATE_LIMIT_EXCEEDED once the daily limit is spent", async () => {
+      const receiver = getRandomBech32mAddress();
+      const limitedConfig: ServerConfig = {
+        ...config,
+        rateLimiting: { ...config.rateLimiting, maxDailyRequests: 1 },
+      };
+
+      const result = await withServer(limitedConfig, faucetFor(receiver), async () => {
+        const first = await post(validBody(receiver));
+        expect(first.response.status).toBe(200);
+        await pollUntilSettled(first.body.dripId as string);
+        return post(validBody(receiver));
+      });
+
+      expect(result.response.status).toBe(429);
+      expect(result.body).toMatchObject({ error: { code: "RATE_LIMIT_EXCEEDED" } });
+    });
+
+    // The partner route no longer shares the public route's handlers, so the
+    // refund on a failed dispense has to be proven here in its own right.
+    it("does not consume the daily rate limit when the dispense fails", async () => {
       const receiver = getRandomBech32mAddress();
       // The fake faucet rejects for any address other than the one it was built
       // for, which is the failure this needs: a valid request that registers and
       // whose drip then fails.
-      const { faucet } = prepareFakeFaucet(config, getRandomBech32mAddress());
-      const limitedConfig = {
+      const faucet = faucetFor(getRandomBech32mAddress());
+      const limitedConfig: ServerConfig = {
         ...config,
-        rateLimiting: {
-          ...config.rateLimiting,
-          maxDailyRequests: 1,
-        },
-      };
-      const baseUrl = `http://${limitedConfig.host}:${limitedConfig.port}/v1`;
-      const partnerHeaders = {
-        "Content-Type": "application/json",
-        Origin: allowedOrigin,
-        "X-API-Key": validApiKey,
+        rateLimiting: { ...config.rateLimiting, maxDailyRequests: 1 },
       };
 
-      const requestDrip = () =>
-        fetch(`${baseUrl}/drips`, {
-          method: "POST",
-          headers: partnerHeaders,
-          body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-        });
+      const retry = await withServer(limitedConfig, faucet, async () => {
+        const first = await post(validBody(receiver));
+        expect(first.response.status).toBe(200);
+        expect(await pollUntilSettled(first.body.dripId as string)).toBe("FAILED");
 
-      const pollUntilSettled = async (dripId: string, attempts = 60): Promise<string> => {
-        const status = await fetch(`${baseUrl}/drips/${dripId}`, { headers: partnerHeaders })
-          .then((res) => res.json())
-          .then((body) => body.status as string);
-        if (status === "CONFIRMED" || status === "FAILED" || attempts <= 1) {
-          return status;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        return pollUntilSettled(dripId, attempts - 1);
-      };
+        // Nothing was dispensed, so the partner's daily allowance is intact.
+        return post(validBody(receiver));
+      });
 
-      return pipe(
-        defaultRoot(limitedConfig, () => faucet),
-        Resource.flatMap((root) => prepareServer(limitedConfig, root)),
-        Resource.use(() =>
-          Task.lift(async () => {
-            const first = await requestDrip();
-            expect(first.status).toBe(200);
-            const { dripId } = await first.json();
+      expect(retry.response.status).toBe(200);
+    });
 
-            expect(await pollUntilSettled(dripId)).toBe("FAILED");
-
-            // Nothing was dispensed, so the partner's daily allowance is intact.
-            return requestDrip();
-          }),
-        ),
-        Task.tap((retry) => {
-          expect(retry.status).toBe(200);
-        }),
-        Task.unsafeRun,
+    it("returns 503 INSUFFICIENT_FUNDS when the wallet is drained", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetInState(lowBalanceState()), () =>
+        post(validBody(receiver)),
       );
+
+      expect(result.response.status).toBe(503);
+      expect(result.body).toMatchObject({ error: { code: "INSUFFICIENT_FUNDS" } });
+    });
+
+    it("returns 503 SERVICE_UNAVAILABLE when the wallet is behind", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetInState(unsyncedState()), () =>
+        post(validBody(receiver)),
+      );
+
+      expect(result.response.status).toBe(503);
+      expect(result.body).toMatchObject({ error: { code: "SERVICE_UNAVAILABLE" } });
     });
   });
 
   describe("GET /v1/drips/:dripId", () => {
-    it("returns drip status for valid dripId", () => {
+    it("reports a registered drip", async () => {
       const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
+      const result = await withServer(config, faucetFor(receiver), async () => {
+        const created = await post(validBody(receiver));
+        return get(`/drips/${created.body.dripId as string}`);
+      });
 
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(async () => {
-            // First create a drip
-            const createResponse = await fetch(`http://${config.host}:${config.port}/v1/drips`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-              body: JSON.stringify({ recipientAddress: receiver, amount: "1000" }),
-            });
-            const createResult = await createResponse.json();
-            const dripId = createResult.dripId;
-
-            // Then get its status
-            const statusResponse = await fetch(
-              `http://${config.host}:${config.port}/v1/drips/${dripId}`,
-              {
-                headers: {
-                  Origin: allowedOrigin,
-                  "X-API-Key": validApiKey,
-                },
-              },
-            );
-            return statusResponse.json();
-          }),
-        ),
-        Task.tap((result: DripResponse) => {
-          expect(result.dripId).toBeDefined();
-          expect(["PENDING", "CONFIRMED", "FAILED"]).toContain(result.status);
-        }),
-        Task.unsafeRun,
-      );
+      expect(result.response.status).toBe(200);
+      expect(["PENDING", "CONFIRMED", "FAILED"]).toContain(result.body.status);
+      expect(Object.keys(result.body).sort()).toEqual([
+        "dripId",
+        "error",
+        "status",
+        "transactionHash",
+      ]);
     });
 
-    it("returns FAILED for non-existent dripId", () => {
-      const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(
-              `http://${config.host}:${config.port}/v1/drips/00000000-0000-0000-0000-000000000000`,
-              {
-                headers: {
-                  Origin: allowedOrigin,
-                  "X-API-Key": validApiKey,
-                },
-              },
-            ).then((res) => res.json()),
-          ),
-        ),
-        Task.tap((result: DripResponse) => {
-          expect(result.status).toBe("FAILED");
-          expect(result.error).toBeDefined();
-        }),
-        Task.unsafeRun,
+    it("answers 200 with an error object for an unknown dripId", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        get("/drips/00000000-0000-0000-0000-000000000000"),
       );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body.status).toBe("FAILED");
+      expect(result.body.error).toMatchObject({ code: "INVALID_REQUEST" });
+    });
+
+    it("answers 200 with an error object for a malformed dripId", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        get("/drips/not-a-uuid"),
+      );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body.status).toBe("FAILED");
+      expect(result.body.error).toMatchObject({ code: "INVALID_REQUEST" });
+    });
+  });
+
+  describe("GET /v1/drip-info/:network/:token", () => {
+    it("reports the configured drip amount", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        get(`/drip-info/${config.thirdPartyApi.network}/${config.thirdPartyApi.token}`),
+      );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body).toEqual({ dripAmount: config.thirdPartyApi.defaultAmount });
+    });
+
+    it("returns 400 UNSUPPORTED_NETWORK for another network", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        get(`/drip-info/ethereum_testnet/${config.thirdPartyApi.token}`),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "UNSUPPORTED_NETWORK" } });
+    });
+
+    it("returns 400 UNSUPPORTED_TOKEN for another token", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        get(`/drip-info/${config.thirdPartyApi.network}/ETH`),
+      );
+
+      expect(result.response.status).toBe(400);
+      expect(result.body).toMatchObject({ error: { code: "UNSUPPORTED_TOKEN" } });
     });
   });
 
   describe("GET /v1/health", () => {
-    it("returns SERVING when wallet is synced and has balance", () => {
-      const receiver = getRandomBech32mAddress();
-      const { faucet } = prepareFakeFaucet(config, receiver);
-
-      return pipe(
-        defaultRoot(config, () => faucet),
-        Resource.map(withMockedConnectivity),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/health`, {
-              headers: {
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-            }).then((res) => res.json()),
-          ),
-        ),
-        Task.tap((result: DripHealthResponse) => {
-          expect(result.status).toBe("SERVING");
-          expect(result.reason).toBeNull();
-        }),
-        Task.unsafeRun,
+    it("reports SERVING when the wallet is synced and funded", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () =>
+        get("/health"),
       );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body).toEqual({ status: "SERVING", reason: null });
     });
 
-    it("returns NOT_SERVING with reason when wallet is not synced", () => {
-      const unsyncedState = {
-        ...cachedState,
-        unshielded: {
-          ...cachedState.unshielded,
-          progress: {
-            ...cachedState.unshielded.progress,
-            // Readiness check fails when highestTransactionId - appliedId > 200n
-            highestTransactionId: 500n,
-            appliedId: 100n,
-            isStrictlyComplete: vi.fn().mockReturnValue(false),
-          },
-        },
-      } as unknown as WalletState;
+    it("reports NODE_DESYNCED when the wallet is behind", async () => {
+      const result = await withServer(config, faucetInState(unsyncedState()), () => get("/health"));
 
-      const state$ = new BehaviorSubject<FaucetState>(calculateFaucetState(unsyncedState));
-
-      const mockFaucet: Faucet = {
-        requestTokens(): Promise<TokenResponse> {
-          return Promise.resolve({
-            transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
-            timeToNextRequest: Duration.fromMillis(0),
-          });
-        },
-        dropAmount: "500",
-        address: getRandomBech32mAddress(),
-        state$,
-        syncErrors$: EMPTY,
-        serializeWalletState: () => ({
-          shielded: Promise.resolve(""),
-          unshielded: Promise.resolve(""),
-          dust: Promise.resolve(""),
-        }),
-      };
-
-      return pipe(
-        defaultRoot(config, () => Resource.of(mockFaucet)),
-        Resource.map(withMockedConnectivity),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/health`, {
-              headers: {
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-            }).then((res) => res.json()),
-          ),
-        ),
-        Task.tap((result: DripHealthResponse) => {
-          expect(result.status).toBe("NOT_SERVING");
-          expect(result.reason).toBeDefined();
-        }),
-        Task.unsafeRun,
-      );
+      // A poller reads the body, so the status stays 200 even when not serving.
+      expect(result.response.status).toBe(200);
+      expect(result.body).toEqual({ status: "NOT_SERVING", reason: "NODE_DESYNCED" });
     });
 
-    it("returns NOT_SERVING when wallet balance is low", () => {
-      const lowBalanceState = {
-        ...cachedState,
-        unshielded: {
-          address: unshieldedAddress,
-          availableCoins: [{ utxo: { value: 50n } }],
-          totalCoins: [{ utxo: { value: 50n } }],
-          pendingCoins: [],
-          balances: {
-            "0000000000000000000000000000000000000000000000000000000000000000": 50n,
-          },
-          progress: {
-            highestTransactionId: 100n,
-            appliedId: 100n,
-            isConnected: true,
-            isStrictlyComplete: vi.fn().mockReturnValue(true),
-            isCompleteWithin: vi.fn().mockReturnValue(true),
-          },
-        },
-      } as unknown as WalletState;
-
-      const state$ = new BehaviorSubject<FaucetState>(calculateFaucetState(lowBalanceState));
-
-      const mockFaucet: Faucet = {
-        requestTokens(): Promise<TokenResponse> {
-          return Promise.resolve({
-            transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
-            timeToNextRequest: Duration.fromMillis(0),
-          });
-        },
-        dropAmount: "500",
-        address: getRandomBech32mAddress(),
-        state$,
-        syncErrors$: EMPTY,
-        serializeWalletState: () => ({
-          shielded: Promise.resolve(""),
-          unshielded: Promise.resolve(""),
-          dust: Promise.resolve(""),
-        }),
-      };
-
-      return pipe(
-        defaultRoot(config, () => Resource.of(mockFaucet)),
-        Resource.map(withMockedConnectivity),
-        Resource.flatMap((root) => prepareServer(config, root)),
-        Resource.use(() =>
-          Task.lift(() =>
-            fetch(`http://${config.host}:${config.port}/v1/health`, {
-              headers: {
-                Origin: allowedOrigin,
-                "X-API-Key": validApiKey,
-              },
-            }).then((res) => res.json()),
-          ),
-        ),
-        Task.tap((result: DripHealthResponse) => {
-          expect(result.status).toBe("NOT_SERVING");
-          expect(result.reason).toBe("WALLET_BALANCE_LOW");
-        }),
-        Task.unsafeRun,
+    it("reports WALLET_BALANCE_LOW when the wallet is drained", async () => {
+      const result = await withServer(config, faucetInState(lowBalanceState()), () =>
+        get("/health"),
       );
+
+      expect(result.response.status).toBe(200);
+      expect(result.body).toEqual({ status: "NOT_SERVING", reason: "WALLET_BALANCE_LOW" });
     });
   });
 });
