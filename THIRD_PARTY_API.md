@@ -1,116 +1,128 @@
 # Third-Party Drip API
 
-This document describes the Third-Party API for requesting tDUST tokens from the Midnight Faucet. This API is designed for whitelisted partner integrations and does not require captcha verification.
+The Midnight Faucet's `/v1` API, for partner integrations. It follows the Drip API specification, so a partner that
+already speaks that specification needs no faucet-specific code. Captcha verification does not apply to this surface —
+the API key is the credential.
 
 ## Base URLs
 
-The Midnight Faucet is deployed on two networks. Use the appropriate URL based on which network your application is targeting:
+The faucet is deployed per network; the deployment you call determines the network you get.
 
 | Network | Base URL                                  | Description                                      |
 | ------- | ----------------------------------------- | ------------------------------------------------ |
 | Preview | `https://faucet.preview.midnight.network` | For early testing and development                |
 | Preprod | `https://faucet.preprod.midnight.network` | For pre-production testing before mainnet launch |
 
-> **Note:** The network is determined by the faucet URL you connect to. There is no network parameter in the API requests. All API paths are appended to the base URL (e.g., `https://faucet.preview.midnight.network/v1/drips`).
+All paths below are appended to the base URL (e.g. `https://faucet.preview.midnight.network/v1/drips`).
 
 ## Authentication
 
-Authentication requires both **Origin URL whitelisting** and an **API key**.
-
-### Origin Header
-Your application's origin must be pre-registered with the faucet administrator. All requests must include an `Origin` header matching your whitelisted domain:
-
-```
-Origin: https://your-whitelisted-domain.com
-```
-
-Requests from non-whitelisted origins will receive a `403 Forbidden` response.
-
-### API Key
-All requests must include the `X-API-Key` header with your assigned API key:
+Every request carries a pre-shared API key in the `X-API-Key` header:
 
 ```
 X-API-Key: your-api-key
 ```
 
-| Status | Description |
-|--------|-------------|
-| `401 Unauthorized` | API key is missing |
-| `403 Forbidden` | API key is invalid |
+A missing, malformed or unrecognised key is answered with `401 Unauthorized` and the error code `INVALID_API_KEY`.
 
-## Rate Limiting
+Calls are server-to-server, so no `Origin` header is expected or required. A deployment serving a browser-side partner
+can additionally switch on an origin allow-list (`THIRD_PARTY_REQUIRE_ORIGIN`), in which case requests must carry an
+`Origin` matching a pre-registered domain; a rejected origin answers `403 Forbidden` with `VERIFICATION_REJECTED`.
 
-- **Per-address daily limit**: Each wallet address is limited to a maximum number of requests per day (default: 25).
-- Rate limits reset at midnight UTC.
+## Amounts
+
+Amounts are integer **strings in the token's smallest denomination** — `"5000000000"`, not `"1000"` and not a number.
+Strings avoid the floating-point precision loss a large denomination would otherwise hit.
+
+`amount` is optional. Omitted (or `null`), the faucet dispenses its configured default, which
+[`GET /v1/drip-info`](#get-v1drip-infonetworktoken) reports.
+
+## Error responses
+
+Every error, on every endpoint, has the same body:
+
+```json
+{
+  "error": {
+    "code": "string",
+    "message": "string | null"
+  }
+}
+```
+
+`message` is human-readable context for support escalations and is not meant for end users.
+
+| Error Code              | HTTP Status               | Trigger                                                                  |
+| ----------------------- | ------------------------- | ------------------------------------------------------------------------ |
+| `INVALID_ADDRESS`       | 400 Bad Request           | The recipient address failed Bech32m/network validation.                 |
+| `UNSUPPORTED_NETWORK`   | 400 Bad Request           | The requested network is not the one this deployment serves.             |
+| `UNSUPPORTED_TOKEN`     | 400 Bad Request           | The requested token is not the one this deployment serves.               |
+| `INVALID_REQUEST`       | 400 Bad Request           | Malformed body, or an amount that is not an integer string within range. |
+| `INVALID_API_KEY`       | 401 Unauthorized          | The `X-API-Key` header is missing or does not match.                     |
+| `VERIFICATION_REJECTED` | 403 Forbidden             | The origin allow-list is enforced and rejected the request.              |
+| `RATE_LIMIT_EXCEEDED`   | 429 Too Many Requests     | The address has no drip left for today.                                  |
+| `INSUFFICIENT_FUNDS`    | 503 Service Unavailable   | The faucet wallet is drained and cannot fulfil the drip.                 |
+| `SERVICE_UNAVAILABLE`   | 503 Service Unavailable   | The node is desynced, or a temporary internal outage is in progress.     |
+| `INTERNAL_ERROR`        | 500 Internal Server Error | An unhandled faucet-side failure.                                        |
+
+`INVALID_REQUEST` is an extension: the specification defines no literal for a malformed body or a bad amount. Callers
+that only know the canonical literals treat it as `INTERNAL_ERROR`, which is the intended fallback for anything
+unrecognised.
+
+Rate limiting is **per address, per day** (default: 25 requests).
 
 ## Endpoints
 
 ### POST /v1/drips
 
-Request a token drip to a wallet address.
+Start a drip. The operation is asynchronous — a 200 means the drip was accepted and queued, and
+[`GET /v1/drips/{dripId}`](#get-v1dripsdripid) reports how it ends. Requests that cannot be served are rejected here,
+synchronously.
 
-#### Request
-
-**Headers:**
-| Header | Required | Description |
-|--------|----------|-------------|
-| `Content-Type` | Yes | Must be `application/json` |
-| `Origin` | Yes | Your whitelisted origin URL |
-| `X-API-Key` | Yes | Your assigned API key |
+**Headers:** `Content-Type: application/json`, `X-API-Key`
 
 **Body:**
 
 ```json
 {
   "recipientAddress": "string",
-  "amount": "string"
+  "network": "string",
+  "token": "string",
+  "amount": "string",
+  "fulfillmentContext": {}
 }
 ```
 
-| Field              | Type   | Required | Description                                                                            |
-| ------------------ | ------ | -------- | -------------------------------------------------------------------------------------- |
-| `recipientAddress` | string | Yes      | Recipient wallet address (Bech32m format, e.g., `mn_addr_...`)                         |
-| `amount`           | string | Yes      | Amount of tDUST to send (non-negative integer as string). Must be between 1 and the configured maximum (default: 1000). String type prevents floating-point precision loss with large denominations. |
-
-#### Response
+| Field                | Type           | Required | Description                                                                        |
+| -------------------- | -------------- | -------- | ---------------------------------------------------------------------------------- |
+| `recipientAddress`   | string         | Yes      | Recipient wallet address (Bech32m, e.g. `mn_addr_...`)                             |
+| `network`            | string         | Yes      | Network identifier, e.g. `midnight_preview`. Matched case-insensitively.           |
+| `token`              | string         | Yes      | Token identifier, e.g. `tNIGHT`. Matched case-insensitively.                       |
+| `amount`             | string \| null | No       | Amount in the smallest denomination. Omitted, the configured default is dispensed. |
+| `fulfillmentContext` | object \| null | No       | Opaque JSON passed through from the caller's frontend, for authorization purposes. |
 
 **Success (200 OK):**
 
 ```json
 {
-  "dripId": "string",
-  "status": "PENDING",
-  "transactionHash": null,
-  "error": null
+  "dripId": "string"
 }
 ```
 
-**Errors:**
+A retry that arrives while an earlier drip for the same address is still in flight answers 200 with that drip's
+`dripId` — the call is idempotent for as long as the drip is unresolved, and no second drip is dispensed.
 
-| Status                  | Description                                                     |
-| ----------------------- | --------------------------------------------------------------- |
-| `400 Bad Request`       | Invalid request body, invalid address format, or invalid amount |
-| `403 Forbidden`         | Origin not whitelisted                                          |
-| `429 Too Many Requests` | Rate limit exceeded for this address                            |
-
-**Error Response:**
-
-```json
-{
-  "error": "string"
-}
-```
-
-#### Example
+**Example:**
 
 ```bash
 curl -X POST https://faucet.preview.midnight.network/v1/drips \
   -H "Content-Type: application/json" \
-  -H "Origin: https://your-whitelisted-domain.com" \
   -H "X-API-Key: your-api-key" \
   -d '{
     "recipientAddress": "mn_addr_undeployed17cnw4q78cjvyyu8mtkynd0pjtk9qjhhschwakjwwml4xflxcw0mswvqz9g",
-    "amount": "1000"
+    "network": "midnight_preview",
+    "token": "tNIGHT",
+    "amount": "5000000000"
   }'
 ```
 
@@ -118,53 +130,64 @@ curl -X POST https://faucet.preview.midnight.network/v1/drips \
 
 ### GET /v1/drips/{dripId}
 
-Get the status of a drip request.
+Poll a drip. **Always answers 200**, including for an unknown or malformed `dripId` — a failure is reported in the body,
+not as an HTTP status, so a poller can read it the same way every time.
 
-#### Request
+**Headers:** `X-API-Key`
 
-**Headers:**
-| Header | Required | Description |
-|--------|----------|-------------|
-| `Origin` | Yes | Your whitelisted origin URL |
-| `X-API-Key` | Yes | Your assigned API key |
-
-**Path Parameters:**
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `dripId` | string | The drip ID returned from `POST /v1/drips` |
-
-#### Response
-
-**Success (200 OK):**
+**Response (200 OK):**
 
 ```json
 {
   "dripId": "string",
-  "status": "PENDING" | "CONFIRMED" | "FAILED",
+  "status": "PENDING | CONFIRMED | FAILED",
   "transactionHash": "string | null",
-  "error": "string | null"
+  "error": { "code": "string", "message": "string | null" }
 }
 ```
 
-| Field             | Type           | Description                                            |
-| ----------------- | -------------- | ------------------------------------------------------ |
-| `dripId`          | string         | The unique identifier for this drip request            |
-| `status`          | string         | Current status: `PENDING`, `CONFIRMED`, or `FAILED`    |
-| `transactionHash` | string \| null | Transaction identifier (only present when `CONFIRMED`) |
-| `error`           | string \| null | Error message (only present when `FAILED`)             |
+| Field             | Type           | Description                                                |
+| ----------------- | -------------- | ---------------------------------------------------------- |
+| `dripId`          | string         | The identifier this drip was created with                  |
+| `status`          | string         | `PENDING` (queued or dispensing), `CONFIRMED`, or `FAILED` |
+| `transactionHash` | string \| null | Transaction identifier; present once `CONFIRMED`           |
+| `error`           | object \| null | Present only when `FAILED`                                 |
 
-**Status Values:**
-| Status | Description |
-|--------|-------------|
-| `PENDING` | Request is queued or being processed |
-| `CONFIRMED` | Transaction completed successfully |
-| `FAILED` | Transaction failed |
+An unknown `dripId` answers `FAILED` with `INVALID_REQUEST`; a drip that failed answers `FAILED` with `INTERNAL_ERROR`.
 
-#### Example
+**Example:**
 
 ```bash
-curl https://faucet.preview.midnight.network/v1/drips/abc123-task-id \
-  -H "Origin: https://your-whitelisted-domain.com" \
+curl https://faucet.preview.midnight.network/v1/drips/6f1f1c34-6f2e-4c4a-9a3f-3a1f2b6c9d10 \
+  -H "X-API-Key: your-api-key"
+```
+
+---
+
+### GET /v1/drip-info/{network}/{token}
+
+The amount a drip dispenses when the request omits `amount`. Poll it to keep a displayed amount current instead of
+hardcoding one.
+
+**Headers:** `X-API-Key`
+
+**Path parameters:** `network` (e.g. `midnight_preview`), `token` (e.g. `tNIGHT`)
+
+**Response (200 OK):**
+
+```json
+{
+  "dripAmount": "string"
+}
+```
+
+`dripAmount` is in the token's smallest denomination. A network or token this deployment does not serve answers 400
+with `UNSUPPORTED_NETWORK` / `UNSUPPORTED_TOKEN`.
+
+**Example:**
+
+```bash
+curl https://faucet.preview.midnight.network/v1/drip-info/midnight_preview/tNIGHT \
   -H "X-API-Key: your-api-key"
 ```
 
@@ -172,206 +195,132 @@ curl https://faucet.preview.midnight.network/v1/drips/abc123-task-id \
 
 ### GET /v1/health
 
-Check if the faucet service is ready to process drip requests.
+Whether the faucet can serve drips. **Always answers 200** — the state is in the body, so a monitor reads one shape
+whatever the answer.
 
-#### Request
+**Headers:** `X-API-Key`
 
-**Headers:**
-| Header | Required | Description |
-|--------|----------|-------------|
-| `Origin` | Yes | Your whitelisted origin URL |
-| `X-API-Key` | Yes | Your assigned API key |
-
-#### Response
-
-**Success (200 OK):**
+**Response (200 OK):**
 
 ```json
 {
-  "status": "SERVING" | "NOT_SERVING",
+  "status": "SERVING | NOT_SERVING",
   "reason": "string | null"
 }
 ```
 
-| Field    | Type           | Description                                      |
-| -------- | -------------- | ------------------------------------------------ |
-| `status` | string         | `SERVING` if ready, `NOT_SERVING` if unavailable |
-| `reason` | string \| null | Reason for `NOT_SERVING` status                  |
+| Reason               | Meaning                                                                      |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `NODE_DESYNCED`      | The wallet is behind, recovering, or upstream services are unreachable       |
+| `WALLET_BALANCE_LOW` | The faucet wallet cannot fund further drips                                  |
+| `INTERNAL_ERROR`     | An internal failure — state could not be persisted, or a check itself failed |
 
-**Possible Reasons for NOT_SERVING:**
-| Reason | Description |
-|--------|-------------|
-| `SERVICES_DOWN` | External services (indexer, proof-server) are unreachable |
-| `SYNC_STUCK_RECOVERY` | Wallet sync is stuck and recovery is in progress |
-| `STATE_PERSISTENCE_FAILURE` | Failed to persist wallet state |
-| `SYNC_BEHIND` | Wallet is not fully synced with the network |
-| `WALLET_BALANCE_LOW` | Faucet wallet has insufficient funds |
-| `INTERNAL_ERROR` | Internal service error |
+`reason` is `null` while `SERVING`. Finer-grained internal reasons are reported on the operator-facing `/api/health`.
 
-#### Example
+**Example:**
 
 ```bash
 curl https://faucet.preview.midnight.network/v1/health \
-  -H "Origin: https://your-whitelisted-domain.com" \
   -H "X-API-Key: your-api-key"
 ```
 
 ---
 
-## Integration Flow
+## Integration flow
 
-1. **Check health** before sending drip requests:
+1. **Check health** — `GET /v1/health`, and proceed while `status` is `SERVING`.
+2. **Read the drip amount** (optional) — `GET /v1/drip-info/{network}/{token}`, if you display it.
+3. **Request the drip** — `POST /v1/drips`, and keep the `dripId`.
+4. **Poll** — `GET /v1/drips/{dripId}` until `CONFIRMED` or `FAILED`. Polling every few seconds is plenty; drips
+   settle in well under a minute in normal operation.
 
-   ```
-   GET /v1/health
-   ```
+### JavaScript
 
-   Ensure `status` is `SERVING`.
-
-2. **Request a drip**:
-
-   ```
-   POST /v1/drips
-   ```
-
-   Store the returned `dripId`.
-
-3. **Poll for completion**:
-   ```
-   GET /v1/drips/{dripId}
-   ```
-   Poll until `status` changes from `PENDING` to `CONFIRMED` or `FAILED`.
-
-### Recommended Polling Strategy
-
-- Initial delay: 5 seconds after POST
-- Poll interval: 5-10 seconds
-- Maximum attempts: 60 (5 minutes total)
-- Consider exponential backoff for production use
-
----
-
-## Code Examples
-
-### JavaScript/TypeScript
-
-```typescript
+```javascript
 const FAUCET_URL = "https://faucet.preview.midnight.network";
+const API_KEY = process.env.FAUCET_API_KEY;
 
-async function requestDrip(recipientAddress: string, amount: string): Promise<string> {
+const headers = { "X-API-Key": API_KEY, "Content-Type": "application/json" };
+
+const requestDrip = async (recipientAddress) => {
   const response = await fetch(`${FAUCET_URL}/v1/drips`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Origin: "https://your-whitelisted-domain.com",
-      "X-API-Key": "your-api-key",
-    },
-    body: JSON.stringify({ recipientAddress, amount }),
+    headers,
+    body: JSON.stringify({
+      recipientAddress,
+      network: "midnight_preview",
+      token: "tNIGHT",
+    }),
   });
 
+  const body = await response.json();
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || "Failed to request drip");
+    throw new Error(`${body.error.code}: ${body.error.message ?? ""}`);
   }
+  return body.dripId;
+};
 
-  const data = await response.json();
-  return data.dripId;
-}
+const waitForDrip = async (dripId) => {
+  for (;;) {
+    const response = await fetch(`${FAUCET_URL}/v1/drips/${dripId}`, { headers });
+    const drip = await response.json();
 
-async function waitForDrip(dripId: string): Promise<{ status: string; transactionHash?: string }> {
-  const maxAttempts = 60;
-  const pollInterval = 5000;
+    if (drip.status === "CONFIRMED") return drip.transactionHash;
+    if (drip.status === "FAILED")
+      throw new Error(`${drip.error.code}: ${drip.error.message ?? ""}`);
 
-  for (let i = 0; i < maxAttempts; i++) {
-    const response = await fetch(`${FAUCET_URL}/v1/drips/${dripId}`, {
-      headers: {
-        Origin: "https://your-whitelisted-domain.com",
-        "X-API-Key": "your-api-key",
-      },
-    });
-
-    const data = await response.json();
-
-    if (data.status === "CONFIRMED") {
-      return { status: "CONFIRMED", transactionHash: data.transactionHash };
-    }
-
-    if (data.status === "FAILED") {
-      throw new Error(data.error || "Drip failed");
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
-
-  throw new Error("Timeout waiting for drip confirmation");
-}
-
-// Usage
-const dripId = await requestDrip("mn_addr_...", "1000");
-const result = await waitForDrip(dripId);
-console.log("Transaction hash:", result.transactionHash);
+};
 ```
 
 ### Python
 
 ```python
-import requests
+import os
 import time
+import requests
 
-FAUCET_URL = 'https://faucet.preview.midnight.network'
-HEADERS = {
-    'Content-Type': 'application/json',
-    'Origin': 'https://your-whitelisted-domain.com',
-    'X-API-Key': 'your-api-key',
-}
+FAUCET_URL = "https://faucet.preview.midnight.network"
+HEADERS = {"X-API-Key": os.environ["FAUCET_API_KEY"], "Content-Type": "application/json"}
 
-def request_drip(address: str, amount: str) -> str:
+
+def request_drip(recipient_address: str) -> str:
     response = requests.post(
-        f'{FAUCET_URL}/v1/drips',
-        json={'recipientAddress': address, 'amount': amount},
+        f"{FAUCET_URL}/v1/drips",
         headers=HEADERS,
+        json={
+            "recipientAddress": recipient_address,
+            "network": "midnight_preview",
+            "token": "tNIGHT",
+        },
     )
-    response.raise_for_status()
-    return response.json()['dripId']
+    body = response.json()
+    if not response.ok:
+        raise RuntimeError(f"{body['error']['code']}: {body['error'].get('message')}")
+    return body["dripId"]
 
-def wait_for_drip(drip_id: str, max_attempts: int = 60, poll_interval: int = 5) -> dict:
-    for _ in range(max_attempts):
-        response = requests.get(
-            f'{FAUCET_URL}/v1/drips/{drip_id}',
-            headers=HEADERS,
-        )
-        data = response.json()
 
-        if data['status'] == 'CONFIRMED':
-            return {'status': 'CONFIRMED', 'transactionHash': data['transactionHash']}
+def wait_for_drip(drip_id: str) -> str:
+    while True:
+        drip = requests.get(f"{FAUCET_URL}/v1/drips/{drip_id}", headers=HEADERS).json()
 
-        if data['status'] == 'FAILED':
-            raise Exception(data.get('error', 'Drip failed'))
+        if drip["status"] == "CONFIRMED":
+            return drip["transactionHash"]
+        if drip["status"] == "FAILED":
+            raise RuntimeError(f"{drip['error']['code']}: {drip['error'].get('message')}")
 
-        time.sleep(poll_interval)
-
-    raise Exception('Timeout waiting for drip confirmation')
-
-# Usage
-drip_id = request_drip('mn_addr_...', '1000')
-result = wait_for_drip(drip_id)
-print(f"Transaction hash: {result['transactionHash']}")
+        time.sleep(5)
 ```
 
----
+## Configuration (operators)
 
-## Onboarding
-
-To get your application whitelisted for the Third-Party API:
-
-1. Contact the Midnight team with your application details
-2. Provide the origin URL(s) that will be making requests
-3. Once approved, you will receive:
-   - Your origin added to the whitelist
-   - Your API key for authentication
-
----
-
-## Support
-
-For questions or issues with the Third-Party API, please contact the Midnight support team.
+| Variable                      | Default              | Purpose                                                             |
+| ----------------------------- | -------------------- | ------------------------------------------------------------------- |
+| `THIRD_PARTY_API_KEY`         | _(empty)_            | The pre-shared key. Empty disables the API entirely.                |
+| `THIRD_PARTY_NETWORK`         | `midnight_<network>` | The `network` literal accepted by this deployment.                  |
+| `THIRD_PARTY_TOKEN`           | `tNIGHT`             | The `token` literal accepted by this deployment.                    |
+| `THIRD_PARTY_DEFAULT_AMOUNT`  | `DROP_AMOUNT`        | Dispensed when a request omits `amount`, smallest denomination.     |
+| `THIRD_PARTY_MAX_AMOUNT`      | `DROP_AMOUNT`        | Largest accepted `amount`, smallest denomination.                   |
+| `THIRD_PARTY_REQUIRE_ORIGIN`  | `false`              | Enforce the origin allow-list (browser-side partners only).         |
+| `THIRD_PARTY_ALLOWED_ORIGINS` | _(empty)_            | Comma-separated origins, used only when the allow-list is enforced. |
