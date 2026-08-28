@@ -4,8 +4,8 @@ import { pino } from "pino";
 import * as ledger from "@midnight-ntwrk/ledger-v8";
 import * as utils from "../setup/utils";
 import { DevnetFaucetMainPage } from "../pages/DevnetFaucetMainPage";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
-import { UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import { UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 const logger = pino({
   transport: {

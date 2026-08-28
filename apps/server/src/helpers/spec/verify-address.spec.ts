@@ -1,6 +1,6 @@
 import { InvalidAddressError, verifyAddress } from "../verify-address";
 import { describe, it, expect, vi } from "vitest";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 
 vi.mock("./wherever/MidnightBech32m", () => ({
   MidnightBech32m: {

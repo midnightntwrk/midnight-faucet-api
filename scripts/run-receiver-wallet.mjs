@@ -1,18 +1,18 @@
 #!/usr/bin/env -S node --experimental-specifier-resolution=node
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { firstValueFrom, filter, tap, throttleTime } from "rxjs";
-import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
+import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
 import {
   createKeystore,
   InMemoryTransactionHistoryStorage,
   PublicKey,
   UnshieldedWallet,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import { ShieldedWallet } from "@midnight-ntwrk/wallet-sdk-shielded";
-import { DustWallet } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
-import { WalletFacade } from "@midnight-ntwrk/wallet-sdk-facade";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
+import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
 import { ZswapSecretKeys, DustSecretKey, LedgerParameters } from "@midnight-ntwrk/ledger-v8";
-import { ShieldedAddress, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { ShieldedAddress, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 const networkId = NetworkId.NetworkId.Undeployed;
 

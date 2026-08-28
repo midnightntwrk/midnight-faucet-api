@@ -4,7 +4,7 @@ import { debounceTime, filter, timeout } from "rxjs";
 import { ServerConfig } from "../config.js";
 import { prepareFaucet } from "../faucet.js";
 import { createLogger } from "../logging.js";
-import { UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 export interface CheckConnectionResult {
   balance: bigint;

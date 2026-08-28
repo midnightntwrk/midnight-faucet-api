@@ -17,7 +17,7 @@ import pino from "pino";
 import { TaskManager, TaskStatuses } from "../TaskManager.js";
 import { RateLimitError } from "../rate-limiting/rate-limiting.js";
 import { verifyAddress, InvalidAddressError } from "../helpers/verify-address.js";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { PostgresqlRateCountRepository } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { HealthService } from "../health.js";

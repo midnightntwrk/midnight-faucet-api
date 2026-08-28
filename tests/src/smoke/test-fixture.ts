@@ -3,8 +3,8 @@ import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from 
 import { StartedGenericContainer } from "testcontainers/build/generic-container/started-generic-container";
 import path from "node:path";
 import * as utils from "../e2e/setup/utils";
-import { NetworkId, NoOpTransactionHistoryStorage } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { type DefaultConfiguration } from "@midnight-ntwrk/wallet-sdk-facade";
+import { NetworkId, NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
+import { type DefaultConfiguration } from "@midnightntwrk/wallet-sdk-facade";
 import { beforeAll, afterAll } from "vitest";
 
 export const currentDir = path.resolve(new URL(import.meta.url).pathname, "..");

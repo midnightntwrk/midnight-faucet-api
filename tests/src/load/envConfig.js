@@ -1,4 +1,4 @@
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 
 export class DevnetConfig {
   faucetUrl = "https://faucet.devnet.midnight.network";

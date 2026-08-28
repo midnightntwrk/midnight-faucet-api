@@ -6,7 +6,7 @@ import { TaskManager } from "../TaskManager.js";
 import { ThirdPartyApiConfig } from "../config.js";
 import { originWhitelistMiddleware } from "./origin-whitelist.js";
 import { apiKeyMiddleware } from "./api-key-middleware.js";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { PostgresqlRateCountRepository } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { HealthService } from "../health.js";

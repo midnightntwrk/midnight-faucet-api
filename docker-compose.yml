@@ -65,7 +65,7 @@ services:
       start_period: 10s
 
   indexer:
-    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.3.2"
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.3.300"
     container_name: indexer_$TESTCONTAINERS_UID
     cap_drop:
       - ALL
@@ -98,7 +98,7 @@ services:
       node:
         condition: service_healthy
   node:
-    image: "ghcr.io/midnight-ntwrk/midnight-node:1.0.0"
+    image: "ghcr.io/midnight-ntwrk/midnight-node:1.0.2"
     container_name: node_$TESTCONTAINERS_UID
     cap_drop:
       - ALL

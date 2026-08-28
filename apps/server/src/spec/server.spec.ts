@@ -37,8 +37,8 @@ import {
   EMPTY,
 } from "rxjs";
 import { ZswapSecretKeys } from "@midnight-ntwrk/ledger-v8";
-import { UnshieldedAddress, MidnightBech32m } from "@midnight-ntwrk/wallet-sdk-address-format";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
+import { UnshieldedAddress, MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { prepareAuthContext } from "../auth/authContext.js";
 import { PostgresqlUserRepository } from "../auth/postgresql-user-repository.js";
 import { defaultRoot } from "../composition-root.js";

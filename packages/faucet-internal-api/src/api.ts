@@ -1,7 +1,7 @@
 import * as t from "io-ts";
 import { Observable } from "rxjs";
 import { Duration } from "luxon";
-import { ShieldedAddress, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { ShieldedAddress, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 const ShieldedAddressCodec = new t.Type<ShieldedAddress, ShieldedAddress, unknown>(
   "ShieldedAddress",

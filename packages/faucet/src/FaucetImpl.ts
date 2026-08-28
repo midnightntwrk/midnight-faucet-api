@@ -24,16 +24,16 @@ import { FaucetWallet, WalletFactory } from "./WalletFactory.js";
 import {
   createKeystore,
   UnshieldedWalletState,
-} from "@midnight-ntwrk/wallet-sdk-unshielded-wallet";
-import { ShieldedWalletState } from "@midnight-ntwrk/wallet-sdk-shielded";
-import { DustWalletState } from "@midnight-ntwrk/wallet-sdk-dust-wallet";
+} from "@midnightntwrk/wallet-sdk-unshielded-wallet";
+import { ShieldedWalletState } from "@midnightntwrk/wallet-sdk-shielded";
+import { DustWalletState } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { DustSecretKey, ZswapSecretKeys, unshieldedToken } from "@midnight-ntwrk/ledger-v8";
-import { WalletFacade, CombinedTokenTransfer } from "@midnight-ntwrk/wallet-sdk-facade";
+import { WalletFacade, CombinedTokenTransfer } from "@midnightntwrk/wallet-sdk-facade";
 import * as ledger from "@midnight-ntwrk/ledger-v8";
 
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
-import { NetworkId } from "@midnight-ntwrk/wallet-sdk-abstractions";
-import { MidnightBech32m, UnshieldedAddress } from "@midnight-ntwrk/wallet-sdk-address-format";
+import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
+import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 export type FaucetConfig<WalletConfig> = {
   networkId: NetworkId.NetworkId;

@@ -1,4 +1,4 @@
-import { HDWallet, Roles } from "@midnight-ntwrk/wallet-sdk-hd";
+import { HDWallet, Roles } from "@midnightntwrk/wallet-sdk-hd";
 
 const getHDWallet = (seedBuffer: Uint8Array): HDWallet => {
   const result = HDWallet.fromSeed(seedBuffer);
