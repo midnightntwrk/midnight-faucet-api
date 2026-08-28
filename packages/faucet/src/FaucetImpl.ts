@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
 import {
   Faucet,
@@ -217,9 +218,9 @@ const mkRequestTokens = (
     const requestLogger = logger.child(fullContext);
     requestLogger.debug("Handling request for tokens");
 
-    const shieldedSeed = WalletSeedUtils.getShieldedSeed(config.walletSeed as Uint8Array);
-    const unshieldedSeed = WalletSeedUtils.getUnshieldedSeed(config.walletSeed as Uint8Array);
-    const dustSeed = WalletSeedUtils.getDustSeed(config.walletSeed as Uint8Array);
+    const shieldedSeed = WalletSeedUtils.getShieldedSeed(config.walletSeed);
+    const unshieldedSeed = WalletSeedUtils.getUnshieldedSeed(config.walletSeed);
+    const dustSeed = WalletSeedUtils.getDustSeed(config.walletSeed);
 
     const unshieldedSenderKeystore = createKeystore(unshieldedSeed, config.networkId);
 
