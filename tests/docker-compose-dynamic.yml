@@ -1,6 +1,6 @@
 services:
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0-rc.3"
+    image: "ghcr.io/midnight-ntwrk/proof-server:-rc.3"
     container_name: proof-server_$TESTCONTAINERS_UID
     security_opt:
       - no-new-privileges:true
@@ -17,7 +17,7 @@ services:
       start_period: 10s
 
   indexer:
-    image: "ghcr.io/midnight-ntwrk/indexer-standalone:4.4.0-pre-alpha.15-l91r3-n2r3-bridge-and-events-epics-blockhash-dust-f06af4b4"
+    image: "ghcr.io/midnight-ntwrk/indexer-standalone:-pre-alpha.15-l91r3-n2r3-bridge-and-events-epics-blockhash-dust-f06af4b4"
     container_name: indexer_$TESTCONTAINERS_UID
     security_opt:
       - no-new-privileges:true
@@ -47,7 +47,7 @@ services:
       node:
         condition: service_healthy
   node:
-    image: "ghcr.io/midnight-ntwrk/midnight-node:2.0.0-rc.3"
+    image: "ghcr.io/midnight-ntwrk/midnight-node:-rc.3"
     container_name: node_$TESTCONTAINERS_UID
     cap_drop:
       - ALL
@@ -75,7 +75,7 @@ services:
       SIDECHAIN_BLOCK_BENEFICIARY: "04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e"
 
   db:
-    image: postgres:15
+    image: postgres:18
     container_name: db_$TESTCONTAINERS_UID
     ports:
       - "5432"
@@ -100,7 +100,7 @@ services:
     environment:
       NODE_URL: "ws://node:9944"
       INDEXER_URL: "http://indexer:8088/api/v4/graphql"
-      PROVING_SERVER_URL: "http://proof-server:6300"
+      PROVING_SERVER_URL: "http://proof-server:"
       DB_HOST: "db"
       PRINT_CONFIG: "true"
       MAX_CONCURRENT_TASKS: 1
