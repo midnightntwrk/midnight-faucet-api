@@ -13,13 +13,13 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "eslint": "^10.8.1",
+    "eslint": "^10.9.1",
     "fast-check": "^4.9.0",
     "fp-ts": "^2.16.0",
     "io-ts": "^2.2.20",
     "luxon": "*",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@midnightntwrk/ledger-v9": "^1.0.0-rc.3",
