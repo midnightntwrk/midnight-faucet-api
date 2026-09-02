@@ -14,7 +14,6 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest-8-core-x64
     env:
-      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       JWT_SIGN_SECRET: ${{ secrets.JWT_SIGN_SECRET }}
     permissions:
       id-token: write # This is required for requesting the JWT
@@ -86,16 +85,14 @@ jobs:
 
       - name: Verify secret env vars
         run: |
-          echo "ENCRYPTION_KEY length: ${#ENCRYPTION_KEY}"
           echo "JWT_SIGN_SECRET length: ${#JWT_SIGN_SECRET}"
-          if [ -z "$ENCRYPTION_KEY" ] || [ -z "$JWT_SIGN_SECRET" ]; then
-            echo "::error::Missing required ENCRYPTION_KEY or JWT_SIGN_SECRET secrets"
+          if [ -z "$JWT_SIGN_SECRET" ]; then
+            echo "::error::Missing required JWT_SIGN_SECRET secret"
             exit 1
           fi
 
       - name: Run checks
         env:
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           JWT_SIGN_SECRET: ${{ secrets.JWT_SIGN_SECRET }}
         run: |
           npx turbo check --cache-dir ./turbo_cache --concurrency 1

@@ -41,8 +41,8 @@ yarn check       # build + lint + test
 Notes:
 
 - **Server tests use Testcontainers** — a Postgres container is started per run, so Docker must be running.
-- Server config requires `ENCRYPTION_KEY` and `JWT_SIGN_SECRET` (hex strings), loaded from `.env` via direnv in local
-  dev. Without them, `loadConfig()` fails and the server-integration suite is skipped.
+- Server config requires `JWT_SIGN_SECRET` (a hex string), loaded from `.env` via direnv in local dev. Without it,
+  `loadConfig()` fails and the server-integration suite is skipped.
 
 ## More
 

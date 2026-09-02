@@ -91,7 +91,6 @@ export const defaultRoot = (
         cachedState: await getState({
           logger,
           stateRepository: stateContext.stateSnapshots,
-          encryptionKey: config.encryptionKey,
         }),
       };
     }),

@@ -109,7 +109,6 @@ export interface ServerConfig {
   rateLimiting: RateLimitConfig;
   logging: LoggingConfig;
   tasks: TaskManagerConfig;
-  encryptionKey: Buffer;
   identifier: string;
   turnstileKey: string;
   turnstileHeader: string;
@@ -155,13 +154,6 @@ export const schema = {
     default: "5000000000", // 1000_000_000n tNight
     env: "DROP_AMOUNT",
     arg: "drop-amount",
-  },
-  encryptionKey: {
-    doc: "Key for state encryption",
-    format: "faucet-hex-string",
-    default: "",
-    env: "ENCRYPTION_KEY",
-    arg: "encryption-key",
   },
   walletSeed: {
     doc: "Secret seed of wallet used for faucet",
@@ -466,7 +458,6 @@ export const loadConfig = (): ServerConfig => {
     port: config.get("port"),
     metricsPort: config.get("metricsPort"),
     dropAmount: config.get("dropAmount"),
-    encryptionKey: Buffer.from(config.get("encryptionKey"), "hex"),
     walletSeed: Buffer.from(config.get("walletSeed") as string, "hex"),
     targetCoinNumber: config.get("targetCoinNumber"),
     targetCoinSizeFactor: BigInt(config.get("targetCoinSizeFactor")),

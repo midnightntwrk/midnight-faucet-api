@@ -20,7 +20,7 @@ cp .env.example .env
 # edit .env as needed
 ```
 
-> The same `.env` is read two ways. **Docker Compose** uses the entire file (the full stack configuration). When you run the **faucet on your host** (see below), the checked-in `.envrc` loads the whole `.env` into your shell via [direnv](https://direnv.net) — the app reads only what it needs (and turbo passes it through). Only `ENCRYPTION_KEY` and `JWT_SIGN_SECRET` are strictly required; everything else has a default. Without direnv, export those two yourself.
+> The same `.env` is read two ways. **Docker Compose** uses the entire file (the full stack configuration). When you run the **faucet on your host** (see below), the checked-in `.envrc` loads the whole `.env` into your shell via [direnv](https://direnv.net) — the app reads only what it needs (and turbo passes it through). Only `JWT_SIGN_SECRET` is strictly required; everything else has a default. Without direnv, export it yourself.
 
 ### Everything in Docker
 
@@ -177,9 +177,9 @@ For all available options:
 npx midnight-faucet help
 ```
 
-Key env vars (everything except the two secrets has a sensible localhost default):
+Key env vars (everything except the secret has a sensible localhost default):
 
-- `ENCRYPTION_KEY`, `JWT_SIGN_SECRET` — **required** hex secrets (no default)
+- `JWT_SIGN_SECRET` — **required** hex secret (no default)
 - `FAUCET_CONFIG_FILE` — Path to JSON5 config file
 - `WALLET_SEED` — 32-byte hex wallet seed
 - `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` — PostgreSQL connection

@@ -6,10 +6,12 @@ import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/pos
 import { PostgresqlStateSnapshotsRepository } from "../state-persistence-repository.js";
 import { getState } from "../get-and-deserialize-state.js";
 
-const encryptionKey = Buffer.from(
-  "ae18ad906ec2686f7cd8e3b9e97255f4d048225771c0412e82717256dc27c49a",
-  "hex",
-);
+const storedState = {
+  shielded:
+    "mn_shield-addr_undeployed1ultslmhufn32879kzanlsvmxvt493tk83y82hrwchggy5r93gpex5uajcx78sucyaghmgshlcn8c4xedxxgr4lejkjh5ztz0m47uk5q9uacjt",
+  unshielded: "mn_addr_undeployed1qpfkp8dd8xpv57t3sf0p5cex8a37qz40kjlz7hke3aq6mfk2pkyshz6pq0",
+  dust: "mn_dust_undeployed1wvggp4jmr2ynq3xf5rzgshjqyxjmdg9sp8hke22tp8d8g5vrawnryf5gld6",
+};
 
 describe("serialize and save state", () => {
   const logger = pino({ level: "silent" });
@@ -34,14 +36,7 @@ describe("serialize and save state", () => {
             infrastructure
               .knex("state_snapshots")
               .delete()
-              .insert({
-                shielded:
-                  "mn_shield-addr_undeployed1ultslmhufn32879kzanlsvmxvt493tk83y82hrwchggy5r93gpex5uajcx78sucyaghmgshlcn8c4xedxxgr4lejkjh5ztz0m47uk5q9uacjt",
-                unshielded:
-                  "mn_addr_undeployed1qpfkp8dd8xpv57t3sf0p5cex8a37qz40kjlz7hke3aq6mfk2pkyshz6pq0",
-                dust: "mn_dust_undeployed1wvggp4jmr2ynq3xf5rzgshjqyxjmdg9sp8hke22tp8d8g5vrawnryf5gld6",
-                identifier: "faucet-1",
-              })
+              .insert({ ...storedState, identifier: "faucet-1" })
               .then(() => new PostgresqlStateSnapshotsRepository(infrastructure.knex, "faucet-1")),
           ),
         ),
@@ -57,7 +52,6 @@ describe("serialize and save state", () => {
     const faucetState = await getState({
       logger,
       stateRepository: repository,
-      encryptionKey,
     });
     expect(faucetState).toEqual({
       address:
@@ -85,34 +79,24 @@ describe("serialize and save state", () => {
     });
   });
 
+  it("should return the stored state verbatim", async () => {
+    const faucetState = await getState({
+      logger,
+      stateRepository: repository,
+    });
+
+    expect(faucetState).toEqual(storedState);
+  });
+
   it("should return undefined when it can't find any state", async () => {
     await infrastructure.knex("state_snapshots").delete();
 
     const faucetState = await getState({
       logger,
       stateRepository: repository,
-      encryptionKey,
     });
 
     expect(faucetState).toBeUndefined();
-  });
-
-  it("should throw when the stored data cannot be decrypted", async () => {
-    await infrastructure.knex("state_snapshots").delete().insert({
-      shielded:
-        "mn_shield-addr_undeployed1ultslmhufn32879kzanlsvmxvt493tk83y82hrwchggy5r93gpex5uajcx78sucyaghmgshlcn8c4xedxxgr4lejkjh5ztz0m47uk5q9uacjt",
-      unshielded: "mn_addr_undeployed1qpfkp8dd8xpv57t3sf0p5cex8a37qz40kjlz7hke3aq6mfk2pkyshz6pq0",
-      dust: "mn_dust_undeployed1wvggp4jmr2ynq3xf5rzgshjqyxjmdg9sp8hke22tp8d8g5vrawnryf5gld6",
-      identifier: "faucet-1",
-    });
-
-    await expect(
-      getState({
-        logger,
-        stateRepository: repository,
-        encryptionKey,
-      }),
-    ).rejects.toThrow();
   });
 
   it("should return undefined when it can't find any state after teardown", async () => {
@@ -122,7 +106,6 @@ describe("serialize and save state", () => {
     const faucetState = await getState({
       logger,
       stateRepository: repository,
-      encryptionKey,
     });
 
     expect(faucetState).toBeUndefined();

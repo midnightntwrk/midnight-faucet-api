@@ -145,7 +145,6 @@ const mkServerResource = (
                 dustState,
                 stateContext,
                 logger,
-                encryptionKey: config.encryptionKey,
               });
               statePersistenceStatus.set(1);
             } catch (error) {

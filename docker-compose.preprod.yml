@@ -1,0 +1,15 @@
+# Point the faucet at Midnight preprod instead of the local node/indexer/proof-server.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.preprod.yml up --no-deps -d db faucet
+#
+# --no-deps is required: the base file's depends_on would otherwise also start the
+# local node, indexer and proof-server containers, which are not needed here.
+services:
+  faucet:
+    environment:
+      NETWORK_ID: "preprod"
+      NODE_URL: "wss://rpc.preprod.midnight.network"
+      INDEXER_URL: "https://indexer-green.preprod.midnight.network/api/v4/graphql"
+      PROVING_SERVER_URL: "https://proof-server.preprod.midnight.network"
+      # captcha bypass for curl; the UI uses ?isTesting=true instead
+      TURNSTILE_HEADER: "local-dev-secret"

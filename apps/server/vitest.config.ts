@@ -5,9 +5,9 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-// loadConfig() sources ENCRYPTION_KEY / JWT_SIGN_SECRET from the environment only, so the suite
-// dies at validation unless something exports the root .env. Local dev relies on direnv for that,
-// which is not always installed — read the file directly so the tests do not depend on it.
+// loadConfig() sources JWT_SIGN_SECRET from the environment only, so the suite dies at validation
+// unless something exports the root .env. Local dev relies on direnv for that, which is not always
+// installed — read the file directly so the tests do not depend on it.
 const rootEnvPath = fileURLToPath(new URL("../../.env", import.meta.url));
 
 const readRootEnv = (): Record<string, string> => {
