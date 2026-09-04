@@ -1,0 +1,41 @@
+name: Scan
+permissions: {}
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {} # so you can still run it manually
+  schedule:
+    - cron: "0 0 * * *" # run daily at midnight UTC
+concurrency:
+  group: ${{ github.event_name != 'merge_group' && format('{0}-{1}', github.workflow, github.head_ref) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: scan
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      statuses: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan code
+        id: scan
+        # The shared scanner includes trivy vulnerability scanning. This pin
+        # also includes the caller-workspace fix; older revisions scanned the
+        # action checkout itself and reported its dependencies.
+        uses: midnightntwrk/upload-sarif-github-action@e90808cc2a4bde5b3f14b1df426c2f142bc59a37
+        with:
+          fail_severity: "high"
+          # Checks supported by Scorecard's local mode; unset means all checks,
+          # and locally-unsupported ones score -1, which the gate reads as high.
+          scorecard_checks: Binary-Artifacts,Dangerous-Workflow,Dependency-Update-Tool,License,Pinned-Dependencies,Security-Policy,Token-Permissions,Vulnerabilities

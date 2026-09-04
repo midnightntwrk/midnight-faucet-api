@@ -1,5 +1,4 @@
-# checkov:skip=CKV_DOCKER_2: healthchecks are defined at the orchestrator level (compose files / deployment probes)
-FROM node:24.18.0@sha256:5711a0d445a1af54af9589066c646df387d1831a608226f4cd694fc59e745059
+FROM node:26.7.0@sha256:bde0dae02f2b12d2bce5ee72b2432f0e511767b7b2dc4dd3b064df11ae422fee
 
 LABEL org.opencontainers.image.source="https://github.com/midnight-ntwrk/artifacts"
 
@@ -14,6 +13,9 @@ RUN corepack enable \
   && yarn && chown -R node:node /source
 
 USER node
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://localhost:5300/api/health || exit 1
 
 ENTRYPOINT [ "/bin/bash", "-c" ]
 CMD [ "midnight-faucet start" ]

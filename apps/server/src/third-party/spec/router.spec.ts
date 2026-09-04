@@ -279,7 +279,7 @@ describe("Third-Party API", () => {
   });
 
   const allowedOrigin = "https://partner.com";
-  const validApiKey = "test-api-key-12345";
+  const validApiKey = "test";
 
   // Helper to mock healthService connectivity check (services not running in tests)
   const withMockedConnectivity = (root: CompositionRoot): CompositionRoot => {

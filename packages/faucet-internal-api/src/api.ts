@@ -34,7 +34,7 @@ export type BackgroundTaskId = t.TypeOf<typeof backgroundTaskResponseCodec>;
 export const durationCodec = t.string.pipe(
   new t.Type<Duration, string, string>(
     "duration",
-    (x): x is Duration => x instanceof Duration && x.isValid,
+    (x): x is Duration => x instanceof Duration && x.isValid === true,
     (input: string, context) => {
       try {
         const res = Duration.fromISO(input);

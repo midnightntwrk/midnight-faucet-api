@@ -1,0 +1,35 @@
+name: Task
+description: A unit of work that isn't a bug or a new feature.
+title: "task: "
+type: Task
+labels: ["status:untriaged", "component:faucet"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs to be done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Concrete, verifiable outcomes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / notes
+      description: Links to related issues, PRs, docs, or dependencies.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true

@@ -2,11 +2,11 @@ name: Update Docker Images
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Weekly on Monday at 9 AM UTC
+    - cron: "0 9 * * 1" # Weekly on Monday at 9 AM UTC
   workflow_dispatch:
     inputs:
       dry-run:
-        description: 'Report the bumps without writing files or opening a PR'
+        description: "Report the bumps without writing files or opening a PR"
         type: boolean
         default: false
 
@@ -16,10 +16,12 @@ jobs:
   update-docker-images:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # push the update branch
-      pull-requests: write  # open the update PR
+      contents: write # push the update branch
+      pull-requests: write # open the update PR
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Check and update docker images
         env:
@@ -210,11 +212,10 @@ jobs:
           git --no-pager diff --stat
 
       - name: Create Pull Request
-        if: ${{ !inputs.dry-run }}
-        uses: peter-evans/create-pull-request@4e1beaa7521e8b457b572c090b25bd3db56bf1c5 # v5
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          commit-message: 'chore: update docker image versions'
-          title: 'chore: update docker image versions to latest'
+          commit-message: "chore: update docker image versions"
+          title: "chore: update docker image versions to latest"
           body: |
             This PR updates the pinned container image tags with the latest
             release / release-candidate versions from their registries.

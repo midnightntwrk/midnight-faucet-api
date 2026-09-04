@@ -11,7 +11,7 @@ Foundation projects.
 
 ## Disclosing a security issue
 
-The Midnight foundation takes all security issues seriously, which includes all source code repositories managed through
+The Midnight Foundation takes all security issues seriously, including all source code repositories managed through
 our [GitHub organization](https://github.com/midnightntwrk). If you believe you have found a security vulnerability in
 any Midnight Foundation owned repository, _please report it using GitHub's private vulnerability reporting_ and not
 through public GitHub issues. To learn more about GitHub's private vulnerability reporting and how to submit a
@@ -36,7 +36,7 @@ an additional three (3) business days indicating the next steps in handling your
 
 If you've been unable to successfully draft a vulnerability report via GitHub or have not received a response during the
 alloted response window, please reach out via the
-[Midnight foundation security contact email](mailto:security@midnight.foundation).
+[Midnight Foundation security contact email](mailto:security@midnight.foundation).
 
 After the initial reply to your report, the maintainers will endeavor to keep you informed of the progress towards a fix
 and full announcement, and may ask for additional information or guidance.

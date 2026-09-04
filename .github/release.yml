@@ -1,0 +1,23 @@
+changelog:
+  exclude:
+    labels:
+      - bot:dependencies
+      - bot:renovate
+      - ignore-for-release
+    authors:
+      - dependabot
+      - dependabot[bot]
+      - renovate[bot]
+  categories:
+    - title: Breaking changes
+      labels: [breaking-change, semver-major]
+    - title: Security fixes
+      labels: [security]
+    - title: Features
+      labels: [enhancement, feature]
+    - title: Bug fixes
+      labels: [bug, fix]
+    - title: Documentation
+      labels: [documentation]
+    - title: Other changes
+      labels: ["*"]

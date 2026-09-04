@@ -1,0 +1,6 @@
+# Local-only development and test infrastructure intentionally uses plaintext
+# loopback/container-network protocols and deterministic fixture credentials.
+docker-compose.yml
+packages/faucet/test-compose.yml
+scripts/run-benchmark.mjs
+tests/docker-compose-dynamic.yml

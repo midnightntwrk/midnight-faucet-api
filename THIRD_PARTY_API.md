@@ -117,7 +117,8 @@ A retry that arrives while an earlier drip for the same address is still in flig
 ```bash
 curl -X POST https://faucet.preview.midnight.network/v1/drips \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: your-api-key" \
+  -H "Origin: https://your-whitelisted-domain.com" \
+  -H "X-API-Key: $YOUR_API_KEY" \
   -d '{
     "recipientAddress": "mn_addr_undeployed17cnw4q78cjvyyu8mtkynd0pjtk9qjhhschwakjwwml4xflxcw0mswvqz9g",
     "network": "midnight_preview",
@@ -158,37 +159,9 @@ An unknown `dripId` answers `FAILED` with `INVALID_REQUEST`; a drip that failed 
 **Example:**
 
 ```bash
-curl https://faucet.preview.midnight.network/v1/drips/6f1f1c34-6f2e-4c4a-9a3f-3a1f2b6c9d10 \
-  -H "X-API-Key: your-api-key"
-```
-
----
-
-### GET /v1/drip-info/{network}/{token}
-
-The amount a drip dispenses when the request omits `amount`. Poll it to keep a displayed amount current instead of
-hardcoding one.
-
-**Headers:** `X-API-Key`
-
-**Path parameters:** `network` (e.g. `midnight_preview`), `token` (e.g. `tNIGHT`)
-
-**Response (200 OK):**
-
-```json
-{
-  "dripAmount": "string"
-}
-```
-
-`dripAmount` is in the token's smallest denomination. A network or token this deployment does not serve answers 400
-with `UNSUPPORTED_NETWORK` / `UNSUPPORTED_TOKEN`.
-
-**Example:**
-
-```bash
-curl https://faucet.preview.midnight.network/v1/drip-info/midnight_preview/tNIGHT \
-  -H "X-API-Key: your-api-key"
+curl https://faucet.preview.midnight.network/v1/drips/abc123-task-id \
+  -H "Origin: https://your-whitelisted-domain.com" \
+  -H "X-API-Key: $YOUR_API_KEY"
 ```
 
 ---
@@ -221,7 +194,8 @@ whatever the answer.
 
 ```bash
 curl https://faucet.preview.midnight.network/v1/health \
-  -H "X-API-Key: your-api-key"
+  -H "Origin: https://your-whitelisted-domain.com" \
+  -H "X-API-Key: $YOUR_API_KEY"
 ```
 
 ---
