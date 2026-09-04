@@ -31,8 +31,12 @@ import { statePersistenceStatus } from "../../metrics/index.js";
 const logger = pino({ level: "error" }, pinoPretty({ colorize: true }));
 
 describe("Third-Party API", () => {
-  /** The key the server is configured with and the one the tests send: one value, so they cannot drift. */
-  const validApiKey = "test-api-key-12345";
+  /**
+   * The key the server is configured with and the one the tests send: one value, so they cannot
+   * drift. Generated per run rather than written as a literal, which keeps a credential-shaped
+   * string out of the source for the secret scanners.
+   */
+  const validApiKey = nodeCrypto.randomBytes(16).toString("hex");
 
   const getConfig = (container: StartedPostgreSqlContainer): ServerConfig => {
     const postgresqlConfig = {
