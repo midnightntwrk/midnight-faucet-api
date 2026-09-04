@@ -31,6 +31,9 @@ import { statePersistenceStatus } from "../../metrics/index.js";
 const logger = pino({ level: "error" }, pinoPretty({ colorize: true }));
 
 describe("Third-Party API", () => {
+  /** The key the server is configured with and the one the tests send: one value, so they cannot drift. */
+  const validApiKey = "test-api-key-12345";
+
   const getConfig = (container: StartedPostgreSqlContainer): ServerConfig => {
     const postgresqlConfig = {
       host: container.getHost(),
@@ -64,7 +67,7 @@ describe("Third-Party API", () => {
         token: "tNIGHT",
         maxAmount: "5000000000",
         defaultAmount: "5000000",
-        apiKey: "test-api-key-12345",
+        apiKey: validApiKey,
       },
     };
   };
@@ -279,7 +282,6 @@ describe("Third-Party API", () => {
   });
 
   const allowedOrigin = "https://partner.com";
-  const validApiKey = "test";
 
   // Helper to mock healthService connectivity check (services not running in tests)
   const withMockedConnectivity = (root: CompositionRoot): CompositionRoot => {
