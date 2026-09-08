@@ -1,0 +1,23 @@
+# Gitleaks configuration for midnight-faucet.
+#
+# The shared scanner (midnightntwrk/upload-sarif-github-action) runs
+# `gitleaks dir .` from the repository root, so this file is picked up and its
+# allowlists apply. That action treats a committed secret as a build failure
+# regardless of `fail_severity`, so documented placeholders and test fixtures
+# have to be declared here or they gate every build.
+#
+# These allowlists deliberately match on the secret *value* and not on `paths`.
+# A global `paths` allowlist makes gitleaks skip the whole file before any rule
+# runs, which would also hide a real credential later added to that same file.
+# Pinning the exact literal keeps the files themselves under active scan.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Literal placeholder in the public API docs curl examples, not a credential"
+regexes = ['''^your-api-key$''']
+
+[[allowlists]]
+description = "Third-party router spec fixture key, never leaves the test process"
+regexes = ['''^test-api-key-12345$''']
