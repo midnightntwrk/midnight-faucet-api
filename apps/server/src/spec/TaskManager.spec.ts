@@ -9,6 +9,7 @@ import {
   CompletedResponse,
   isCompleted,
   noRateLimitSlots,
+  RegisterTaskResult,
   TaskManager,
   TaskManagerConfig,
   Response,
@@ -21,6 +22,18 @@ const logger = pino({
 });
 
 const $isReady = rx.of(true);
+
+/**
+ * The task id `registerTask` produced. These specs all run on
+ * {@link noRateLimitSlots}, so a refusal means the harness is wired wrong rather
+ * than the case under test.
+ */
+const taskIdOf = (registered: RegisterTaskResult): string => {
+  if (registered._tag === "rateLimited") {
+    throw new Error("Unexpected rate limit — these specs do not rate-limit at all");
+  }
+  return registered.taskId;
+};
 
 class Deferred<T> {
   #subject = new rx.Subject<T>();
@@ -68,7 +81,7 @@ describe.todo("Task Manager", () => {
           const registeredTaskIds = await pipe(
             rx.from(taskRange),
             rx.concatMap((taskNr) => {
-              return rx.defer(() => taskManager.registerTask(taskNr.toString(2)));
+              return rx.defer(() => taskManager.registerTask(taskNr.toString(2)).then(taskIdOf));
             }),
             rx.toArray(),
             (x) => rx.firstValueFrom(x),
@@ -162,7 +175,7 @@ describe.todo("Task Manager", () => {
           return pipe(
             rx.from(tasks),
             rx.concatMap(async (address: string) => {
-              const taskId = await taskManager.registerTask(address);
+              const taskId = taskIdOf(await taskManager.registerTask(address));
               return pipe(
                 rx.interval(2000),
                 rx.concatMap(() => taskManager.getStatus(taskId)),
@@ -220,7 +233,7 @@ describe.todo("Task Manager", () => {
           return pipe(
             rx.from(tasks),
             rx.concatMap(async (address) => {
-              const taskId = await taskManager.registerTask(address);
+              const taskId = taskIdOf(await taskManager.registerTask(address));
               return pipe(
                 rx.interval(1),
                 rx.concatMap(() => taskManager.getStatus(taskId)),
@@ -281,7 +294,7 @@ describe.todo("Task Manager", () => {
           return pipe(
             rx.from(tasks),
             rx.mergeMap(async ([, address]) => {
-              const taskId = await taskManager.registerTask(address);
+              const taskId = taskIdOf(await taskManager.registerTask(address));
               return pipe(
                 rx.interval(1),
                 rx.concatMap(() => taskManager.getStatus(taskId)),
@@ -331,7 +344,7 @@ describe.todo("Task Manager", () => {
             return pipe(
               rx.from(tasks),
               rx.mergeMap(async ([, hash]) => {
-                const taskId = await taskManager.registerTask(hash);
+                const taskId = taskIdOf(await taskManager.registerTask(hash));
 
                 return pipe(
                   rx.interval(100),

@@ -12,25 +12,25 @@
     "e2e-test": "yarn playwright test src/e2e/tests"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "eslint": "^10.8.0",
+    "@types/node": "^26.4.0",
+    "eslint": "^10.9.1",
     "fast-check": "^4.9.0",
     "fp-ts": "^2.16.0",
     "io-ts": "^2.2.20",
     "luxon": "*",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "@midnightntwrk/ledger-v9": "^1.0.0-rc.3",
     "@midnightntwrk/wallet-sdk": "^2.0.0-beta.2",
     "@playwright/test": "^1.62.1",
-    "axios": "^1.19.0",
+    "axios": "^1.20.0",
     "dotenv": "^16.3.1",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",
     "rxjs": "^7.5.5",
-    "testcontainers": "^12.0.4",
+    "testcontainers": "^12.1.0",
     "ts-node": "^10.9.2"
   }
 }

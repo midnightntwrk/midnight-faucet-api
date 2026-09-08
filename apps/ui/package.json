@@ -17,7 +17,7 @@
     "dev": "vite --mode=development --clearScreen false"
   },
   "dependencies": {
-    "@marsidev/react-turnstile": "^1.5.4",
+    "@marsidev/react-turnstile": "^1.6.1",
     "@midnight-ntwrk/faucet-client": "workspace:^",
     "@midnight-ntwrk/faucet-internal-api": "workspace:^",
     "@types/react": "^18.2.34",
@@ -36,8 +36,8 @@
   ],
   "devDependencies": {
     "@vitejs/plugin-react": "5.2.0",
-    "css-loader": "7.1.4",
-    "eslint": "10.8.0",
+    "css-loader": "7.1.5",
+    "eslint": "10.9.1",
     "fast-check": "4.9.0",
     "mini-css-extract-plugin": "2.10.2",
     "ts-loader": "9.6.2",
