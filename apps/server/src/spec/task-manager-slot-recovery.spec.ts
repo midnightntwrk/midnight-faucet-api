@@ -3,6 +3,7 @@ import pino from "pino";
 import * as rx from "rxjs";
 import { vi } from "vitest";
 import { RateLimitSlots, TaskManager, TaskManagerConfig } from "../TaskManager.js";
+import type { SlotReservation } from "../rate-counts/rate-counts-repository.js";
 import { PostgresqlTaskRepository, TaskType } from "../tasks/task-repository.js";
 
 /**
@@ -96,7 +97,7 @@ const asRepository = (fake: FakeRepository): PostgresqlTaskRepository =>
   fake as unknown as PostgresqlTaskRepository;
 
 /**
- * `consume` resolves a distinct anchor rather than `new Date()`, so a test can prove
+ * `reserve` resolves a distinct anchor rather than `new Date()`, so a test can prove
  * a compensating refund was given the anchor the reservation actually wrote instead
  * of an app-clock guess (#595).
  */
@@ -104,6 +105,9 @@ const RESERVED_ANCHOR = new Date("2026-07-31T12:00:00.000Z");
 
 const fakeSlots = () => ({
   refund: vi.fn((_address: string, _registeredAt: Date): Promise<void> => Promise.resolve()),
+  reserve: vi.fn((_address: string): Promise<SlotReservation> =>
+    Promise.resolve({ _tag: "reserved", registeredAt: RESERVED_ANCHOR }),
+  ),
   consume: vi.fn((_address: string): Promise<Date> => Promise.resolve(RESERVED_ANCHOR)),
 });
 
@@ -343,6 +347,27 @@ describe("TaskManager rate-limit slot recovery", () => {
       );
     });
 
+    it("stops once the retry shows the sweep got there first", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      picksOnce(repository);
+      // The write threw, and the retry finds no in-progress row: the sweep won
+      // after all, and has already handed the slot back.
+      repository.finalizeIfInProgress
+        .mockRejectedValueOnce(new Error("connection reset"))
+        .mockResolvedValue(undefined);
+
+      await withManager(
+        { repository, slots, handler: () => Promise.reject(new Error("insufficient funds")) },
+        (harness) =>
+          harness.tick(() => {
+            expect(harness.logged("Task already finalized")).toBe(true);
+            expect(repository.finalizeIfInProgress).toHaveBeenCalledTimes(2);
+            expect(slots.refund).not.toHaveBeenCalled();
+          }),
+      );
+    });
+
     it("leaves the slot to the sweep when the finalize outcome stays unknown", async () => {
       const repository = fakeRepository();
       const slots = fakeSlots();
@@ -358,6 +383,89 @@ describe("TaskManager rate-limit slot recovery", () => {
             expect(slots.refund).not.toHaveBeenCalled();
           }),
       );
+    });
+  });
+
+  /**
+   * What a failed drip reports back to the requester. The wrappers around a
+   * dispense report the underlying node failure inconsistently — nested causes, an
+   * aggregate of attempts, a bare string — and reporting only the outermost
+   * `message` leaves "Transaction submission error" as the whole explanation.
+   *
+   * Driven through a failing task because the flattening is internal to the
+   * manager; the persisted `state` is where its result becomes observable.
+   */
+  describe("the message a failed drip records", () => {
+    const persistedFailure = async (error: unknown): Promise<string | undefined> => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      picksOnce(repository);
+      repository.finalizeIfInProgress.mockResolvedValue(taskRow({ status: "failure" }));
+
+      await withManager(
+        {
+          repository,
+          slots,
+          // Rejecting with something that is not an `Error` is the subject of these
+          // cases, not an oversight: the wallet SDK throws bare strings and plain
+          // objects, and flattening those is what this describe covers.
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+          handler: () => Promise.reject(error),
+        },
+        (harness) =>
+          harness.tick(() => {
+            expect(repository.finalizeIfInProgress).toHaveBeenCalled();
+          }),
+      );
+
+      return repository.finalizeIfInProgress.mock.calls[0]?.[1].state;
+    };
+
+    it("keeps the whole cause chain, not just the outermost wrapper", async () => {
+      const error = new Error("Transaction submission error", {
+        cause: new Error("node rejected: insufficient balance"),
+      });
+
+      expect(await persistedFailure(error)).toBe(
+        JSON.stringify("Transaction submission error: node rejected: insufficient balance"),
+      );
+    });
+
+    it("reports every attempt an aggregate failure carries", async () => {
+      const error = new AggregateError(
+        [new Error("proof server timed out"), new Error("node unreachable")],
+        "all submissions failed",
+      );
+
+      expect(await persistedFailure(error)).toBe(
+        JSON.stringify("all submissions failed: proof server timed out: node unreachable"),
+      );
+    });
+
+    it("reads a thrown string", async () => {
+      expect(await persistedFailure("node rejected the transaction")).toBe(
+        JSON.stringify("node rejected the transaction"),
+      );
+    });
+
+    it("falls back to a reason when there is no message", async () => {
+      expect(await persistedFailure({ reason: "wallet is not synced" })).toBe(
+        JSON.stringify("wallet is not synced"),
+      );
+    });
+
+    it("terminates on a cause that points back at itself", async () => {
+      // Mutation is the only way to build a cycle, and a cycle is exactly what the
+      // wrappers produce when a retry attaches its own attempt as the cause.
+      const cyclic: { message: string; cause?: unknown } = { message: "submission failed" };
+      cyclic.cause = cyclic;
+
+      expect(await persistedFailure(cyclic)).toBe(JSON.stringify("submission failed"));
+    });
+
+    it("says something even when the failure carries nothing legible", async () => {
+      expect(await persistedFailure({})).toBe(JSON.stringify("Unknown error"));
+      expect(await persistedFailure(new Error(""))).toBe(JSON.stringify("Unknown error"));
     });
   });
 
@@ -379,6 +487,25 @@ describe("TaskManager rate-limit slot recovery", () => {
           expect(slots.refund).toHaveBeenCalledTimes(2);
           expect(slots.refund).toHaveBeenCalledWith(ADDRESS, REGISTERED_AT);
           expect(slots.refund).toHaveBeenCalledWith(otherAddress, otherCreatedAt);
+        }),
+      );
+    });
+
+    it("refunds the rest of a batch when one refund fails", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      const addresses = [ADDRESS, `${ADDRESS}-second`, `${ADDRESS}-third`];
+      repository.failTimedOutTasks
+        .mockResolvedValueOnce(addresses.map((address) => ({ address, created_at: REGISTERED_AT })))
+        .mockResolvedValue([]);
+      // One address's refund fails. The sweep has already failed all three rows,
+      // so abandoning the batch here would burn the remaining slots for good.
+      slots.refund.mockRejectedValueOnce(new Error("rate count table unavailable"));
+
+      await withManager({ repository, slots, handler: () => Promise.resolve("tx-1") }, (harness) =>
+        harness.tick(() => {
+          expect(slots.refund).toHaveBeenCalledTimes(addresses.length);
+          expect(harness.logged("Failed to refund rate-limit slot")).toBe(true);
         }),
       );
     });
@@ -442,7 +569,7 @@ describe("TaskManager rate-limit slot recovery", () => {
         async (harness) => {
           await expect(harness.manager.registerTask(ADDRESS)).rejects.toThrow(failure);
 
-          expect(slots.consume).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(slots.reserve).toHaveBeenCalledExactlyOnceWith(ADDRESS);
           // Compensate the reservation: there is no task left to fail and refund it.
           // The anchor must be the one the reservation returned — refunding against
           // an app-clock date silently no-ops whenever the clocks straddle midnight.
@@ -459,10 +586,153 @@ describe("TaskManager rate-limit slot recovery", () => {
       await withManager(
         { repository, slots, handler: () => Promise.resolve("tx-1") },
         async (harness) => {
-          expect(await harness.manager.registerTask(ADDRESS)).toBe(TASK_ID);
+          expect(await harness.manager.registerTask(ADDRESS)).toEqual({
+            _tag: "deduplicated",
+            taskId: TASK_ID,
+          });
 
-          expect(slots.consume).not.toHaveBeenCalled();
+          expect(slots.reserve).not.toHaveBeenCalled();
           expect(repository.create).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("dedupes onto a task that is queued but not yet picked", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      // A wallet that cannot pick leaves tasks `scheduled` for as long as the
+      // outage lasts, which is when a requester is most likely to resubmit.
+      repository.getByAddress.mockResolvedValue(taskRow({ status: "scheduled" }));
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.registerTask(ADDRESS)).toEqual({
+            _tag: "deduplicated",
+            taskId: TASK_ID,
+          });
+
+          expect(slots.reserve).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("reserves a slot for a request following a settled task", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      // Nothing is in flight, so this is a new drip and must cost a slot —
+      // otherwise a requester's second request of the day would be free. The
+      // settled row also drives the status guard `registerTask` keeps on top of
+      // `getByAddress`, which selects the active statuses on its own.
+      repository.getByAddress.mockResolvedValue(taskRow({ status: "success" }));
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.registerTask(ADDRESS)).toMatchObject({
+            _tag: "registered",
+          });
+
+          expect(slots.reserve).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(repository.create).toHaveBeenCalledTimes(1);
+        },
+      );
+    });
+
+    it("reports a refused reservation instead of scheduling a task", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      slots.reserve.mockResolvedValue({ _tag: "denied" });
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.registerTask(ADDRESS)).toEqual({ _tag: "rateLimited" });
+
+          // Nothing to dispense and nothing to refund: the reservation was refused,
+          // so no slot was ever taken.
+          expect(repository.create).not.toHaveBeenCalled();
+          expect(slots.refund).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("returns the id of the task it scheduled", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          const registered = await harness.manager.registerTask(ADDRESS);
+          if (registered._tag !== "registered") {
+            throw new Error(`Expected the task to be registered, got ${registered._tag}`);
+          }
+
+          // The id handed back must be the one persisted, or the caller polls the
+          // status of a task that does not exist.
+          expect(repository.create).toHaveBeenCalledExactlyOnceWith({
+            id: registered.taskId,
+            address: ADDRESS,
+            amount: undefined,
+          });
+          expect(slots.reserve).toHaveBeenCalledExactlyOnceWith(ADDRESS);
+          expect(slots.refund).not.toHaveBeenCalled();
+        },
+      );
+    });
+
+    it("schedules nothing when the reservation itself fails", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      const failure = new Error("rate count table unavailable");
+      slots.reserve.mockRejectedValue(failure);
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          await expect(harness.manager.registerTask(ADDRESS)).rejects.toThrow(failure);
+
+          // Reserving before creating is what keeps this safe: with no task there
+          // is nothing to dispense, and nothing was reserved to hand back.
+          expect(repository.create).not.toHaveBeenCalled();
+          expect(slots.refund).not.toHaveBeenCalled();
+        },
+      );
+    });
+  });
+
+  describe("getStatus", () => {
+    it("reports a generic failure when the stored state is not a message", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      repository.getById.mockResolvedValue(
+        taskRow({ status: "failure", state: JSON.stringify({ code: 500 }) }),
+      );
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.getStatus(TASK_ID)).toEqual({
+            status: "failure",
+            error: "Task failed",
+          });
+        },
+      );
+    });
+
+    it("reports a failure for a task it cannot find", async () => {
+      const repository = fakeRepository();
+      const slots = fakeSlots();
+      repository.getById.mockResolvedValue(undefined);
+
+      await withManager(
+        { repository, slots, handler: () => Promise.resolve("tx-1") },
+        async (harness) => {
+          expect(await harness.manager.getStatus(TASK_ID)).toEqual({
+            status: "failure",
+            error: `Could not find Task with id ${TASK_ID}`,
+          });
         },
       );
     });

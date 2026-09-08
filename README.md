@@ -153,12 +153,14 @@ Prometheus metrics (text or JSON).
 
 ### Third-Party API (`/v1/*`)
 
-For whitelisted partner integrations (origin whitelist + API key authentication).
+For partner integrations, following the Drip API specification. Authenticated with a pre-shared `X-API-Key`; an origin
+allow-list can be switched on for browser-side partners.
 
 See **[Third-Party API Documentation](./THIRD_PARTY_API.md)** for complete details, including:
 
 - `POST /v1/drips` — Request a drip
 - `GET /v1/drips/{dripId}` — Get status
+- `GET /v1/drip-info/{network}/{token}` — Get the default drip amount
 - `GET /v1/health` — Check health
 
 ## Configuration
