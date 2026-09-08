@@ -48,14 +48,14 @@ jobs:
           yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}"
 
       - name: Log in to GitHub Container registry
-        uses: docker/login-action@af63523ba5f55733d817da0fdb813e660152c72c
+        uses: docker/login-action@0a596b2e7a325f0cedf8e9bd21ab002cbd3c9241
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
           password: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
 
       - name: Docker setup buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
         with:
           platforms: linux/arm64,linux/amd64
 
