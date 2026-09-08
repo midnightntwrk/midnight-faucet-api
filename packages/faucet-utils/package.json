@@ -32,7 +32,7 @@
     "dist/"
   ],
   "devDependencies": {
-    "eslint": "10.9.1",
+    "eslint": "10.10.0",
     "fast-check": "4.9.0",
     "typescript": "6.0.3"
   },

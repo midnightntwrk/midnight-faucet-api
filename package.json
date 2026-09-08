@@ -71,7 +71,7 @@
     "@vitest/runner": "3.2.7",
     "@vitest/ui": "4.1.11",
     "D": "1.0.0",
-    "eslint": "10.9.1",
+    "eslint": "10.10.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-config-turbo": "2.10.12",
     "eslint-plugin-prettier": "5.5.6",
