@@ -82,7 +82,13 @@ const makeFakeWallet = (available: UnshieldedCoin[]) => {
     transferError: null as Error | null,
     submitError: null as Error | null,
     signError: null as Error | null,
+    finalizeError: null as Error | null,
     revertError: null as Error | null,
+
+    /** The recipe the last `transferTransaction` handed out, for identity checks. */
+    lastRecipe: null as unknown,
+    /** How many coins were still available when the recipe was signed. */
+    availableWhenSigning: null as number | null,
 
     state: () => subject.asObservable(),
 
@@ -91,13 +97,19 @@ const makeFakeWallet = (available: UnshieldedCoin[]) => {
       const s = subject.getValue();
       reserved = s.unshielded.availableCoins;
       subject.next(buildState([], [...s.unshielded.pendingCoins, ...reserved]));
-      return Promise.resolve({ type: "UNPROVEN_TRANSACTION", transaction: {} });
+      wallet.lastRecipe = { type: "UNPROVEN_TRANSACTION", transaction: {} };
+      return Promise.resolve(wallet.lastRecipe);
     },
 
-    signRecipe: (recipe: unknown) =>
-      wallet.signError ? Promise.reject(wallet.signError) : Promise.resolve(recipe),
+    signRecipe: (recipe: unknown) => {
+      wallet.availableWhenSigning = subject.getValue().unshielded.availableCoins.length;
+      return wallet.signError ? Promise.reject(wallet.signError) : Promise.resolve(recipe);
+    },
 
-    finalizeRecipe: () => Promise.resolve({ transactionHash: () => ({ toString: () => TX_HASH }) }),
+    finalizeRecipe: () =>
+      wallet.finalizeError
+        ? Promise.reject(wallet.finalizeError)
+        : Promise.resolve({ transactionHash: () => ({ toString: () => TX_HASH }) }),
 
     submitTransaction: () =>
       wallet.submitError ? Promise.reject(wallet.submitError) : Promise.resolve(TX_HASH),
@@ -139,6 +151,20 @@ describe("mkRequestTokens - coin reservation handling", () => {
     const response = await requestTokens(receiverAddress);
 
     expect(response.transactionIdentifier).toBe(TX_HASH);
+    // Nothing failed, so the reservation must stand: reverting here would put the
+    // coins back while the transaction that spends them is already submitted.
+    expect(wallet.revert).not.toHaveBeenCalled();
+  });
+
+  it("submits even though building the transfer left no coins available", async () => {
+    // The faucet used to snapshot the available coins, build the transfer, and
+    // then check whether those coins were still available — which they never are,
+    // because building the transfer is what reserves them. Every drip failed that
+    // check before anything was submitted, and the coins stayed reserved.
+    const response = await requestTokens(receiverAddress);
+
+    expect(wallet.availableWhenSigning).toBe(0);
+    expect(response.transactionIdentifier).toBe(TX_HASH);
   });
 
   it("releases reserved coins back to available when submission fails, instead of leaving them stuck in pending", async () => {
@@ -162,6 +188,26 @@ describe("mkRequestTokens - coin reservation handling", () => {
     const finalState = await firstValueFrom(wallet.state());
     expect(finalState.unshielded.availableCoins).toHaveLength(2);
     expect(finalState.unshielded.pendingCoins).toHaveLength(0);
+  });
+
+  it("releases reserved coins when finalizing the transaction fails", async () => {
+    wallet.finalizeError = new Error("finalize boom");
+
+    await expect(requestTokens(receiverAddress)).rejects.toThrow("finalize boom");
+
+    expect(wallet.revert).toHaveBeenCalledTimes(1);
+    const finalState = await firstValueFrom(wallet.state());
+    expect(finalState.unshielded.availableCoins).toHaveLength(2);
+  });
+
+  it("releases exactly the recipe that reserved the coins", async () => {
+    wallet.submitError = new Error("submit boom");
+
+    await expect(requestTokens(receiverAddress)).rejects.toThrow("submit boom");
+
+    // Reverting anything else would leave this attempt's coins reserved, which is
+    // the state that took the faucet down until a restart.
+    expect(wallet.revert).toHaveBeenCalledWith(wallet.lastRecipe);
   });
 
   it("propagates the original failure, not the revert error, when releasing reserved coins itself fails", async () => {

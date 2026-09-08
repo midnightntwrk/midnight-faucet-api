@@ -6,8 +6,10 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-        hookTimeout: 90000,
-    testTimeout: 90000,
+    // Must exceed the compose environment's withStartupTimeout(240_000) in faucet.spec.ts —
+    // the indexer only reports /ready once the node produces blocks and its storage migrates.
+    hookTimeout: 300_000,
+    testTimeout: 90_000,
     coverage: {
       provider: "v8",
       enabled: true,
