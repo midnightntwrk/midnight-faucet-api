@@ -35,6 +35,7 @@ import {
   exhaustMap,
   take,
   EMPTY,
+  Subject,
 } from "rxjs";
 import { ZswapSecretKeys } from "@midnightntwrk/ledger-v9";
 import { UnshieldedAddress, MidnightBech32m } from "@midnightntwrk/wallet-sdk-address-format";
@@ -240,7 +241,6 @@ describe("Faucet Server", () => {
       knexResource(config.db, logger),
       Resource.mapPromise(async (knex) => {
         await knex("users").delete();
-        await knex("user_action_times").delete();
         return new PostgresqlUserRepository(knex);
       }),
       Resource.map((u) => prepareAuthContext(config, u, logger)),
@@ -363,6 +363,80 @@ describe("Faucet Server", () => {
     }
     await sleep(delayMs);
     return pollRateCount(knex, address, target, { attempts: attempts - 1, delayMs });
+  };
+
+  /** Poll a task row until it reaches `target`; returns the last status seen. */
+  const pollTaskStatus = async (
+    knex: ReturnType<typeof knexLib>,
+    id: string,
+    target: string,
+    { attempts = 100, delayMs = 50 }: { attempts?: number; delayMs?: number } = {},
+  ): Promise<string | undefined> => {
+    const row = await knex<{ id: string; status: string }>("tasks").where({ id }).first();
+    if (row?.status === target || attempts <= 1) {
+      return row?.status;
+    }
+    await sleep(delayMs);
+    return pollTaskStatus(knex, id, target, { attempts: attempts - 1, delayMs });
+  };
+
+  /**
+   * How many slots `address` has spent today. No row means none were ever
+   * reserved, which reads as zero — reporting `NaN` instead would turn a missing
+   * row into "expected NaN to be 0" and hide what actually went wrong.
+   */
+  const readRateCount = async (
+    knex: ReturnType<typeof knexLib>,
+    address: string,
+  ): Promise<number> =>
+    knex<{ address: string; count: number }>("rate_counts")
+      .where({ address })
+      .first()
+      .then((row) => (row === undefined ? 0 : Number(row.count)));
+
+  /**
+   * Assert a slot count reaches `expected` **and stays there**.
+   *
+   * A single reading taken at a fixed moment cannot tell "refunded once" from
+   * "about to be refunded again": the second refund of a double-refund lands in
+   * the task manager's finalize tail, after the drip has already been reported as
+   * settled. Re-reading once the tail has had time to run is what makes the
+   * exactly-once claim testable.
+   */
+  const expectSettledRateCount = async (
+    knex: ReturnType<typeof knexLib>,
+    address: string,
+    expected: number,
+  ): Promise<void> => {
+    expect(await pollRateCount(knex, address, expected)).toBe(expected);
+    await sleep(500);
+    expect(await readRateCount(knex, address)).toBe(expected);
+  };
+
+  /**
+   * Drop tasks earlier tests left unfinished.
+   *
+   * Every test shares one database, and a test that deliberately hangs a dispense
+   * leaves its task behind. A later test that needs its own drip *picked* would
+   * otherwise wait for workers those leftovers are still holding.
+   */
+  const clearPendingTasks = (knex: ReturnType<typeof knexLib>) =>
+    knex("tasks").whereIn("status", ["scheduled", "in_progress"]).delete();
+
+  /** Age a picked task past the in-progress timeout so the real sweep strands it. */
+  const strandTask = (knex: ReturnType<typeof knexLib>, id: string) =>
+    knex("tasks")
+      .where({ id })
+      .update({ start_time: new Date(Date.now() - 10 * 60 * 1000) });
+
+  /**
+   * A handler the test releases by hand, so a drip can still be in flight while
+   * the sweep runs against it.
+   */
+  const heldHandler = <T>(outcome: () => Promise<T>) => {
+    const gate = new Subject<void>();
+    const held = firstValueFrom(gate);
+    return { release: () => gate.next(), handler: () => held.then(outcome) };
   };
 
   /**
@@ -582,6 +656,44 @@ describe("Faucet Server", () => {
     );
   });
 
+  // A refund path that works once is not enough: the requester whose drip keeps
+  // failing is exactly the one who retries, and each attempt has to be given back.
+  it("keeps refunding across repeated failures in the same day", () => {
+    const receiver = getRandomBech32mAddress();
+    const failingFaucet = stubFaucet(() =>
+      Promise.reject(new Error("Transaction submission error")),
+    );
+    const limitedConfig = {
+      ...config,
+      rateLimiting: { ...config.rateLimiting, maxDailyRequests: 1 },
+    };
+    const faucetUrl = `http://${limitedConfig.host}:${limitedConfig.port}/api`;
+
+    const failOnce = async () => {
+      const res = await postDrip(faucetUrl, receiver);
+      expect(res.status).toBe(200);
+      const { dripId } = await res.json();
+      expect(await waitForFinalStatus(checkDripStatus(faucetUrl), dripId)).toBe("FAILED");
+    };
+
+    return pipe(
+      defaultRoot(limitedConfig, () => Resource.of(failingFaucet)),
+      Resource.flatMap((root) => prepareServer(limitedConfig, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await failOnce();
+            await failOnce();
+
+            await expectSettledRateCount(knex, receiver, 0);
+            expect((await postDrip(faucetUrl, receiver)).status).toBe(200);
+          }),
+        ),
+      ),
+      Task.unsafeRun,
+    );
+  });
+
   // Regression for #595 (timeout/restart path): a task left `in_progress` and
   // failed by the bulk timeout sweep — not by executeTask — must still refund
   // the slot it reserved. Reproduces the most common trigger (a restart mid-drip).
@@ -617,6 +729,92 @@ describe("Faucet Server", () => {
       Task.tap((count) => {
         expect(count).toBe(0);
       }),
+      Task.unsafeRun,
+    );
+  });
+
+  /** Seed a slot reserved today plus the orphaned task a restart mid-drip leaves. */
+  const seedStrandedDrip = async (knex: ReturnType<typeof knexLib>, address: string) => {
+    await knex("rate_counts").insert({
+      address,
+      count: 1,
+      // Anchored to the start of today, so the refund's window check compares two
+      // dates from the same day however close to midnight the suite runs.
+      updated_at: DateTime.now().startOf("day").toJSDate(),
+    });
+    await knex("tasks").insert({
+      id: nodeCrypto.randomUUID(),
+      address,
+      status: "in_progress",
+      start_time: new Date(Date.now() - 10 * 60 * 1000),
+      created_at: new Date(),
+      amount: null,
+    });
+  };
+
+  // The refund is only worth anything if the requester can then use it, which is
+  // one more step than reading the counter back to zero.
+  it("lets a requester retry the same day once the sweep refunds their stranded drip", () => {
+    const receiver = getRandomBech32mAddress();
+    const limitedConfig = {
+      ...config,
+      rateLimiting: { ...config.rateLimiting, maxDailyRequests: 1 },
+    };
+    const faucetUrl = `http://${limitedConfig.host}:${limitedConfig.port}/api`;
+    const workingFaucet = stubFaucet(() =>
+      Promise.resolve({
+        transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
+        timeToNextRequest: Duration.fromMillis(0),
+      }),
+    );
+
+    return pipe(
+      defaultRoot(limitedConfig, () => Resource.of(workingFaucet)),
+      Resource.flatMap((root) => prepareServer(limitedConfig, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await seedStrandedDrip(knex, receiver);
+            expect(await pollRateCount(knex, receiver, 0)).toBe(0);
+
+            const retry = await postDrip(faucetUrl, receiver);
+            expect(retry.status).toBe(200);
+            const { dripId } = await retry.json();
+            expect(await waitForFinalStatus(checkDripStatus(faucetUrl), dripId)).toBe("CONFIRMED");
+          }),
+        ),
+      ),
+      Task.unsafeRun,
+    );
+  });
+
+  // The counter's `updated_at` is the day the window is anchored to. Moving it
+  // while refunding would drag the window forward off the back of a failure,
+  // which for a requester near midnight silently postpones their reset.
+  it("does not move the daily window when it refunds a stranded slot", () => {
+    const receiver = getRandomBech32mAddress();
+    const idleFaucet = stubFaucet(() => Promise.reject(new Error("unused")));
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(idleFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await seedStrandedDrip(knex, receiver);
+            const before = await knex<{ address: string; updated_at: Date }>("rate_counts")
+              .where({ address: receiver })
+              .first();
+
+            expect(await pollRateCount(knex, receiver, 0)).toBe(0);
+
+            const after = await knex<{ address: string; updated_at: Date }>("rate_counts")
+              .where({ address: receiver })
+              .first();
+            expect(after?.updated_at.getTime()).toBe(before?.updated_at.getTime());
+          }),
+        ),
+      ),
       Task.unsafeRun,
     );
   });
@@ -657,36 +855,86 @@ describe("Faucet Server", () => {
     );
   });
 
+  /**
+   * The poll loop runs the sweep and the dispense through the same `mergeMap`, so
+   * with the default concurrency of one an in-flight drip blocks the sweep and the
+   * two can never overlap in a single instance. Raising it is what lets the real
+   * sweep strand a drip that is still running — the same overlap a second server
+   * instance produces in production.
+   */
+  const racingConfig = () => ({
+    ...config,
+    tasks: { ...config.tasks, maxConcurrentTasks: 2 },
+  });
+
+  /**
+   * Regression for #617, fixed in #619. `registerTask` reads for an active task and
+   * then reserves and creates, with nothing holding the address in between.
+   * Duplicates arriving within that window — a double-clicked button, a client
+   * retry — all read "nothing in flight", so each used to reserve a slot *and*
+   * schedule its own dispense: the requester lost several of their daily requests
+   * and received several drips.
+   *
+   * Reserving on the create path only, which the sequential duplicate coverage above
+   * pins, fixes the double-submit arriving as two round trips. It cannot fix the one
+   * that arrives at once — that takes the `tasks_active_address_unique` index, which
+   * refuses the second insert so the loser can hand its slot back.
+   *
+   * This passing does not on its own prove the race was *exercised*: whether the
+   * three requests truly interleave depends on which wins a fresh pool connection
+   * (`min: 0`, so none are warm). The repository suite pins the constraint directly
+   * and does not depend on that timing.
+   */
+  it("does not consume extra slots for simultaneous duplicate requests", () => {
+    const receiver = getRandomBech32mAddress();
+    const hangingFaucet = stubFaucet(() => new Promise<TokenResponse>(() => {}));
+    const faucetUrl = `http://${config.host}:${config.port}/api`;
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(hangingFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            const responses = await Promise.all(
+              Array.from({ length: 3 }, () => postDrip(faucetUrl, receiver)),
+            );
+            responses.forEach((res) => expect(res.status).toBe(200));
+
+            return readRateCount(knex, receiver);
+          }),
+        ),
+      ),
+      Task.tap((count) => {
+        expect(count).toBe(1);
+      }),
+      Task.unsafeRun,
+    );
+  });
+
   // Regression for #595 (double-refund): a slow drip can be failed *and refunded*
   // by the timeout sweep while its dispense is still in flight. When the dispense
   // then also reports failure, executeTask must NOT refund the slot a second time
   // — a second refund decrements a *different*, successful request's slot, handing
   // the address an extra daily allowance. executeTask now finalizes only while the
   // task is still `in_progress`, so an already-swept task is skipped here.
-  it("refunds a failed drip's slot only once when the sweep and executeTask race (#595)", () => {
+  it("refunds a failed drip's slot only once when the sweep strands it mid-dispense", () => {
     const receiver = getRandomBech32mAddress();
-    const faucetUrl = `http://${config.host}:${config.port}/api`;
+    const racing = racingConfig();
+    const faucetUrl = `http://${racing.host}:${racing.port}/api`;
+    // The drip hangs until the sweep has had its turn, then fails.
+    const { release, handler } = heldHandler(() =>
+      Promise.reject<TokenResponse>(new Error("Transaction submission error")),
+    );
 
-    return withKnex((knex) => {
-      // The dispense reproduces the sweep landing mid-flight: it refunds THIS task's
-      // slot (as the bulk sweep would) and marks it failed, then rejects. A second,
-      // already-successful request's slot is added first so an erroneous double
-      // refund is visible as that slot being stolen rather than floored at zero.
-      const racingFaucet = stubFaucet(async () => {
-        await knex("rate_counts").where({ address: receiver }).increment("count", 1);
-        await knex("tasks")
-          .where({ address: receiver, status: "in_progress" })
-          .update({
-            status: "failure",
-            state: JSON.stringify("Token request failed due to timeout"),
-          });
-        await knex("rate_counts").where({ address: receiver }).decrement("count", 1);
-        throw new Error("Transaction submission error");
-      });
+    return withKnex(async (knex) => {
+      // Before the server exists, not once it is polling: a leftover picked in
+      // between would be handed the held dispense and never release its worker.
+      await clearPendingTasks(knex);
 
       return pipe(
-        defaultRoot(config, () => Resource.of(racingFaucet)),
-        Resource.flatMap((root) => prepareServer(config, root)),
+        defaultRoot(racing, () => Resource.of(stubFaucet(handler))),
+        Resource.flatMap((root) => prepareServer(racing, root)),
         Resource.use(() =>
           Task.lift(async () => {
             // Registration reserves one slot (count = 1) and schedules the task.
@@ -694,26 +942,24 @@ describe("Faucet Server", () => {
             expect(res.status).toBe(200);
             const { dripId } = await res.json();
 
-            // Wait for the dispense to fail.
-            const finalStatus = await waitForFinalStatus(checkDripStatus(faucetUrl), dripId, {
-              delayMs: 200,
-            });
-            expect(finalStatus).toBe("FAILED");
+            expect(await pollTaskStatus(knex, dripId, "in_progress")).toBe("in_progress");
+            // Age the picked task so the *real* `failTimedOutTasks` strands it
+            // while its dispense is still running.
+            await strandTask(knex, dripId);
+            expect(await pollRateCount(knex, receiver, 0)).toBe(0);
 
-            // Let executeTask's finalize-and-maybe-refund tail settle, then read the
-            // slot count. Exactly one refund (the sweep's) should have landed.
-            await sleep(500);
-            const row = await knex<{ address: string; count: number }>("rate_counts")
-              .where({ address: receiver })
-              .first();
-            return Number(row?.count);
+            // Stand in for a later, successful request from the same address, so a
+            // second refund shows up as that slot being stolen rather than being
+            // absorbed by the zero floor.
+            await knex("rate_counts").where({ address: receiver }).increment("count", 1);
+
+            release();
+            expect(await waitForFinalStatus(checkDripStatus(faucetUrl), dripId)).toBe("FAILED");
+            // 1 (later request) with only the sweep's refund applied. A double
+            // refund drops this to 0.
+            await expectSettledRateCount(knex, receiver, 1);
           }),
         ),
-        Task.tap((count) => {
-          // 1 (registration) + 1 (second request) − 1 (single sweep refund). The
-          // pre-fix double refund dropped this to 0, stealing the second slot.
-          expect(count).toBe(1);
-        }),
         Task.unsafeRun,
       );
     });
@@ -723,57 +969,46 @@ describe("Faucet Server", () => {
   // refund* a slow drip whose dispense then succeeds anyway. Tokens were delivered,
   // so the slot must be re-consumed and the task recorded as a success — otherwise
   // the address keeps its full daily allowance *and* got the tokens.
-  it("re-consumes the slot when a drip succeeds after the sweep refunded it (#595)", () => {
+  it("re-consumes the slot when a drip succeeds after the sweep refunded it", () => {
     const receiver = getRandomBech32mAddress();
-    const faucetUrl = `http://${config.host}:${config.port}/api`;
+    const racing = racingConfig();
+    const faucetUrl = `http://${racing.host}:${racing.port}/api`;
+    const { release, handler } = heldHandler(() =>
+      Promise.resolve<TokenResponse>({
+        transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
+        timeToNextRequest: Duration.fromMillis(0),
+      }),
+    );
 
-    return withKnex((knex) => {
-      const lateSuccessFaucet = stubFaucet(async () => {
-        // Reproduce the sweep landing mid-flight: fail and refund this task ...
-        await knex("tasks")
-          .where({ address: receiver, status: "in_progress" })
-          .update({
-            status: "failure",
-            state: JSON.stringify("Token request failed due to timeout"),
-          });
-        await knex("rate_counts").where({ address: receiver }).decrement("count", 1);
-        // ... and only afterwards does the dispense actually succeed.
-        return {
-          transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
-          timeToNextRequest: Duration.fromMillis(0),
-        };
-      });
+    return withKnex(async (knex) => {
+      await clearPendingTasks(knex);
 
       return pipe(
-        defaultRoot(config, () => Resource.of(lateSuccessFaucet)),
-        Resource.flatMap((root) => prepareServer(config, root)),
+        defaultRoot(racing, () => Resource.of(stubFaucet(handler))),
+        Resource.flatMap((root) => prepareServer(racing, root)),
         Resource.use(() =>
           Task.lift(async () => {
-            // Registration reserves one slot (count = 1) and schedules the task.
             const res = await postDrip(faucetUrl, receiver);
             expect(res.status).toBe(200);
             const { dripId } = await res.json();
 
-            const finalStatus = await waitForFinalStatus(checkDripStatus(faucetUrl), dripId, {
-              delayMs: 200,
-            });
-            // The drip delivered tokens, so it must be reported as a success even
-            // though the sweep had already written `failure`.
-            expect(finalStatus).toBe("CONFIRMED");
+            expect(await pollTaskStatus(knex, dripId, "in_progress")).toBe("in_progress");
+            await strandTask(knex, dripId);
+            expect(await pollRateCount(knex, receiver, 0)).toBe(0);
 
-            // Let executeTask's reclaim tail settle, then read the slot count.
-            await sleep(500);
-            const row = await knex<{ address: string; count: number }>("rate_counts")
-              .where({ address: receiver })
-              .first();
-            return Number(row?.count);
+            // Only now do the tokens actually go out.
+            release();
+
+            // The drip delivered, so the swept `failure` row has to be reclaimed:
+            // polling for `success` specifically, because the sweep already wrote a
+            // settled status that a first-settled-status poll would report instead.
+            expect(await pollTaskStatus(knex, dripId, "success")).toBe("success");
+            expect((await checkDripStatus(faucetUrl)(dripId)).status).toBe("CONFIRMED");
+            // 1 (registration) − 1 (sweep refund) + 1 (reclaim). Without the
+            // reclaim this stays 0 — tokens delivered and the allowance intact.
+            await expectSettledRateCount(knex, receiver, 1);
           }),
         ),
-        Task.tap((count) => {
-          // 1 (registration) − 1 (sweep refund) + 1 (reclaim). Before the fix the
-          // reclaim never happened, leaving 0 — a free drip.
-          expect(count).toBe(1);
-        }),
         Task.unsafeRun,
       );
     });
@@ -815,6 +1050,102 @@ describe("Faucet Server", () => {
       ),
       Task.tap((count) => {
         // Pre-fix the sweep sat behind the `canPickTasks` filter, so this stayed 1.
+        expect(count).toBe(0);
+      }),
+      Task.unsafeRun,
+    );
+  });
+
+  // Regression for #622: an address pinned by a stranded `scheduled` task. The sweep
+  // only ever looked at `in_progress`, on the reasoning that `pick` would eventually
+  // run anything queued — but while no wallet can pick, nothing does, and since
+  // migration 009 that one unfinished row is what stops the address requesting
+  // again. The requester was left holding a burned slot on a task that would never
+  // run, polling `PENDING` forever.
+  it("fails and refunds a scheduled task no wallet ever picked up (#622)", () => {
+    const receiver = getRandomBech32mAddress();
+    const strandedId = nodeCrypto.randomUUID();
+    // No wallet able to pick, so the queued task genuinely never advances.
+    const brokeFaucet: Faucet = {
+      ...stubFaucet(() => Promise.reject(new Error("unused"))),
+      state$: unpickableState(),
+    };
+    const faucetUrl = `http://${config.host}:${config.port}/api`;
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(brokeFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            // The scheduled arm only fires when nothing has been picked recently,
+            // and this file shares one database, so drips dispensed by earlier tests
+            // would read as a live poller and hold the gate shut. Clearing them is
+            // what makes "no wallet ever picked up" true of the whole table, which is
+            // the state this test is about.
+            await knex("tasks").whereNot({ address: receiver }).delete();
+            // A slot reserved today, as registration would.
+            await knex("rate_counts").insert({ address: receiver, count: 1 });
+            // Queued well past the scheduled timeout and never picked.
+            await knex("tasks").insert({
+              id: strandedId,
+              address: receiver,
+              status: "scheduled",
+              created_at: new Date(Date.now() - 90 * 60 * 1000),
+              amount: null,
+            });
+
+            const count = await pollRateCount(knex, receiver, 0);
+            const swept = await knex<{ id: string; status: string }>("tasks")
+              .where({ id: strandedId })
+              .first();
+            // The refund is only half the fix: the pin has to lift too, so a retry
+            // must produce a *new* task rather than dedupe onto the dead one.
+            const retry = await postDrip(faucetUrl, receiver);
+            const { dripId } = await retry.json();
+
+            return { count, status: swept?.status, retryStatus: retry.status, dripId };
+          }),
+        ),
+      ),
+      Task.tap(({ count, status, retryStatus, dripId }) => {
+        expect(status).toBe("failure");
+        expect(count).toBe(0);
+        expect(retryStatus).toBe(200);
+        expect(dripId).not.toBe(strandedId);
+      }),
+      Task.unsafeRun,
+    );
+  });
+
+  // Regression for #622: `start_time` is nullable, and `NULL < timestamp` is NULL, so
+  // comparing the column directly excluded exactly the rows most likely to be stuck —
+  // an `in_progress` task that got there without going through `pick`.
+  it("fails an in-progress task whose start_time is null (#622)", () => {
+    const receiver = getRandomBech32mAddress();
+    const failingFaucet = stubFaucet(() => Promise.reject(new Error("unused")));
+
+    return pipe(
+      defaultRoot(config, () => Resource.of(failingFaucet)),
+      Resource.flatMap((root) => prepareServer(config, root)),
+      Resource.use(() =>
+        Task.lift(() =>
+          withKnex(async (knex) => {
+            await knex("rate_counts").insert({ address: receiver, count: 1 });
+            await knex("tasks").insert({
+              id: nodeCrypto.randomUUID(),
+              address: receiver,
+              status: "in_progress",
+              start_time: null,
+              created_at: new Date(Date.now() - 10 * 60 * 1000),
+              amount: null,
+            });
+
+            return pollRateCount(knex, receiver, 0);
+          }),
+        ),
+      ),
+      Task.tap((count) => {
         expect(count).toBe(0);
       }),
       Task.unsafeRun,

@@ -2,8 +2,13 @@ name: Update Docker Images
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Weekly on Monday at 9 AM UTC
+    - cron: "0 9 * * 1" # Weekly on Monday at 9 AM UTC
   workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Report the bumps without writing files or opening a PR"
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -11,60 +16,210 @@ jobs:
   update-docker-images:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # push the update branch
-      pull-requests: write  # open the update PR
+      contents: write # push the update branch
+      pull-requests: write # open the update PR
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Check and update docker images
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ inputs.dry-run && '1' || '0' }}
         run: |
-          set -e
+          set -euo pipefail
 
-          # Get latest versions using Docker Registry API
-          echo "Checking for latest image versions..."
-          NODE_LATEST=$(curl -s 'https://registry.hub.docker.com/v2/repositories/library/node/tags/?page_size=100' | grep -o '"name":"[0-9]*\.[0-9]*\.[0-9]*"' | grep -o '[0-9]*\.[0-9]*\.[0-9]*' | sort -V | tail -1)
-          POSTGRES_LATEST=$(curl -s 'https://registry.hub.docker.com/v2/repositories/library/postgres/tags/?page_size=100' | grep -o '"name":"[0-9]*"' | grep -o '[0-9]*' | sort -V | tail -1)
-          PROOF_SERVER_LATEST=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" 'https://ghcr.io/v2/midnight-ntwrk/proof-server/tags/list' | jq -r '.tags[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
-          INDEXER_LATEST=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" 'https://ghcr.io/v2/midnight-ntwrk/indexer-standalone/tags/list' | jq -r '.tags[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
-          MIDNIGHT_NODE_LATEST=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" 'https://ghcr.io/v2/midnight-ntwrk/midnight-node/tags/list' | jq -r '.tags[]' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          # Tags we are willing to move to. GHCR carries thousands of per-branch
+          # and per-commit builds (`4.3.2-5d2507e3`,
+          # `4.4.0-pre-alpha.15-l91r3-...`); matching only clean release and
+          # release-candidate tags keeps those out of the pin.
+          RELEASE_TAG_PATTERN='^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'
 
-          echo "Found latest versions:"
-          echo "  node: ${NODE_LATEST}"
-          echo "  postgres: ${POSTGRES_LATEST}"
-          echo "  proof-server: ${PROOF_SERVER_LATEST}"
-          echo "  indexer-standalone: ${INDEXER_LATEST}"
-          echo "  midnight-node: ${MIDNIGHT_NODE_LATEST}"
+          # The Dockerfile and .nvmrc track the same Node line, so the bump stays
+          # inside the current major rather than jumping LTS lines unattended.
+          NODE_MAJOR="$(sed -E 's/^([0-9]+)\..*/\1/' .nvmrc)"
 
-          # Update Dockerfile
-          sed -i "s|FROM node:.*|FROM node:${NODE_LATEST}|g" Dockerfile
+          COMPOSE_FILES=(
+            docker-compose.yml
+            tests/docker-compose-dynamic.yml
+            tests/docker-compose-proof-server-dynamic.yml
+          )
 
-          # Update docker-compose.yml
-          sed -i "s|postgres:[0-9]*|postgres:${POSTGRES_LATEST}|g" docker-compose.yml
-          sed -i "s|proof-server:[0-9.]*|proof-server:${PROOF_SERVER_LATEST}|g" docker-compose.yml
-          sed -i "s|indexer-standalone:[0-9.]*|indexer-standalone:${INDEXER_LATEST}|g" docker-compose.yml
-          sed -i "s|midnight-node:[0-9.]*|midnight-node:${MIDNIGHT_NODE_LATEST}|g" docker-compose.yml
+          log() { printf '%s\n' "$*"; }
 
-          # Update tests/docker-compose-dynamic.yml
-          sed -i "s|postgres:[0-9]*|postgres:${POSTGRES_LATEST}|g" tests/docker-compose-dynamic.yml
-          sed -i "s|proof-server:[0-9.]*|proof-server:${PROOF_SERVER_LATEST}|g" tests/docker-compose-dynamic.yml
-          sed -i "s|indexer-standalone:[0-9.]*|indexer-standalone:${INDEXER_LATEST}|g" tests/docker-compose-dynamic.yml
-          sed -i "s|midnight-node:[0-9.]*|midnight-node:${MIDNIGHT_NODE_LATEST}|g" tests/docker-compose-dynamic.yml
+          # Sort key giving semver precedence: a release outranks its
+          # pre-releases, and numeric pre-release identifiers compare numerically
+          # (rc.2 < rc.10) rather than as strings. `sort -V` gets both of these
+          # backwards for `-rc.N` tags.
+          semver_key() {
+            awk '{
+              n = split($0, a, "-")
+              core = a[1]
+              pre = ""
+              for (i = 2; i <= n; i++) pre = (pre == "" ? a[i] : pre "-" a[i])
+              split(core, b, ".")
+              key = sprintf("%010d.%010d.%010d", b[1], b[2], b[3])
+              if (pre == "") { print key " 1 " $0; next }
+              m = split(pre, parts, ".")
+              s = ""
+              for (i = 1; i <= m; i++)
+                s = s (parts[i] ~ /^[0-9]+$/ ? sprintf("%010d", parts[i]) : parts[i]) "."
+              print key " 0 " s " " $0
+            }'
+          }
 
-          # Update tests/docker-compose-proof-server-dynamic.yml
-          sed -i "s|postgres:[0-9]*|postgres:${POSTGRES_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
-          sed -i "s|proof-server:[0-9.]*|proof-server:${PROOF_SERVER_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
-          sed -i "s|indexer-standalone:[0-9.]*|indexer-standalone:${INDEXER_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
-          sed -i "s|midnight-node:[0-9.]*|midnight-node:${MIDNIGHT_NODE_LATEST}|g" tests/docker-compose-proof-server-dynamic.yml
+          # Highest version on stdin, by semver precedence. Empty in, empty out.
+          latest_version() { semver_key | sort | tail -1 | awk '{print $NF}'; }
+
+          # True when $1 is strictly newer than $2.
+          is_newer() {
+            [ -n "$1" ] || return 1
+            [ "$1" != "$2" ] || return 1
+            [ "$(printf '%s\n%s\n' "$1" "$2" | latest_version)" = "$1" ]
+          }
+
+          # GHCR rejects a raw GITHUB_TOKEN as a registry bearer token — that is
+          # why every lookup here used to come back null. It has to be exchanged
+          # for a per-repository pull token first.
+          ghcr_tags() {
+            repo="$1"
+            token="$(curl -fsSL -u "x-access-token:${GITHUB_TOKEN}" \
+              "https://ghcr.io/token?service=ghcr.io&scope=repository:${repo}:pull" | jq -r '.token')"
+            if [ -z "$token" ] || [ "$token" = "null" ]; then
+              log "ERROR: could not obtain a GHCR pull token for ${repo}" >&2
+              return 1
+            fi
+
+            # A page caps out at 1000 tags, well short of these repositories
+            # (midnight-node has >31k), so the newest release is only reachable
+            # by following the Link header to the end.
+            url="https://ghcr.io/v2/${repo}/tags/list?n=1000"
+            while [ -n "$url" ]; do
+              hdr="$(mktemp)"
+              body="$(curl -fsSL -D "$hdr" -H "Authorization: Bearer ${token}" "$url")"
+              printf '%s\n' "$body" | jq -r '.tags[]?'
+              next="$(tr -d '\r' < "$hdr" | sed -n 's/^[Ll]ink: *<\([^>]*\)>.*rel="next".*/\1/p' | head -1)"
+              rm -f "$hdr"
+              case "$next" in
+                '')    url='' ;;
+                http*) url="$next" ;;
+                *)     url="https://ghcr.io${next}" ;;
+              esac
+            done
+          }
+
+          dockerhub_tags() {
+            url="https://registry.hub.docker.com/v2/repositories/library/$1/tags/?page_size=100"
+            while [ -n "$url" ] && [ "$url" != "null" ]; do
+              page="$(curl -fsSL "$url")"
+              printf '%s\n' "$page" | jq -r '.results[]?.name'
+              url="$(printf '%s\n' "$page" | jq -r '.next')"
+            done
+          }
+
+          # Digest for a Docker Hub tag, so the Dockerfile keeps its `@sha256:`
+          # pin instead of being rewritten to a bare, unpinned tag.
+          dockerhub_digest() {
+            token="$(curl -fsSL \
+              "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/$1:pull" \
+              | jq -r '.token')"
+            curl -fsSL -o /dev/null -D - \
+              -H "Authorization: Bearer ${token}" \
+              -H 'Accept: application/vnd.oci.image.index.v1+json' \
+              -H 'Accept: application/vnd.docker.distribution.manifest.list.v2+json' \
+              -H 'Accept: application/vnd.docker.distribution.manifest.v2+json' \
+              "https://registry-1.docker.io/v2/library/$1/manifests/$2" \
+              | tr -d '\r' | sed -n 's/^[Dd]ocker-[Cc]ontent-[Dd]igest: *//p' | head -1
+          }
+
+          # Current tag for an image, from the first compose file that pins it.
+          current_tag() {
+            for file in "${COMPOSE_FILES[@]}"; do
+              [ -f "$file" ] || continue
+              found="$(sed -nE "s|^[[:space:]]*image:[[:space:]]*\"?$1:([^\"[:space:]]+)\"?.*|\1|p" "$file" | head -1)"
+              if [ -n "$found" ]; then printf '%s\n' "$found"; return 0; fi
+            done
+            return 0
+          }
+
+          # Replace the *whole* tag, not just its numeric prefix. The previous
+          # `[0-9.]*` pattern stopped at the first hyphen, so bumping
+          # `indexer-standalone:4.4.0-pre-alpha.15-...` rewrote only the `4.4.0`
+          # and left the stale pre-release suffix welded onto the new version.
+          replace_tag() {
+            for file in "${COMPOSE_FILES[@]}"; do
+              [ -f "$file" ] || continue
+              tmp="$(mktemp)"
+              sed -E "s|(^[[:space:]]*image:[[:space:]]*\"?$1):[^\"[:space:]]+|\1:$2|" "$file" > "$tmp"
+              if [ "${DRY_RUN}" = "1" ]; then rm -f "$tmp"; else mv "$tmp" "$file"; fi
+            done
+          }
+
+          update_image() {
+            label="$1"; image="$2"; latest="$3"
+            current="$(current_tag "$image")"
+            if [ -z "$latest" ]; then
+              log "  ${label}: SKIP — no tag matched ${RELEASE_TAG_PATTERN}"
+            elif is_newer "$latest" "$current"; then
+              replace_tag "$image" "$latest"
+              log "  ${label}: ${current} -> ${latest}"
+            else
+              log "  ${label}: ${current} — already current (newest candidate: ${latest})"
+            fi
+            return 0
+          }
+
+          update_ghcr_image() {
+            tags="$(ghcr_tags "midnight-ntwrk/$1" || true)"
+            latest="$(printf '%s\n' "$tags" | grep -E "$RELEASE_TAG_PATTERN" | latest_version || true)"
+            update_image "$1" "ghcr.io/midnight-ntwrk/$1" "$latest"
+          }
+
+          update_node() {
+            latest="$(dockerhub_tags node | grep -E "^${NODE_MAJOR}\.[0-9]+\.[0-9]+$" | latest_version || true)"
+            current="$(sed -nE 's|^FROM node:([^@[:space:]]+).*|\1|p' Dockerfile | head -1)"
+            if ! is_newer "$latest" "$current"; then
+              log "  node: ${current} — already current on the ${NODE_MAJOR}.x line (newest: ${latest:-none})"
+              return 0
+            fi
+            digest="$(dockerhub_digest node "$latest" || true)"
+            if [ -z "$digest" ]; then
+              log "  node: SKIP — could not resolve a digest for ${latest}"
+              return 0
+            fi
+            if [ "${DRY_RUN}" != "1" ]; then
+              tmp="$(mktemp)"
+              sed -E "s|^FROM node:.*|FROM node:${latest}@${digest}|" Dockerfile > "$tmp"
+              mv "$tmp" Dockerfile
+              printf '%s\n' "$latest" > .nvmrc
+            fi
+            log "  node: ${current} -> ${latest}@${digest} (.nvmrc kept in sync)"
+          }
+
+          if [ "${DRY_RUN}" = "1" ]; then log "DRY RUN — no files will be written"; fi
+          log "Checking pinned image versions..."
+
+          update_node
+          update_image postgres postgres \
+            "$(dockerhub_tags postgres | grep -E '^[0-9]+$' | sort -n | tail -1 || true)"
+          update_ghcr_image proof-server
+          update_ghcr_image indexer-standalone
+          update_ghcr_image midnight-node
+
+          log ""
+          log "Resulting diff:"
+          git --no-pager diff --stat
 
       - name: Create Pull Request
+        if: ${{ !inputs.dry-run }}
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          commit-message: 'chore: update docker image versions'
-          title: 'chore: update docker image versions to latest'
+          commit-message: "chore: update docker image versions"
+          title: "chore: update docker image versions to latest"
           body: |
-            This PR updates the docker-compose.yml with the latest image versions from their respective registries.
+            This PR updates the pinned container image tags with the latest
+            release / release-candidate versions from their registries.
 
             Please review the updated versions and test before merging.
           branch: chore/update-docker-images

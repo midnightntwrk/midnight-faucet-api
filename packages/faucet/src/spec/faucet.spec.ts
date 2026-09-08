@@ -18,7 +18,7 @@ import {
   firstValueFrom,
   BehaviorSubject,
 } from "rxjs";
-import { DockerComposeEnvironment, StartedDockerComposeEnvironment } from "testcontainers";
+import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from "testcontainers";
 import {
   FaucetConfig,
   FaucetImpl,
@@ -42,7 +42,14 @@ const environment = (): Resource<Environment> => {
   return pipe(
     Resource.make(
       Task.lift(() => {
-        const env = new DockerComposeEnvironment(path.resolve("."), "test-compose.yml");
+        // The indexer is gated from the host rather than by a compose healthcheck: its image
+        // ships no curl or wget, so any in-container HTTP probe exits 127 forever and the
+        // container is eventually marked unhealthy. /ready returns 200 once the node is
+        // producing blocks and the indexer's storage has migrated.
+        // withStartupTimeout must stay below vitest's hookTimeout.
+        const env = new DockerComposeEnvironment(path.resolve("."), "test-compose.yml")
+          .withStartupTimeout(240_000)
+          .withWaitStrategy("faucet-test-indexer", Wait.forHttp("/ready", 8088));
         return env.up();
       }),
       (env) =>
@@ -57,7 +64,7 @@ const environment = (): Resource<Environment> => {
       const indexerURL = new URL(
         `http://localhost:${runningEnvironment
           .getContainer("faucet-test-indexer")
-          .getMappedPort(8088)}/api/v3/graphql`,
+          .getMappedPort(8088)}/api/v4/graphql`,
       );
       const indexerSubscriptionURL = block(() => {
         const out = new URL(indexerURL);

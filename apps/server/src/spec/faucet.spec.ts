@@ -37,18 +37,18 @@ describe("Faucet configuration", () => {
 
     it.each([
       {
-        provided: "https://localhost:8088/api/v3/graphql",
-        expected: "wss://localhost:8088/api/v3/graphql/ws",
+        provided: "https://localhost:8088/api/v4/graphql",
+        expected: "wss://localhost:8088/api/v4/graphql/ws",
       },
       {
-        provided: "https://localhost/api/v3/graphql",
-        expected: "wss://localhost/api/v3/graphql/ws",
+        provided: "https://localhost/api/v4/graphql",
+        expected: "wss://localhost/api/v4/graphql/ws",
       },
       {
-        provided: "http://localhost:8088/api/v3/graphql",
-        expected: "ws://localhost:8088/api/v3/graphql/ws",
+        provided: "http://localhost:8088/api/v4/graphql",
+        expected: "ws://localhost:8088/api/v4/graphql/ws",
       },
-      { provided: "http://localhost/api/v3/graphql", expected: "ws://localhost/api/v3/graphql/ws" },
+      { provided: "http://localhost/api/v4/graphql", expected: "ws://localhost/api/v4/graphql/ws" },
       { provided: "http://localhost:8088/foo", expected: "ws://localhost:8088/foo/ws" },
       { provided: "http://localhost:8088/foo/", expected: "ws://localhost:8088/foo/ws" },
       { provided: "http://localhost:8088/foo/1", expected: "ws://localhost:8088/foo/1/ws" },
