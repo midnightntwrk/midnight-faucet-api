@@ -99,7 +99,7 @@ jobs:
         run: corepack enable
 
       - name: Log in to GitHub Container registry
-        uses: docker/login-action@af63523ba5f55733d817da0fdb813e660152c72c
+        uses: docker/login-action@0a596b2e7a325f0cedf8e9bd21ab002cbd3c9241
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
