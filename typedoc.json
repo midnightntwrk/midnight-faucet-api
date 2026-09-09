@@ -1,5 +1,5 @@
 {
-  "titleLink": "https://github.com/input-output-hk/midnight-faucet",
+  "titleLink": "https://github.com/midnightntwrk/midnight-faucet-api",
   "name": "@midnight-ntwrk/faucet-client",
   "out": "docs/api/faucet-client",
   "readme": "./packages/faucet-client/README.md",
