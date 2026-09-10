@@ -36,7 +36,7 @@
     "@midnight-ntwrk/faucet-internal-api": "workspace:^",
     "@midnight-ntwrk/faucet-ui": "workspace:^",
     "@midnight-ntwrk/faucet-utils": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.2",
+    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.3",
     "@types/convict": "^6.1.5",
     "@types/cors": "^2.8.15",
     "@types/express": "^5.0.0",
@@ -74,7 +74,7 @@
   ],
   "devDependencies": {
     "@midnight-ntwrk/faucet-client": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.2",
+    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.3",
     "@testcontainers/postgresql": "11.14.0",
     "eslint": "10.9.1",
     "fast-check": "4.9.0",
