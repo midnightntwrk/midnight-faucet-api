@@ -35,7 +35,7 @@
     "dist/"
   ],
   "devDependencies": {
-    "@vitejs/plugin-react": "5.2.0",
+    "@vitejs/plugin-react": "6.1.1",
     "css-loader": "7.1.5",
     "eslint": "10.9.1",
     "fast-check": "4.9.0",
