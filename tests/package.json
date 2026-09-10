@@ -12,7 +12,7 @@
     "e2e-test": "yarn playwright test src/e2e/tests"
   },
   "devDependencies": {
-    "@types/node": "^26.4.0",
+    "@types/node": "^26.4.1",
     "eslint": "^10.9.1",
     "fast-check": "^4.9.0",
     "fp-ts": "^2.16.0",
