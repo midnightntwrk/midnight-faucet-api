@@ -51,8 +51,7 @@ function getPackages() {
       "HTTP server for token distribution with REST API, rate limiting, and async task processing.",
     "@midnight-ntwrk/faucet-ui":
       "React web interface for requesting test tokens with CAPTCHA protection.",
-    "@midnight-ntwrk/faucet-client":
-      "TypeScript client library for programmatic faucet access.",
+    "@midnight-ntwrk/faucet-client": "TypeScript client library for programmatic faucet access.",
     "@midnight-ntwrk/faucet":
       "Core faucet library with wallet integration and token transfer logic.",
     "@midnight-ntwrk/faucet-auth": "JWT-based authentication for faucet API access.",
@@ -191,7 +190,7 @@ ${improvementsList}
 ${packagesTable}
 ---
 ### Links and references
-- GitHub Repository: [midnightntwrk/midnight-faucet](https://github.com/midnightntwrk/midnight-faucet)
+- GitHub Repository: [midnightntwrk/midnight-faucet-api](https://github.com/midnightntwrk/midnight-faucet-api)
 - Midnight Network Documentation: [docs.midnight.network](https://docs.midnight.network)
 - Wallet SDK: [midnightntwrk/midnight-wallet](https://github.com/midnightntwrk/midnight-wallet)
 ---

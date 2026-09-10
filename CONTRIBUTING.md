@@ -20,8 +20,8 @@ We are committed to providing a welcoming and inclusive environment. Please be r
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/midnightntwrk/midnight-faucet.git
-   cd midnight-faucet
+   git clone https://github.com/midnightntwrk/midnight-faucet-api.git
+   cd midnight-faucet-api
    ```
 
 2. **Install dependencies:**
