@@ -1,6 +1,6 @@
 {
   "name": "@midnight-ntwrk/faucet-smoke-test",
-  "version": "0.14.0-rc.2",
+  "version": "1.0.0",
   "private": true,
   "description": "Faucet smoke test",
   "type": "module",

@@ -1,5 +1,5 @@
 {
-  "version": "0.14.0-rc.2",
+  "version": "1.0.0",
   "resolutions": {
     "@midnightntwrk/ledger-v9": "^1.0.0-rc.3",
     "cross-spawn": "^7.0.6",
