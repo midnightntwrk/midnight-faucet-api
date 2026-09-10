@@ -23,7 +23,7 @@ jobs:
       packages: write # This is required for using GH docker registry
     # if: ${{ github.event_name != 'schedule' && (github.ref_name == 'main' || contains(github.event.head_commit.message, '[do_publish]') || contains(github.event.ref, 'tags') || github.event_name == 'workflow_dispatch') }}
     steps:
-      - name: Checkout midnight-faucet repository
+      - name: Checkout midnight-faucet-api repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -132,5 +132,5 @@ jobs:
         run: |
           docker buildx build \
           --platform linux/arm64,linux/amd64 \
-          -t "ghcr.io/midnight-ntwrk/midnight-faucet:${DOCKER_TAG}" \
+          -t "ghcr.io/midnight-ntwrk/midnight-faucet-api:${DOCKER_TAG}" \
           --push .
