@@ -68,7 +68,7 @@
     "@types/yargs": "17.0.35",
     "@vitest/coverage-v8": "4.1.11",
     "@vitest/eslint-plugin": "1.6.27",
-    "@vitest/runner": "3.2.7",
+    "@vitest/runner": "4.1.11",
     "@vitest/ui": "4.1.11",
     "D": "1.0.0",
     "eslint": "10.9.1",
