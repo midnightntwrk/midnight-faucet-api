@@ -1052,7 +1052,7 @@ __metadata:
     "@midnight-ntwrk/faucet-internal-api": "workspace:^"
     "@midnight-ntwrk/faucet-ui": "workspace:^"
     "@midnight-ntwrk/faucet-utils": "workspace:^"
-    "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
+    "@midnightntwrk/wallet-sdk": "npm:2.0.0-canary.20260702133504-1f7aaca"
     "@testcontainers/postgresql": "npm:11.14.0"
     "@types/convict": "npm:^6.1.5"
     "@types/cors": "npm:^2.8.15"
@@ -1391,7 +1391,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnightntwrk/wallet-sdk@npm:^2.0.0-beta.2":
+"@midnightntwrk/wallet-sdk@npm:2.0.0-canary.20260702133504-1f7aaca, @midnightntwrk/wallet-sdk@npm:^2.0.0-beta.2":
   version: 2.0.0-canary.20260702133504-1f7aaca
   resolution: "@midnightntwrk/wallet-sdk@npm:2.0.0-canary.20260702133504-1f7aaca"
   dependencies:
