@@ -1,6 +1,6 @@
 import { Observable, Subscription } from "rxjs";
 import pino from "pino";
-import { FaucetState } from "@midnight-ntwrk/faucet-internal-api";
+import { FaucetState } from "@midnightntwrk/faucet-internal-api";
 import { HealthService } from "./health.js";
 import { PostgresqlStateSnapshotsRepository } from "./state-persistence/state-persistence-repository.js";
 

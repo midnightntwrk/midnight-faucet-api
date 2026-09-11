@@ -238,7 +238,7 @@ yarn test --reporter=verbose path/to/spec.spec.ts # Verbose output
 Key architectural decisions:
 
 - **ESM throughout** with `--experimental-specifier-resolution=node`
-- **Resource/Task lifecycle** from `@midnight-ntwrk/faucet-utils` (not raw Promises)
+- **Resource/Task lifecycle** from `@midnightntwrk/faucet-utils` (not raw Promises)
 - **io-ts codecs** for API types (source of truth)
 - **RxJS for streams** (wallet state, health checks, metrics)
 - **Postgres task queue** for durable transaction execution

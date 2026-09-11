@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import _ from "lodash";
 import pino from "pino";
 import * as rx from "rxjs";
 import { asyncScheduler } from "rxjs";
-import { StatusResponse } from "@midnight-ntwrk/faucet-internal-api";
+import { StatusResponse } from "@midnightntwrk/faucet-internal-api";
 import {
   CompletedResponse,
   isCompleted,

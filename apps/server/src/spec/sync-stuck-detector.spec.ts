@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Subject } from "rxjs";
 import pino from "pino";
-import { FaucetState } from "@midnight-ntwrk/faucet-internal-api";
+import { FaucetState } from "@midnightntwrk/faucet-internal-api";
 import { createSyncStuckDetector } from "../sync-stuck-detector.js";
 import { HealthService } from "../health.js";
 import { PostgresqlStateSnapshotsRepository } from "../state-persistence/state-persistence-repository.js";

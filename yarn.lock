@@ -989,11 +989,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnight-ntwrk/faucet-auth@workspace:^, @midnight-ntwrk/faucet-auth@workspace:packages/auth":
+"@midnight-ntwrk/zkir-v2@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "@midnight-ntwrk/zkir-v2@npm:2.1.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40midnight-ntwrk%2Fzkir-v2%2F2.1.0%2Fb3c8b9720535d7e62b86c5ff8341a13a46eb5c7e"
+  checksum: 10/c16761489c3abbf858a4b7c2c4dd99d498f40554b5f1a57a93534b21c66390d4c6b0035dee8923fb5972418c75ac1f80e2e0675d8f3eb2a96dce7e7555fb2b7d
+  languageName: node
+  linkType: hard
+
+"@midnightntwrk/faucet-auth@workspace:^, @midnightntwrk/faucet-auth@workspace:packages/auth":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-auth@workspace:packages/auth"
+  resolution: "@midnightntwrk/faucet-auth@workspace:packages/auth"
   dependencies:
-    "@midnight-ntwrk/faucet-utils": "workspace:^"
+    "@midnightntwrk/faucet-utils": "workspace:^"
     "@types/jsonwebtoken": "npm:^9.0.4"
     date-fns: "npm:^4.1.0"
     eslint: "npm:10.9.1"
@@ -1008,11 +1015,11 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet-client@workspace:^, @midnight-ntwrk/faucet-client@workspace:packages/faucet-client":
+"@midnightntwrk/faucet-client@workspace:^, @midnightntwrk/faucet-client@workspace:packages/faucet-client":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-client@workspace:packages/faucet-client"
+  resolution: "@midnightntwrk/faucet-client@workspace:packages/faucet-client"
   dependencies:
-    "@midnight-ntwrk/faucet-internal-api": "workspace:^"
+    "@midnightntwrk/faucet-internal-api": "workspace:^"
     eslint: "npm:10.9.1"
     fast-check: "npm:4.9.0"
     luxon: "npm:^3.4.3"
@@ -1025,9 +1032,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet-internal-api@workspace:^, @midnight-ntwrk/faucet-internal-api@workspace:packages/faucet-internal-api":
+"@midnightntwrk/faucet-internal-api@workspace:^, @midnightntwrk/faucet-internal-api@workspace:packages/faucet-internal-api":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-internal-api@workspace:packages/faucet-internal-api"
+  resolution: "@midnightntwrk/faucet-internal-api@workspace:packages/faucet-internal-api"
   dependencies:
     "@types/luxon": "npm:3.7.5"
     eslint: "npm:10.9.1"
@@ -1042,16 +1049,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet-server@workspace:apps/server":
+"@midnightntwrk/faucet-server@workspace:apps/server":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-server@workspace:apps/server"
+  resolution: "@midnightntwrk/faucet-server@workspace:apps/server"
   dependencies:
-    "@midnight-ntwrk/faucet": "workspace:^"
-    "@midnight-ntwrk/faucet-auth": "workspace:^"
-    "@midnight-ntwrk/faucet-client": "workspace:^"
-    "@midnight-ntwrk/faucet-internal-api": "workspace:^"
-    "@midnight-ntwrk/faucet-ui": "workspace:^"
-    "@midnight-ntwrk/faucet-utils": "workspace:^"
+    "@midnightntwrk/faucet": "workspace:^"
+    "@midnightntwrk/faucet-auth": "workspace:^"
+    "@midnightntwrk/faucet-client": "workspace:^"
+    "@midnightntwrk/faucet-internal-api": "workspace:^"
+    "@midnightntwrk/faucet-ui": "workspace:^"
+    "@midnightntwrk/faucet-utils": "workspace:^"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@testcontainers/postgresql": "npm:11.14.0"
     "@types/convict": "npm:^6.1.5"
@@ -1095,9 +1102,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet-smoke-test@workspace:tests":
+"@midnightntwrk/faucet-smoke-test@workspace:tests":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-smoke-test@workspace:tests"
+  resolution: "@midnightntwrk/faucet-smoke-test@workspace:tests"
   dependencies:
     "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
@@ -1120,13 +1127,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet-ui@workspace:^, @midnight-ntwrk/faucet-ui@workspace:apps/ui":
+"@midnightntwrk/faucet-ui@workspace:^, @midnightntwrk/faucet-ui@workspace:apps/ui":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-ui@workspace:apps/ui"
+  resolution: "@midnightntwrk/faucet-ui@workspace:apps/ui"
   dependencies:
     "@marsidev/react-turnstile": "npm:^1.6.1"
-    "@midnight-ntwrk/faucet-client": "workspace:^"
-    "@midnight-ntwrk/faucet-internal-api": "workspace:^"
+    "@midnightntwrk/faucet-client": "workspace:^"
+    "@midnightntwrk/faucet-internal-api": "workspace:^"
     "@types/react": "npm:^18.2.34"
     "@types/react-dom": "npm:^18.2.14"
     "@vitejs/plugin-react": "npm:5.2.0"
@@ -1149,9 +1156,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet-utils@workspace:^, @midnight-ntwrk/faucet-utils@workspace:packages/faucet-utils":
+"@midnightntwrk/faucet-utils@workspace:^, @midnightntwrk/faucet-utils@workspace:packages/faucet-utils":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet-utils@workspace:packages/faucet-utils"
+  resolution: "@midnightntwrk/faucet-utils@workspace:packages/faucet-utils"
   dependencies:
     eslint: "npm:10.9.1"
     fast-check: "npm:4.9.0"
@@ -1162,12 +1169,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@midnight-ntwrk/faucet@workspace:^, @midnight-ntwrk/faucet@workspace:packages/faucet":
+"@midnightntwrk/faucet@workspace:^, @midnightntwrk/faucet@workspace:packages/faucet":
   version: 0.0.0-use.local
-  resolution: "@midnight-ntwrk/faucet@workspace:packages/faucet"
+  resolution: "@midnightntwrk/faucet@workspace:packages/faucet"
   dependencies:
-    "@midnight-ntwrk/faucet-internal-api": "workspace:^"
-    "@midnight-ntwrk/faucet-utils": "workspace:^"
+    "@midnightntwrk/faucet-internal-api": "workspace:^"
+    "@midnightntwrk/faucet-utils": "workspace:^"
     "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@types/lodash": "npm:^4.17.25"
@@ -1186,13 +1193,6 @@ __metadata:
     rxjs: ^7.5.5
   languageName: unknown
   linkType: soft
-
-"@midnight-ntwrk/zkir-v2@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@midnight-ntwrk/zkir-v2@npm:2.1.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40midnight-ntwrk%2Fzkir-v2%2F2.1.0%2Fb3c8b9720535d7e62b86c5ff8341a13a46eb5c7e"
-  checksum: 10/c16761489c3abbf858a4b7c2c4dd99d498f40554b5f1a57a93534b21c66390d4c6b0035dee8923fb5972418c75ac1f80e2e0675d8f3eb2a96dce7e7555fb2b7d
-  languageName: node
-  linkType: hard
 
 "@midnightntwrk/ledger-v9@npm:^1.0.0-rc.3":
   version: 1.0.0-rc.3

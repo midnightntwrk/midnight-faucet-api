@@ -1,4 +1,4 @@
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { ServerConfig } from "../config.js";
 import { createLogger } from "../logging.js";
 import { knexResource, MigrationResult, runMigrations } from "../postgres.js";

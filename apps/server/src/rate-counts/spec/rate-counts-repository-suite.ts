@@ -1,5 +1,5 @@
 import * as nodeCrypto from "node:crypto";
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { option } from "fp-ts";
 import { DateTime, Settings } from "luxon";
 import pino from "pino";

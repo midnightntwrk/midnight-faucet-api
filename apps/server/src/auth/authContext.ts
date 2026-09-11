@@ -1,4 +1,4 @@
-import { UserAuthenticator, UserRepository } from "@midnight-ntwrk/faucet-auth";
+import { UserAuthenticator, UserRepository } from "@midnightntwrk/faucet-auth";
 import pino from "pino";
 import { ServerConfig } from "../config.js";
 

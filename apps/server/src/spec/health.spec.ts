@@ -1,4 +1,4 @@
-import { pipe } from "@midnight-ntwrk/faucet-utils";
+import { pipe } from "@midnightntwrk/faucet-utils";
 import mapValues from "lodash/mapValues";
 import pino from "pino";
 import * as fc from "fast-check";

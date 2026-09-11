@@ -1,5 +1,5 @@
-import { Resource, Task } from "@midnight-ntwrk/faucet-utils";
-import { testUserRepository } from "@midnight-ntwrk/faucet-auth/dist/testing";
+import { Resource, Task } from "@midnightntwrk/faucet-utils";
+import { testUserRepository } from "@midnightntwrk/faucet-auth/dist/testing";
 import pino from "pino";
 import { PostgresqlUserRepository } from "../postgresql-user-repository.js";
 import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/postgres.js";

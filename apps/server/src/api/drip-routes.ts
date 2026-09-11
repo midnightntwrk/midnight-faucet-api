@@ -6,8 +6,8 @@ import {
   dripHealthResponseCodec,
   DripResponse,
   DripHealthResponse,
-} from "@midnight-ntwrk/faucet-internal-api";
-import { pipe, Task } from "@midnight-ntwrk/faucet-utils";
+} from "@midnightntwrk/faucet-internal-api";
+import { pipe, Task } from "@midnightntwrk/faucet-utils";
 import * as express from "express";
 import { either } from "fp-ts";
 import * as t from "io-ts";

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Resource, Task } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import { vi } from "vitest";
 import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/postgres.js";

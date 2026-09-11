@@ -1,5 +1,5 @@
 #!/usr/bin/env -S node --experimental-specifier-resolution=node
-import { FaucetClient } from "@midnight-ntwrk/faucet-client";
+import { FaucetClient } from "@midnightntwrk/faucet-client";
 import { WalletBuilder } from "@midnightntwrk/wallet";
 import { NetworkId } from "@midnight-ntwrk/zswap";
 import _ from "lodash";

@@ -1,4 +1,4 @@
-import { Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Resource, Task } from "@midnightntwrk/faucet-utils";
 import { testUserRepository } from "../testing/user-repository-spec.js";
 import { InMemoryUserRepository } from "../user-repository.js";
 
