@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/faucet-internal-api",
+  "name": "@midnightntwrk/faucet-internal-api",
   "version": "1.0.0",
   "description": "Midnight faucet library",
   "type": "module",
@@ -14,10 +14,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/midnight-ntwrk/artifacts.git"
+    "url": "https://github.com/midnightntwrk/midnight-faucet-api.git"
   },
   "author": "IOHK",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "eslint --max-warnings=0",
     "build": "tsc -b ./tsconfig.build.json",

@@ -1,11 +1,11 @@
 {
-  "name": "@midnight-ntwrk/faucet-ui",
+  "name": "@midnightntwrk/faucet-ui",
   "version": "1.0.0",
   "description": "Midnight faucet server",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/midnight-ntwrk/artifacts.git"
+    "url": "https://github.com/midnightntwrk/midnight-faucet-api.git"
   },
   "author": "IOHK",
   "license": "Apache-2.0",
@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.6.1",
-    "@midnight-ntwrk/faucet-client": "workspace:^",
-    "@midnight-ntwrk/faucet-internal-api": "workspace:^",
+    "@midnightntwrk/faucet-client": "workspace:^",
+    "@midnightntwrk/faucet-internal-api": "workspace:^",
     "@types/react": "^18.2.34",
     "@types/react-dom": "^18.2.14",
     "classnames": "^2.3.2",

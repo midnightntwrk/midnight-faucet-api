@@ -1,5 +1,5 @@
 import { writeHeapSnapshot } from "node:v8";
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import express, { Router } from "express";
 import * as http from "node:http";
 import pino from "pino";

@@ -12,7 +12,7 @@ import { type DefaultConfiguration, WalletFacade } from "@midnightntwrk/wallet-s
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { DustSecretKey, LedgerParameters, ZswapSecretKeys } from "@midnightntwrk/ledger-v9";
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 
 export const DustOptions = {
   additionalFeeOverhead: 300_000_000_000_000n,

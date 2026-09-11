@@ -1,6 +1,6 @@
 {
   "titleLink": "https://github.com/midnightntwrk/midnight-faucet-api",
-  "name": "@midnight-ntwrk/faucet-client",
+  "name": "@midnightntwrk/faucet-client",
   "out": "docs/api/faucet-client",
   "readme": "./packages/faucet-client/README.md",
   "entryPointStrategy": "expand",

@@ -5,6 +5,8 @@ on:
     secrets:
       MIDNIGHTCI_PACKAGES_WRITE:
         required: true
+      NPM_TOKEN:
+        required: true
   workflow_dispatch:
     inputs:
       ref:
@@ -34,25 +36,34 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           always-auth: true
-          registry-url: https://npm.pkg.github.com/
-          scope: "@midnight-ntwrk"
+          registry-url: https://registry.npmjs.org/
+          scope: "@midnightntwrk"
           node-version-file: ".nvmrc"
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Enable Corepack
         run: corepack enable
 
+      # Two registries are in play. The faucet packages publish publicly to npmjs, so the
+      # publish step needs an npmjs automation token. Separately, @midnight-ntwrk/zkir-v2
+      # (a transitive wallet-SDK dep) still downloads from GitHub Packages and needs the
+      # PAT kept on that scope, or a cold install 401s.
       - name: Configure yarn
         run: |
+          yarn config set 'npmRegistries["https://registry.npmjs.org"].npmAuthToken' "${{ secrets.NPM_TOKEN }}"
           yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}"
 
+      # The image now lives in this repo's own org, so the job's `packages: write`
+      # GITHUB_TOKEN is sufficient and is scoped to this repo alone, unlike the org-wide
+      # PAT. It also makes GHCR link the new package to this repo automatically, so it
+      # inherits the repo's public visibility instead of defaulting to private.
       - name: Log in to GitHub Container registry
         uses: docker/login-action@0a596b2e7a325f0cedf8e9bd21ab002cbd3c9241
         with:
           registry: "https://ghcr.io"
-          username: ntwrk-bot
-          password: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Docker setup buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
@@ -132,5 +143,5 @@ jobs:
         run: |
           docker buildx build \
           --platform linux/arm64,linux/amd64 \
-          -t "ghcr.io/midnight-ntwrk/midnight-faucet-api:${DOCKER_TAG}" \
+          -t "ghcr.io/midnightntwrk/midnight-faucet-api:${DOCKER_TAG}" \
           --push .

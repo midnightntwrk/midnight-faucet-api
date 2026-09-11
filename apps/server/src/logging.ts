@@ -1,4 +1,4 @@
-import { ValuesOf } from "@midnight-ntwrk/faucet-utils";
+import { ValuesOf } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import pinoPretty from "pino-pretty";
 

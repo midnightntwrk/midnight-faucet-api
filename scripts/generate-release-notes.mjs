@@ -37,27 +37,27 @@ function readPackageJson(path) {
 function getPackages() {
   const packages = [];
   const dirs = [
-    { path: "apps/server", name: "@midnight-ntwrk/faucet-server" },
-    { path: "apps/ui", name: "@midnight-ntwrk/faucet-ui" },
-    { path: "packages/faucet", name: "@midnight-ntwrk/faucet" },
-    { path: "packages/faucet-client", name: "@midnight-ntwrk/faucet-client" },
-    { path: "packages/auth", name: "@midnight-ntwrk/faucet-auth" },
-    { path: "packages/faucet-internal-api", name: "@midnight-ntwrk/faucet-internal-api" },
-    { path: "packages/faucet-utils", name: "@midnight-ntwrk/faucet-utils" },
+    { path: "apps/server", name: "@midnightntwrk/faucet-server" },
+    { path: "apps/ui", name: "@midnightntwrk/faucet-ui" },
+    { path: "packages/faucet", name: "@midnightntwrk/faucet" },
+    { path: "packages/faucet-client", name: "@midnightntwrk/faucet-client" },
+    { path: "packages/auth", name: "@midnightntwrk/faucet-auth" },
+    { path: "packages/faucet-internal-api", name: "@midnightntwrk/faucet-internal-api" },
+    { path: "packages/faucet-utils", name: "@midnightntwrk/faucet-utils" },
   ];
 
   const descriptions = {
-    "@midnight-ntwrk/faucet-server":
+    "@midnightntwrk/faucet-server":
       "HTTP server for token distribution with REST API, rate limiting, and async task processing.",
-    "@midnight-ntwrk/faucet-ui":
+    "@midnightntwrk/faucet-ui":
       "React web interface for requesting test tokens with CAPTCHA protection.",
-    "@midnight-ntwrk/faucet-client": "TypeScript client library for programmatic faucet access.",
-    "@midnight-ntwrk/faucet":
+    "@midnightntwrk/faucet-client": "TypeScript client library for programmatic faucet access.",
+    "@midnightntwrk/faucet":
       "Core faucet library with wallet integration and token transfer logic.",
-    "@midnight-ntwrk/faucet-auth": "JWT-based authentication for faucet API access.",
-    "@midnight-ntwrk/faucet-internal-api":
+    "@midnightntwrk/faucet-auth": "JWT-based authentication for faucet API access.",
+    "@midnightntwrk/faucet-internal-api":
       "Shared API types and codecs for client-server communication.",
-    "@midnight-ntwrk/faucet-utils":
+    "@midnightntwrk/faucet-utils":
       "Common utilities for functional programming patterns and testing.",
   };
 

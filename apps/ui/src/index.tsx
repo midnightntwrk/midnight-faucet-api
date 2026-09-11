@@ -1,4 +1,4 @@
-import { FaucetClient } from "@midnight-ntwrk/faucet-client";
+import { FaucetClient } from "@midnightntwrk/faucet-client";
 import { createRoot } from "react-dom/client";
 import { App } from "./app.js";
 import { fakeClient } from "./fakeClient.js";

@@ -1,4 +1,4 @@
-import { Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Resource, Task } from "@midnightntwrk/faucet-utils";
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import knexLib, { Knex } from "knex";
 import * as crypto from "node:crypto";

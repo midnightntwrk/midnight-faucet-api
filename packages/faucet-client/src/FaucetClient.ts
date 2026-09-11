@@ -6,7 +6,7 @@ import {
   errorResponseCodec,
   FaucetClientRequests,
   WalletAddress,
-} from "@midnight-ntwrk/faucet-internal-api";
+} from "@midnightntwrk/faucet-internal-api";
 import { either } from "fp-ts";
 import * as t from "io-ts";
 import { PathReporter } from "io-ts/lib/PathReporter.js";

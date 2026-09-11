@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { calculateFaucetState, getFaucetState, WalletState } from "@midnight-ntwrk/faucet";
-import { User, UserId } from "@midnight-ntwrk/faucet-auth";
-import { ClientError, FaucetClient } from "@midnight-ntwrk/faucet-client";
+import { calculateFaucetState, getFaucetState, WalletState } from "@midnightntwrk/faucet";
+import { User, UserId } from "@midnightntwrk/faucet-auth";
+import { ClientError, FaucetClient } from "@midnightntwrk/faucet-client";
 import {
   Faucet,
   FaucetState,
@@ -11,8 +11,8 @@ import {
   dripRequestCodec,
   TokenResponse,
   WalletAddress,
-} from "@midnight-ntwrk/faucet-internal-api";
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+} from "@midnightntwrk/faucet-internal-api";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { either } from "fp-ts";
 import knexLib from "knex";

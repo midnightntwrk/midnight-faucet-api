@@ -1,4 +1,4 @@
-import { Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Resource, Task } from "@midnightntwrk/faucet-utils";
 import * as nodeCrypto from "node:crypto";
 import pino from "pino";
 import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/postgres.js";

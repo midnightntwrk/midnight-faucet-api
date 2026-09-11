@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/faucet-auth",
+  "name": "@midnightntwrk/faucet-auth",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -7,7 +7,7 @@
   "types": "./dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/midnight-ntwrk/artifacts.git"
+    "url": "https://github.com/midnightntwrk/midnight-faucet-api.git"
   },
   "author": "IOHK",
   "license": "Apache-2.0",
@@ -27,7 +27,7 @@
     "typescript": "6.0.3"
   },
   "dependencies": {
-    "@midnight-ntwrk/faucet-utils": "workspace:^",
+    "@midnightntwrk/faucet-utils": "workspace:^",
     "@types/jsonwebtoken": "^9.0.4",
     "date-fns": "^4.1.0",
     "jsonwebtoken": "^9.0.2",

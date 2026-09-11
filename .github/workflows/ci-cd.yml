@@ -26,6 +26,7 @@ jobs:
     needs: 'check'
     secrets:
       MIDNIGHTCI_PACKAGES_WRITE: ${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     permissions:
       contents: read
       packages: write

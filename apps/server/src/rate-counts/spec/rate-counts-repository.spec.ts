@@ -1,4 +1,4 @@
-import { Resource } from "@midnight-ntwrk/faucet-utils";
+import { Resource } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/postgres.js";
 import { runRateCountsRepositorySuite } from "./rate-counts-repository-suite.js";

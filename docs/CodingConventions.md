@@ -56,7 +56,7 @@ const usableCoins = availableCoins.filter((c) => c.value > dustThreshold);
 
 The stack is **fp-ts** + **RxJS** + **io-ts**. Follow the patterns already established in the codebase:
 
-- **Resource / Task lifecycle** (`@midnight-ntwrk/faucet-utils`) — acquire/release pairs via `Resource.make`, run with
+- **Resource / Task lifecycle** (`@midnightntwrk/faucet-utils`) — acquire/release pairs via `Resource.make`, run with
   `Resource.use`. See existing usage in `apps/server/src/composition-root.ts`.
 - **RxJS observables** — `shareReplay({ bufferSize: 1, refCount: true })` for subscriptions shared across consumers;
   `exhaustMap` for backpressure; `auditTime` to throttle high-frequency emissions (e.g. wallet state).
