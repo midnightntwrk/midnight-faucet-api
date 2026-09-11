@@ -3,7 +3,7 @@ import {
   FaucetClientRequests,
   HealthStatus,
   WalletAddress,
-} from "@midnight-ntwrk/faucet-internal-api";
+} from "@midnightntwrk/faucet-internal-api";
 import { of } from "rxjs";
 
 const randomDelay = () =>

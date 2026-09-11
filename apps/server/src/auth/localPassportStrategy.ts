@@ -2,7 +2,7 @@ import {
   AuthenticatedUser,
   InvalidPasswordError,
   UserNotFoundError,
-} from "@midnight-ntwrk/faucet-auth";
+} from "@midnightntwrk/faucet-auth";
 import * as passportLocal from "passport-local";
 import { AuthContext } from "./authContext.js";
 

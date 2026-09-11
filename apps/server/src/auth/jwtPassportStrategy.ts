@@ -1,4 +1,4 @@
-import { InvalidTokenError, JwtPayload, UserNotFoundError } from "@midnight-ntwrk/faucet-auth";
+import { InvalidTokenError, JwtPayload, UserNotFoundError } from "@midnightntwrk/faucet-auth";
 import * as passportJwt from "passport-jwt";
 import { VerifiedCallback } from "passport-jwt";
 import { AuthContext } from "./authContext.js";

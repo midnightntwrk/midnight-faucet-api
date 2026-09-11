@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Observable } from "rxjs";
-import { HealthStatus } from "@midnight-ntwrk/faucet-internal-api";
+import { HealthStatus } from "@midnightntwrk/faucet-internal-api";
 
 export function useHealthStatus(healthStatus$: Observable<HealthStatus>) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);

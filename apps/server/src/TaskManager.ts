@@ -1,4 +1,4 @@
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { array, either, option } from "fp-ts";
 import * as t from "io-ts";
 import { DateTime } from "luxon";

@@ -4,8 +4,8 @@ import {
   FaucetState,
   TokenResponse,
   WalletAddress,
-} from "@midnight-ntwrk/faucet-internal-api";
-import { pipe, Resource } from "@midnight-ntwrk/faucet-utils";
+} from "@midnightntwrk/faucet-internal-api";
+import { pipe, Resource } from "@midnightntwrk/faucet-utils";
 import { Duration } from "luxon";
 import pino from "pino";
 import { auditTime, firstValueFrom, map, Observable, shareReplay, Subject, tap } from "rxjs";

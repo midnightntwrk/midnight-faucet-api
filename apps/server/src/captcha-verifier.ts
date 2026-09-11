@@ -1,4 +1,4 @@
-import { Task } from "@midnight-ntwrk/faucet-utils";
+import { Task } from "@midnightntwrk/faucet-utils";
 
 export class CaptchaVerificationError extends Error {
   constructor(message: string) {

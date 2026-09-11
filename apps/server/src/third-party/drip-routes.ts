@@ -7,7 +7,7 @@ import {
   thirdPartyDripStatusResponseCodec,
   thirdPartyHealthResponseCodec,
   type ThirdPartyHealthResponse,
-} from "@midnight-ntwrk/faucet-internal-api";
+} from "@midnightntwrk/faucet-internal-api";
 import * as express from "express";
 import { either } from "fp-ts";
 import pino from "pino";

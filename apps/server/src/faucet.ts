@@ -1,6 +1,6 @@
-import { FaucetImpl, StandardWalletConfig, WalletFactory } from "@midnight-ntwrk/faucet";
-import { Faucet } from "@midnight-ntwrk/faucet-internal-api";
-import { Resource } from "@midnight-ntwrk/faucet-utils";
+import { FaucetImpl, StandardWalletConfig, WalletFactory } from "@midnightntwrk/faucet";
+import { Faucet } from "@midnightntwrk/faucet-internal-api";
+import { Resource } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import { Subject } from "rxjs";
 import { ServerConfig } from "./config.js";

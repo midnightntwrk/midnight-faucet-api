@@ -1,5 +1,5 @@
-import { ClientError } from "@midnight-ntwrk/faucet-client";
-import { DripResponse, FaucetClientRequests } from "@midnight-ntwrk/faucet-internal-api";
+import { ClientError } from "@midnightntwrk/faucet-client";
+import { DripResponse, FaucetClientRequests } from "@midnightntwrk/faucet-internal-api";
 import { RequestTokensForm } from "./requestTokensForm.js";
 import { useSubmit } from "./submit.js";
 import { useHealthStatus } from "./useHealthStatus.js";

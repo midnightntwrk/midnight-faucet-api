@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import knexLib, { Knex } from "knex";
 import { ConnectionOptions } from "node:tls";
 import { fileURLToPath } from "node:url";

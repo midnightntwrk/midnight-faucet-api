@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { calculateFaucetState, getFaucetState, WalletState } from "@midnight-ntwrk/faucet";
-import { User, UserId } from "@midnight-ntwrk/faucet-auth";
+import { calculateFaucetState, getFaucetState, WalletState } from "@midnightntwrk/faucet";
+import { User, UserId } from "@midnightntwrk/faucet-auth";
 import {
   Faucet,
   FaucetState,
   TokenResponse,
   WalletAddress,
-} from "@midnight-ntwrk/faucet-internal-api";
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+} from "@midnightntwrk/faucet-internal-api";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import knexLib from "knex";
 import { Duration } from "luxon";

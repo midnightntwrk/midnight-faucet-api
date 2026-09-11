@@ -3,7 +3,7 @@
 import * as fs from "node:fs/promises";
 import * as readline from "node:readline";
 import { writeHeapSnapshot } from "node:v8";
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { either } from "fp-ts";
 import yargs from "yargs";
 import { addUser } from "./commands/add-user.js";
