@@ -5,7 +5,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/midnight-ntwrk/artifacts.git"
+    "url": "https://github.com/midnightntwrk/midnight-faucet-api.git"
   },
   "author": "IOHK",
   "license": "Apache-2.0",

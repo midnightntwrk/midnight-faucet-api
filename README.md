@@ -263,10 +263,10 @@ docker run \
 ### Using Published Images
 
 ```bash
-docker pull ghcr.io/midnight-ntwrk/midnight-faucet-api:main
+docker pull ghcr.io/midnightntwrk/midnight-faucet-api:main
 docker run --net=host \
   -e NODE_URL='http://node:9944' \
-  ghcr.io/midnight-ntwrk/midnight-faucet-api:main
+  ghcr.io/midnightntwrk/midnight-faucet-api:main
 ```
 
 See [docker-compose.yml](./docker-compose.yml) for a complete example.
@@ -311,7 +311,7 @@ We use Git Flow for releases:
 3. **Create GitHub release** with release notes
 
 4. **Tag creation** triggers CD to build and publish:
-   - Docker images to `ghcr.io/midnight-ntwrk/midnight-faucet-api`
+   - Docker images to `ghcr.io/midnightntwrk/midnight-faucet-api`
    - NPM packages to GitHub Packages
    - Release artifacts
 

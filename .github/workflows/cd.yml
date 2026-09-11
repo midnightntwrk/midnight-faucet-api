@@ -132,5 +132,5 @@ jobs:
         run: |
           docker buildx build \
           --platform linux/arm64,linux/amd64 \
-          -t "ghcr.io/midnight-ntwrk/midnight-faucet-api:${DOCKER_TAG}" \
+          -t "ghcr.io/midnightntwrk/midnight-faucet-api:${DOCKER_TAG}" \
           --push .
