@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { checkIndexer, checkProofServer, checkNode } from "@midnight-ntwrk/faucet";
+import { checkIndexer, checkProofServer, checkNode } from "@midnightntwrk/faucet";
 import {
   Faucet,
   tokenResponseCodec,
   TokenResponseOutput,
-} from "@midnight-ntwrk/faucet-internal-api";
-import { pipe, Resource } from "@midnight-ntwrk/faucet-utils";
+} from "@midnightntwrk/faucet-internal-api";
+import { pipe, Resource } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import * as rx from "rxjs";
 import { register, type Registry } from "prom-client";

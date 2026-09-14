@@ -1,4 +1,4 @@
-import { pipe } from "@midnight-ntwrk/faucet-utils";
+import { pipe } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import { type Observable, type Subscription } from "rxjs";
 import * as rx from "rxjs";

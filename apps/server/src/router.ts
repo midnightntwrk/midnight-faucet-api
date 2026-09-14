@@ -1,5 +1,5 @@
-import { AuthenticatedUser } from "@midnight-ntwrk/faucet-auth";
-import { Task } from "@midnight-ntwrk/faucet-utils";
+import { AuthenticatedUser } from "@midnightntwrk/faucet-auth";
+import { Task } from "@midnightntwrk/faucet-utils";
 import cors from "cors";
 import * as express from "express";
 import _ from "lodash";

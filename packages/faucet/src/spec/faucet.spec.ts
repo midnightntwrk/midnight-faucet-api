@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Faucet } from "@midnight-ntwrk/faucet-internal-api";
-import { block, firstL, pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Faucet } from "@midnightntwrk/faucet-internal-api";
+import { block, firstL, pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { randomBytes } from "crypto";
 import { either } from "fp-ts";

@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node  --experimental-specifier-resolution=node
 
-import { FaucetClient } from "@midnight-ntwrk/faucet-client";
+import { FaucetClient } from "@midnightntwrk/faucet-client";
 
 const client = FaucetClient({ url: "http://localhost:5300/api", pollInterval: 100 });
 

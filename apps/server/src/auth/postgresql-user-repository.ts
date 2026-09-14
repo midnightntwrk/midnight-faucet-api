@@ -1,4 +1,4 @@
-import { User, UserId, UserRepository, UserRepositoryError } from "@midnight-ntwrk/faucet-auth";
+import { User, UserId, UserRepository, UserRepositoryError } from "@midnightntwrk/faucet-auth";
 import { Knex } from "knex";
 
 type UserData = {

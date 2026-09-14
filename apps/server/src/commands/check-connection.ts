@@ -1,5 +1,5 @@
-import { Faucet } from "@midnight-ntwrk/faucet-internal-api";
-import { firstL, pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Faucet } from "@midnightntwrk/faucet-internal-api";
+import { firstL, pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import { debounceTime, filter, timeout } from "rxjs";
 import { ServerConfig } from "../config.js";
 import { prepareFaucet } from "../faucet.js";

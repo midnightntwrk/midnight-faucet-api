@@ -1,5 +1,5 @@
-import { Task } from "@midnight-ntwrk/faucet-utils";
-import { User } from "@midnight-ntwrk/faucet-auth";
+import { Task } from "@midnightntwrk/faucet-utils";
+import { User } from "@midnightntwrk/faucet-auth";
 import { AuthContext } from "../auth/authContext.js";
 
 type UserData = {

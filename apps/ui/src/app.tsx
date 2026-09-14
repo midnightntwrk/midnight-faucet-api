@@ -1,4 +1,4 @@
-import { FaucetClientRequests } from "@midnight-ntwrk/faucet-internal-api";
+import { FaucetClientRequests } from "@midnightntwrk/faucet-internal-api";
 import { AppContainer } from "./appContainer.js";
 import { AppLayout } from "./appLayout.js";
 

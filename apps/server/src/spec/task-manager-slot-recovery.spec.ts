@@ -1,4 +1,4 @@
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import * as rx from "rxjs";
 import { vi } from "vitest";

@@ -4,7 +4,7 @@ import {
   DripError,
   DripErrorCode,
   thirdPartyErrorResponseCodec,
-} from "@midnight-ntwrk/faucet-internal-api";
+} from "@midnightntwrk/faucet-internal-api";
 
 /**
  * The HTTP status the spec pairs with each error code. `INVALID_REQUEST` is our

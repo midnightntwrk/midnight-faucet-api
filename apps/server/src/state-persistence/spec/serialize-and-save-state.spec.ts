@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { Resource, Task } from "@midnightntwrk/faucet-utils";
 import pino from "pino";
 import { PostgreInfrastructure, postgresInfrastructure } from "../../testing/postgres.js";
 import { saveState } from "../serialize-and-save-state.js";

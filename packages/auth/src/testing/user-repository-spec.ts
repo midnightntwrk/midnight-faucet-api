@@ -1,4 +1,4 @@
-import { pipe, Resource, Task } from "@midnight-ntwrk/faucet-utils";
+import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 import * as crypto from "crypto";
 import fc from "fast-check";
 import pino from "pino";

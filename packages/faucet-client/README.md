@@ -7,7 +7,7 @@ be used to request tokens from the faucet.
 ## Example
 
 ```ts
-import { FaucetClient } from '@midnight-ntwrk/faucet-client';
+import { FaucetClient } from '@midnightntwrk/faucet-client';
 
 const client = FaucetClient("http://localhost:5300/api");
 const authToken = await client.login("<username>", "<password>");
