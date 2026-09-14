@@ -990,9 +990,9 @@ __metadata:
   linkType: hard
 
 "@midnight-ntwrk/zkir-v2@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@midnight-ntwrk/zkir-v2@npm:2.1.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40midnight-ntwrk%2Fzkir-v2%2F2.1.0%2Fb3c8b9720535d7e62b86c5ff8341a13a46eb5c7e"
-  checksum: 10/c16761489c3abbf858a4b7c2c4dd99d498f40554b5f1a57a93534b21c66390d4c6b0035dee8923fb5972418c75ac1f80e2e0675d8f3eb2a96dce7e7555fb2b7d
+  version: 2.1.1
+  resolution: "@midnight-ntwrk/zkir-v2@npm:2.1.1"
+  checksum: 10/d310a651191b1f81b9ce151e61d6592231fdde72d38884c1a5ab494cf70367579baa29f57dcb23490a52babb5f4a1ce55ca7dafaaea5656d92d4b3b0899f1404
   languageName: node
   linkType: hard
 
@@ -1042,6 +1042,7 @@ __metadata:
     testcontainers: "npm:12.1.0"
     typescript: "npm:6.0.3"
   peerDependencies:
+    "@midnightntwrk/wallet-sdk-address-format": ^4.0.0-canary.20260702133504-1f7aaca
     fp-ts: ^2.16.0
     io-ts: ^2.2.20
     luxon: ^3.4.3
@@ -1106,6 +1107,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@midnightntwrk/faucet-smoke-test@workspace:tests"
   dependencies:
+    "@midnightntwrk/faucet-client": "workspace:^"
     "@midnightntwrk/ledger-v9": "npm:^1.0.0-rc.3"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.0-beta.2"
     "@playwright/test": "npm:^1.62.1"

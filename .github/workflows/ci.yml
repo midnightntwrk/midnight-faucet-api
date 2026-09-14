@@ -26,15 +26,12 @@ jobs:
         with:
           persist-credentials: false
 
+      # setup-node's registry inputs only write an .npmrc for the npm CLI, which Yarn
+      # Berry never reads. All packages resolve from public npmjs via .yarnrc.yml.
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          always-auth: true
-          registry-url: https://npm.pkg.github.com/
-          scope: "@midnight-ntwrk"
           node-version-file: ".nvmrc"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
       - name: Update NPM
         run: npm install -g npm@12.0.2
@@ -48,10 +45,6 @@ jobs:
           registry: "https://ghcr.io"
           username: ntwrk-bot
           password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-
-      - name: Configure yarn
-        run: |
-          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_READ }}"
 
       - name: Dependencies cache restore
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

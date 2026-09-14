@@ -1,6 +1,7 @@
 {
   "name": "@midnightntwrk/faucet-server",
   "version": "1.0.0",
+  "private": true,
   "description": "Midnight faucet server",
   "type": "module",
   "main": "./dist/index.js",

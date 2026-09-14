@@ -39,6 +39,7 @@
     "typescript": "6.0.3"
   },
   "peerDependencies": {
+    "@midnightntwrk/wallet-sdk-address-format": "^4.0.0-canary.20260702133504-1f7aaca",
     "fp-ts": "^2.16.0",
     "io-ts": "^2.2.20",
     "luxon": "^3.4.3",

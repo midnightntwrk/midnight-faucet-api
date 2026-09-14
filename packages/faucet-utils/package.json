@@ -1,6 +1,7 @@
 {
   "name": "@midnightntwrk/faucet-utils",
   "version": "1.0.0",
+  "private": true,
   "description": "Midnight faucet library",
   "type": "module",
   "main": "./dist/index.js",

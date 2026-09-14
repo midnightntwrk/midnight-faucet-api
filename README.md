@@ -312,8 +312,16 @@ We use Git Flow for releases:
 
 4. **Tag creation** triggers CD to build and publish:
    - Docker images to `ghcr.io/midnightntwrk/midnight-faucet-api`
-   - NPM packages to GitHub Packages
+   - `@midnightntwrk/faucet-client` and `@midnightntwrk/faucet-internal-api` to
+     [npmjs](https://www.npmjs.com) (public)
    - Release artifacts
+
+   > **First-publish caveats:** GHCR creates a new package **private** even when pushed
+   > from a public repo — an org admin must flip its visibility to public once in the
+   > package settings, or anonymous `docker pull` fails. On npmjs, the first version ever
+   > published to a new package name seeds the `latest` dist-tag even with
+   > `--tag prerelease`, so make the first publish of a new package a tagged release (or
+   > run `npm dist-tag add <pkg>@<stable> latest` right after and verify `dist-tags`).
 
 5. **After deploy**, merge release branch into `main`
 

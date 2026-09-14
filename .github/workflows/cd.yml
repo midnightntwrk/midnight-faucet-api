@@ -3,8 +3,6 @@ name: CD
 on:
   workflow_call:
     secrets:
-      MIDNIGHTCI_PACKAGES_WRITE:
-        required: true
       NPM_TOKEN:
         required: true
   workflow_dispatch:
@@ -32,32 +30,21 @@ jobs:
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
+      # setup-node's registry inputs only write an .npmrc for the npm CLI, which Yarn
+      # Berry never reads — registry and auth live in .yarnrc.yml instead.
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          always-auth: true
-          registry-url: https://registry.npmjs.org/
-          scope: "@midnightntwrk"
           node-version-file: ".nvmrc"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Enable Corepack
         run: corepack enable
 
-      # Two registries are in play. The faucet packages publish publicly to npmjs, so the
-      # publish step needs an npmjs automation token. Separately, @midnight-ntwrk/zkir-v2
-      # (a transitive wallet-SDK dep) still downloads from GitHub Packages and needs the
-      # PAT kept on that scope, or a cold install 401s.
-      - name: Configure yarn
-        run: |
-          yarn config set 'npmRegistries["https://registry.npmjs.org"].npmAuthToken' "${{ secrets.NPM_TOKEN }}"
-          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "${{ secrets.MIDNIGHTCI_PACKAGES_WRITE }}"
-
       # The image now lives in this repo's own org, so the job's `packages: write`
       # GITHUB_TOKEN is sufficient and is scoped to this repo alone, unlike the org-wide
-      # PAT. It also makes GHCR link the new package to this repo automatically, so it
-      # inherits the repo's public visibility instead of defaulting to private.
+      # PAT, and GHCR links the new package to this repo automatically. Note the package
+      # is still created *private* on first push — visibility is not inherited — so a
+      # one-time manual flip to public in the package settings is required.
       - name: Log in to GitHub Container registry
         uses: docker/login-action@0a596b2e7a325f0cedf8e9bd21ab002cbd3c9241
         with:
@@ -121,12 +108,19 @@ jobs:
           TARGET_VERSION: ${{ steps.vars.outputs.target_version }}
         run: yarn workspaces foreach --all version "$TARGET_VERSION"
 
+      # NPM_TOKEN reaches yarn through the ${NPM_TOKEN:-} interpolation in .yarnrc.yml.
+      # Passing it as step env (instead of `yarn config set`) keeps the secret out of the
+      # checked-out .yarnrc.yml, which the Dockerfile copies into the published image.
       - name: Publish prerelease packages
         if: ${{ !startsWith(github.ref, 'refs/tags/') }} # When a tag is created, we want to use the version that is being saved in package.json
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn do-publish --cache-dir ./turbo_cache -- --tag prerelease
 
       - name: Publish release packages
         if: contains(github.event.ref, 'tags') #When a tag is created, we want to use the version that is being saved in package.json
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn do-publish --cache-dir ./turbo_cache
 
       - name: Free disk space
