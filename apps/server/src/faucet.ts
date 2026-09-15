@@ -51,5 +51,6 @@ export const prepareFaucet = (
     cachedState,
     logger,
     syncErrorSubject,
+    indexerURL: config.urls.indexer,
   });
 };

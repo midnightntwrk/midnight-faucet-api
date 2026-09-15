@@ -202,6 +202,7 @@ describe("Faucet Server", () => {
           dust: Promise.resolve(""),
         }),
         state$,
+        indexerPastGenesis$: of(true),
         syncErrors$: EMPTY,
       };
     });
@@ -448,6 +449,7 @@ describe("Faucet Server", () => {
     dropAmount: "500",
     address: getRandomBech32mAddress(),
     state$: getFaucetState(logger, fakeWallet()),
+    indexerPastGenesis$: of(true),
     syncErrors$: EMPTY,
     serializeWalletState: () => ({
       shielded: Promise.resolve(""),
@@ -529,6 +531,7 @@ describe("Faucet Server", () => {
       address: getRandomBech32mAddress(),
       // dummy state
       state$: getFaucetState(logger, fakeWallet()),
+      indexerPastGenesis$: of(true),
       syncErrors$: EMPTY,
       serializeWalletState: () => ({
         shielded: Promise.resolve(""),
@@ -570,6 +573,7 @@ describe("Faucet Server", () => {
       address: getRandomBech32mAddress(),
       // dummy state
       state$: getFaucetState(logger, fakeWallet()),
+      indexerPastGenesis$: of(true),
       syncErrors$: EMPTY,
       serializeWalletState: () => ({
         shielded: Promise.resolve(""),
@@ -1238,6 +1242,7 @@ describe("Faucet Server", () => {
       address: getRandomBech32mAddress(),
       // dummy state
       state$: getFaucetState(logger, fakeWallet()),
+      indexerPastGenesis$: of(true),
       syncErrors$: EMPTY,
       serializeWalletState: () => ({
         shielded: Promise.resolve(""),
@@ -1451,6 +1456,7 @@ describe("Faucet Server", () => {
         dropAmount: "500",
         address: getRandomBech32mAddress(),
         state$: getFaucetState(logger, fakeWallet()),
+        indexerPastGenesis$: of(true),
         syncErrors$: EMPTY,
         serializeWalletState: () => ({
           shielded: Promise.resolve(""),
@@ -1613,6 +1619,7 @@ describe("Faucet Server", () => {
         dropAmount: "500",
         address: getRandomBech32mAddress(),
         state$,
+        indexerPastGenesis$: of(true),
         syncErrors$: EMPTY,
         serializeWalletState: () => ({
           shielded: Promise.resolve(""),
@@ -1667,6 +1674,55 @@ describe("Faucet Server", () => {
         }),
         Task.unsafeRun,
       );
+    });
+
+    // Regression: drips picked up while the indexer was at genesis failed with
+    // "could not balance dust".
+    it("holds a drip in the queue until the indexer is past genesis, then dispenses it", () => {
+      const receiver = getRandomBech32mAddress();
+      const indexerPastGenesis$ = new BehaviorSubject(false);
+      const dispensed = vi.fn();
+      const gatedFaucet: Faucet = {
+        ...stubFaucet((address) => {
+          dispensed(address);
+          return Promise.resolve({
+            transactionIdentifier: nodeCrypto.randomBytes(32).toString("hex"),
+            timeToNextRequest: Duration.fromMillis(0),
+          });
+        }),
+        indexerPastGenesis$,
+      };
+      const faucetUrl = `http://${config.host}:${config.port}/api`;
+      const statusChecker = checkDripStatus(faucetUrl);
+
+      return withKnex(async (knex) => {
+        // Leftovers from earlier tests would otherwise be picked ahead of this drip.
+        await clearPendingTasks(knex);
+
+        return pipe(
+          defaultRoot(config, () => Resource.of(gatedFaucet)),
+          Resource.flatMap((root) => prepareServer(config, root)),
+          Resource.use(() =>
+            Task.lift(async () => {
+              const res = await postDrip(faucetUrl, receiver);
+              expect(res.status).toBe(200);
+              const { dripId } = await res.json();
+
+              // pollTime is 1ms, so an open gate would have dispensed long before this.
+              await sleep(500);
+              expect(dispensed).not.toHaveBeenCalled();
+              expect((await statusChecker(dripId)).status).toBe("PENDING");
+
+              indexerPastGenesis$.next(true);
+
+              expect(await waitForFinalStatus(statusChecker, dripId)).toBe("CONFIRMED");
+              expect(dispensed).toHaveBeenCalledTimes(1);
+              expect(dispensed).toHaveBeenCalledWith(receiver);
+            }),
+          ),
+          Task.unsafeRun,
+        );
+      });
     });
   });
 });

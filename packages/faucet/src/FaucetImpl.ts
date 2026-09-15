@@ -17,6 +17,7 @@ import { DustSecretKey, ZswapSecretKeys, unshieldedToken } from "@midnightntwrk/
 import { WalletFacade, CombinedTokenTransfer } from "@midnightntwrk/wallet-sdk-facade";
 import * as ledger from "@midnightntwrk/ledger-v9";
 
+import { getIndexerPastGenesis } from "./indexer-past-genesis.js";
 import { logTxFinalityOutcome, observeTxFinality } from "./observe-tx-finality.js";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
@@ -361,6 +362,7 @@ export const FaucetImpl = <WalletConfig>(
       dust: string | undefined;
     };
     syncErrorSubject?: Subject<unknown>;
+    indexerURL: URL;
   },
 ): Resource<Faucet> => {
   const syncErrors$ = dependencies.syncErrorSubject ?? new Subject<unknown>();
@@ -377,6 +379,7 @@ export const FaucetImpl = <WalletConfig>(
           return address;
         }),
         state$: getFaucetState(dependencies.logger, wallet),
+        indexerPastGenesis$: getIndexerPastGenesis(dependencies.logger, dependencies.indexerURL),
 
         syncErrors$: syncErrors$.asObservable(),
         serializeWalletState: () => ({

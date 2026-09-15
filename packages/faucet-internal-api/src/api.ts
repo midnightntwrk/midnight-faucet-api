@@ -335,6 +335,7 @@ export interface Faucet extends FaucetRequests {
   dropAmount: string;
   address: WalletAddress;
   state$: Observable<FaucetState>;
+  indexerPastGenesis$: Observable<boolean>;
   syncErrors$: Observable<unknown>;
 
   serializeWalletState: () => SerializedCompositeWalletState;
