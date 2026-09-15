@@ -13,7 +13,12 @@ RUN npm i -g corepack@0.36.0 && corepack enable
 
 COPY . /source/
 WORKDIR /source
-RUN mkdir -p apps/server/certs \
+# Node unbundled corepack in v25, so it must be installed before `corepack enable`.
+# It stays in use rather than a plain `npm i -g yarn` because the `packageManager`
+# hash in package.json is only verified when corepack provisions Yarn.
+RUN npm i -g corepack@latest \
+  && corepack enable \
+  && mkdir -p apps/server/certs \
   && curl -fsSL -o apps/server/certs/rds-ca-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
   && yarn && chown -R node:node /source
 
