@@ -133,6 +133,7 @@ describe("Faucet transacting & connectivity", () => {
       const faucetResource: Resource<Faucet> = FaucetImpl(faucetConfig, {
         walletFactory,
         logger,
+        indexerURL: env.urls.indexerURL,
       });
 
       const receiverWalletRes = walletFactory.fromSeed(randomBytes(32));
