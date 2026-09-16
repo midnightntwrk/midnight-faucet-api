@@ -188,6 +188,7 @@ describe("Third-Party API", () => {
           dust: Promise.resolve(""),
         }),
         state$,
+        indexerPastGenesis$: of(true),
         syncErrors$: EMPTY,
       };
     });
@@ -371,6 +372,7 @@ describe("Third-Party API", () => {
       dropAmount: "500",
       address: getRandomBech32mAddress(),
       state$,
+      indexerPastGenesis$: of(true),
       syncErrors$: EMPTY,
       serializeWalletState: () => ({
         shielded: Promise.resolve(""),
@@ -787,6 +789,22 @@ describe("Third-Party API", () => {
       const result = await withServer(config, faucetInState(unsyncedState()), () => get("/health"));
 
       // A poller reads the body, so the status stays 200 even when not serving.
+      expect(result.response.status).toBe(200);
+      expect(result.body).toEqual({ status: "NOT_SERVING", reason: "NODE_DESYNCED" });
+    });
+
+    it("reports NODE_DESYNCED while the indexer has not indexed past genesis", async () => {
+      const { faucet } = prepareFakeFaucet(config, getRandomBech32mAddress());
+      const result = await withServer(
+        config,
+        () =>
+          pipe(
+            faucet,
+            Resource.map((synced) => ({ ...synced, indexerPastGenesis$: of(false) })),
+          ),
+        () => get("/health"),
+      );
+
       expect(result.response.status).toBe(200);
       expect(result.body).toEqual({ status: "NOT_SERVING", reason: "NODE_DESYNCED" });
     });

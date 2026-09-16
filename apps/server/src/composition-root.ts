@@ -131,6 +131,8 @@ export const defaultRoot = (
               state.unshielded.availableBalance > 2n * BigInt(faucet.dropAmount)
             );
           }),
+          rx.combineLatestWith(faucet.indexerPastGenesis$),
+          rx.map(([walletReady, pastGenesis]) => walletReady && pastGenesis),
         ),
         {
           refund: (address: string, registeredAt: Date) =>
@@ -205,6 +207,11 @@ export const defaultRoot = (
                     ? "ok"
                     : "not_ok";
                 }),
+              ),
+            ),
+            "indexer-past-genesis": HealthService.checkFromObservable(
+              faucet.indexerPastGenesis$.pipe(
+                rx.map((pastGenesis) => (pastGenesis ? "ok" : "not_ok")),
               ),
             ),
           },
