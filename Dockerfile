@@ -1,4 +1,4 @@
-FROM node:26.8.2@sha256:fb192b8ad31841aadc4bb79c44ae0f59d193a798ffbc9fdce37ba6ecb20c2236
+FROM node:26.9.0@sha256:e26b4e7d163a29e0d05806e167db8cc0c76f02f633006c1f5c0aeea5a8415147
 
 LABEL org.opencontainers.image.source="https://github.com/midnightntwrk/midnight-faucet-api"
 
