@@ -24,7 +24,7 @@
   ],
   "devDependencies": {
     "eslint": "10.10.0",
-    "fast-check": "4.9.0",
+    "fast-check": "4.10.1",
     "typescript": "6.0.3"
   },
   "dependencies": {
