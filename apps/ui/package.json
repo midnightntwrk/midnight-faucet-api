@@ -38,12 +38,12 @@
   "devDependencies": {
     "@vitejs/plugin-react": "6.1.1",
     "css-loader": "7.1.5",
-    "eslint": "10.10.0",
-    "fast-check": "4.9.0",
+    "eslint": "10.11.0",
+    "fast-check": "4.10.2",
     "mini-css-extract-plugin": "2.10.2",
     "ts-loader": "9.6.2",
     "typescript": "6.0.3",
-    "vite": "8.2.2",
+    "vite": "8.3.0",
     "vite-plugin-wasm": "3.6.0"
   }
 }
