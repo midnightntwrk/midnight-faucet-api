@@ -37,7 +37,7 @@
     "@midnightntwrk/faucet-internal-api": "workspace:^",
     "@midnightntwrk/faucet-ui": "workspace:^",
     "@midnightntwrk/faucet-utils": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.3",
+    "@midnightntwrk/wallet-sdk": "2.0.0-canary.20260730145109-1cf94a3",
     "@types/convict": "^6.1.5",
     "@types/cors": "^2.8.15",
     "@types/express": "^5.0.0",
@@ -68,7 +68,7 @@
     "quick-lru": "^7.0.0",
     "rxjs": "^7.8.1",
     "vitest": "^4.1.11",
-    "yargs": "^18.1.0"
+    "yargs": "^18.2.0"
   },
   "files": [
     "dist/"
@@ -76,11 +76,11 @@
   "devDependencies": {
     "@midnightntwrk/faucet-client": "workspace:^",
     "@midnightntwrk/wallet-sdk": "^2.0.0-beta.3",
-    "@testcontainers/postgresql": "11.14.0",
-    "eslint": "10.10.0",
-    "fast-check": "4.9.0",
+    "@testcontainers/postgresql": "12.1.0",
+    "eslint": "10.11.0",
+    "fast-check": "4.10.2",
     "testcontainers": "12.1.0",
-    "tsx": "4.23.13",
+    "tsx": "4.23.15",
     "typescript": "6.0.3"
   }
 }
