@@ -997,7 +997,7 @@ __metadata:
     "@marsidev/react-turnstile": "npm:^1.6.1"
     "@midnightntwrk/faucet-client": "workspace:^"
     "@midnightntwrk/faucet-internal-api": "workspace:^"
-    "@types/react": "npm:^18.2.34"
+    "@types/react": "npm:^19.3.0"
     "@types/react-dom": "npm:^18.2.14"
     "@vitejs/plugin-react": "npm:6.1.1"
     classnames: "npm:^2.3.2"
@@ -1009,7 +1009,7 @@ __metadata:
     luxon: "npm:^3.4.3"
     mini-css-extract-plugin: "npm:2.10.2"
     normalize.css: "npm:^8.0.1"
-    react: "npm:^18.2.0"
+    react: "npm:^19.3.0"
     react-dom: "npm:^18.2.0"
     rxjs: "npm:^7.8.1"
     ts-loader: "npm:9.6.2"
@@ -2588,13 +2588,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/prop-types@npm:*":
-  version: 15.7.15
-  resolution: "@types/prop-types@npm:15.7.15"
-  checksum: 10/31aa2f59b28f24da6fb4f1d70807dae2aedfce090ec63eaf9ea01727a9533ef6eaf017de5bff99fbccad7d1c9e644f52c6c2ba30869465dd22b1a7221c29f356
-  languageName: node
-  linkType: hard
-
 "@types/qs@npm:*":
   version: 6.15.1
   resolution: "@types/qs@npm:6.15.1"
@@ -2618,13 +2611,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:^18.2.34":
-  version: 18.3.31
-  resolution: "@types/react@npm:18.3.31"
+"@types/react@npm:^19.3.0":
+  version: 19.3.0
+  resolution: "@types/react@npm:19.3.0"
   dependencies:
-    "@types/prop-types": "npm:*"
     csstype: "npm:^3.2.2"
-  checksum: 10/0a5d73b1ba3ce73273b28cc50da78d520b1a8d4253075820dc5cf6c9e286ff6cb339b56bd613d05885fec214fbecd8137bddcbdb475612fdcc46e061d88f00fc
+  checksum: 10/2f4589222fd9c512e1ef78e65f334ade8777400add8ec0803fcc3a044761679b7984ba8410a890af24255383c3251a568bb692b60acfa22397ba0a64b2e032bf
   languageName: node
   linkType: hard
 
@@ -6773,12 +6765,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:^18.2.0":
-  version: 18.3.1
-  resolution: "react@npm:18.3.1"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10/261137d3f3993eaa2368a83110466fc0e558bc2c7f7ae7ca52d94f03aac945f45146bd85e5f481044db1758a1dbb57879e2fcdd33924e2dde1bdc550ce73f7bf
+"react@npm:^19.3.0":
+  version: 19.3.0
+  resolution: "react@npm:19.3.0"
+  checksum: 10/e98669f09750c41abb1bf020af67cc847e018c91a8c5413d3f40ddd737e3daef6e419bcd1521b113fda73fd667ae82d5f0e9d9e3ff462faeb82059c09e7f04b1
   languageName: node
   linkType: hard
 
