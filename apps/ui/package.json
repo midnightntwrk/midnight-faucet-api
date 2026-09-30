@@ -43,7 +43,7 @@
     "mini-css-extract-plugin": "2.10.2",
     "ts-loader": "9.6.2",
     "typescript": "6.0.3",
-    "vite": "8.3.1",
+    "vite": "8.3.0",
     "vite-plugin-wasm": "3.6.0"
   }
 }
