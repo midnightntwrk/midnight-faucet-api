@@ -35,7 +35,7 @@
     "@midnightntwrk/faucet-internal-api": "workspace:^",
     "@midnightntwrk/faucet-utils": "workspace:^",
     "@midnightntwrk/ledger-v9": "^1.0.0-rc.4",
-    "@midnightntwrk/wallet-sdk": "^2.0.0-beta.3",
+    "@midnightntwrk/wallet-sdk": "^2.0.0-canary.20260922143855-94c69ec",
     "@types/lodash": "^4.17.25",
     "lodash": "^4.18.1",
     "vitest": "^4.1.11"
