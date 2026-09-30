@@ -9,16 +9,12 @@ import { pipe, Resource } from "@midnightntwrk/faucet-utils";
 import { Duration } from "luxon";
 import pino from "pino";
 import { auditTime, firstValueFrom, map, Observable, shareReplay, Subject, tap } from "rxjs";
-import { FaucetWallet, WalletFactory } from "./WalletFactory.js";
+import { FaucetWallet, LedgerV9OnlySchedule, WalletFactory } from "./WalletFactory.js";
 import { createKeystore, UnshieldedWalletState } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { ShieldedWalletState } from "@midnightntwrk/wallet-sdk-shielded";
 import { DustWalletState } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import { unshieldedToken } from "@midnightntwrk/ledger-v9";
-import {
-  WalletFacade,
-  CombinedTokenTransfer,
-  DefaultForkSchedule,
-} from "@midnightntwrk/wallet-sdk-facade";
+import { WalletFacade, CombinedTokenTransfer } from "@midnightntwrk/wallet-sdk-facade";
 import * as ledger from "@midnightntwrk/ledger-v9";
 
 import { getIndexerPastGenesis } from "./indexer-past-genesis.js";
@@ -80,8 +76,12 @@ const SYNC_GAP_TOLERANCE = 50n;
  * The epoch the faucet acts in. `WalletTransaction` is ledger-agnostic and only yields the carried
  * transaction to a caller that states which protocol versions it speaks, so reading a transaction
  * hash needs one.
+ *
+ * Derived from the same schedule the wallets are built with rather than restating a version: the wallets stamp
+ * transactions at the boundary they were registered against, so a constant computed from anything else would
+ * refuse the very handles the facade just produced.
  */
-const V9_EPOCH = ProtocolVersion.epochOf(DefaultForkSchedule.v9, DefaultForkSchedule.v9);
+const V9_EPOCH = ProtocolVersion.epochOf(LedgerV9OnlySchedule.v9, LedgerV9OnlySchedule.v9);
 
 export const calculateFaucetState = (state: WalletState): FaucetState => {
   const unshieldedToken = ledger.unshieldedToken().raw;

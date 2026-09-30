@@ -4,10 +4,9 @@ import pino from "pino";
 import { createKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { unshieldedToken } from "@midnightntwrk/ledger-v9";
 import { NetworkId, WalletTransaction } from "@midnightntwrk/wallet-sdk-abstractions";
-import { DefaultForkSchedule } from "@midnightntwrk/wallet-sdk-facade";
 
 import { FaucetConfig, InsufficientFundsError, mkRequestTokens } from "../FaucetImpl.js";
-import type { FaucetWallet } from "../WalletFactory.js";
+import { LedgerV9OnlySchedule, type FaucetWallet } from "../WalletFactory.js";
 import * as WalletSeedUtils from "../WalletSeedUtils.js";
 
 const TX_HASH = "txhash-abc";
@@ -116,11 +115,12 @@ const makeFakeWallet = (available: UnshieldedCoin[]) => {
 
     // The SDK hands back a transaction sealed with the protocol version it was built at, not a bare
     // one, and the faucet has to unwrap it at the version it acts in — so the fake stamps one too.
+    // Stamped at the floor, which is where the single-variant wallets the faucet composes seal theirs.
     finalizeRecipe: () =>
       wallet.finalizeError
         ? Promise.reject(wallet.finalizeError)
         : Promise.resolve(
-            WalletTransaction.adopt("Finalized", carriedTransaction, DefaultForkSchedule.v9),
+            WalletTransaction.adopt("Finalized", carriedTransaction, LedgerV9OnlySchedule.v9),
           ),
 
     submitTransaction: () =>
