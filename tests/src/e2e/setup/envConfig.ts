@@ -1,6 +1,6 @@
 import { NetworkId, NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
 import { testWalletHalo2, WalletConfig } from "./walletConfig";
-import { type DefaultConfiguration } from "@midnightntwrk/wallet-sdk-facade";
+import { type ResolvedConfiguration, DefaultForkSchedule } from "@midnightntwrk/wallet-sdk-facade";
 
 export interface Config {
   readonly faucetUi: string;
@@ -120,7 +120,7 @@ export function getConfig(): Config {
   return config;
 }
 
-export function getWalletConfig(config: Config): DefaultConfiguration {
+export function getWalletConfig(config: Config): ResolvedConfiguration {
   return {
     indexerClientConnection: {
       indexerHttpUrl: config.indexerAddress,
@@ -133,5 +133,7 @@ export function getWalletConfig(config: Config): DefaultConfiguration {
       feeBlocksMargin: 5,
     },
     txHistoryStorage: new NoOpTransactionHistoryStorage(),
+    // The per-wallet configurations require a fork schedule; only the facade presets one.
+    forks: DefaultForkSchedule,
   };
 }

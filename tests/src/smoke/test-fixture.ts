@@ -4,7 +4,7 @@ import { StartedGenericContainer } from "testcontainers/build/generic-container/
 import path from "node:path";
 import * as utils from "../e2e/setup/utils";
 import { NetworkId, NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-sdk-abstractions";
-import { type DefaultConfiguration } from "@midnightntwrk/wallet-sdk-facade";
+import { type ResolvedConfiguration, DefaultForkSchedule } from "@midnightntwrk/wallet-sdk-facade";
 import { beforeAll, afterAll } from "vitest";
 
 export const currentDir = path.resolve(new URL(import.meta.url).pathname, "..");
@@ -188,7 +188,7 @@ export class TestContainersFixture {
     }
   }
 
-  public getWalletConfig(): DefaultConfiguration {
+  public getWalletConfig(): ResolvedConfiguration {
     return {
       indexerClientConnection: {
         indexerHttpUrl: this.getIndexerUri(),
@@ -201,6 +201,8 @@ export class TestContainersFixture {
         feeBlocksMargin: 5,
       },
       txHistoryStorage: new NoOpTransactionHistoryStorage(),
+      // The per-wallet configurations require a fork schedule; only the facade presets one.
+      forks: DefaultForkSchedule,
     };
   }
 }

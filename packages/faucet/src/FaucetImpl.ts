@@ -13,14 +13,22 @@ import { FaucetWallet, WalletFactory } from "./WalletFactory.js";
 import { createKeystore, UnshieldedWalletState } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { ShieldedWalletState } from "@midnightntwrk/wallet-sdk-shielded";
 import { DustWalletState } from "@midnightntwrk/wallet-sdk-dust-wallet";
-import { DustSecretKey, ZswapSecretKeys, unshieldedToken } from "@midnightntwrk/ledger-v9";
-import { WalletFacade, CombinedTokenTransfer } from "@midnightntwrk/wallet-sdk-facade";
+import { unshieldedToken } from "@midnightntwrk/ledger-v9";
+import {
+  WalletFacade,
+  CombinedTokenTransfer,
+  DefaultForkSchedule,
+} from "@midnightntwrk/wallet-sdk-facade";
 import * as ledger from "@midnightntwrk/ledger-v9";
 
 import { getIndexerPastGenesis } from "./indexer-past-genesis.js";
 import { logTxFinalityOutcome, observeTxFinality } from "./observe-tx-finality.js";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
-import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
+import {
+  NetworkId,
+  ProtocolVersion,
+  WalletTransaction,
+} from "@midnightntwrk/wallet-sdk-abstractions";
 import { MidnightBech32m, UnshieldedAddress } from "@midnightntwrk/wallet-sdk-address-format";
 
 export type FaucetConfig<WalletConfig> = {
@@ -67,6 +75,13 @@ export class InsufficientFundsError extends Error {
  * PENDING / "scheduled"). The SDK's own default tolerance is 50.
  */
 const SYNC_GAP_TOLERANCE = 50n;
+
+/**
+ * The epoch the faucet acts in. `WalletTransaction` is ledger-agnostic and only yields the carried
+ * transaction to a caller that states which protocol versions it speaks, so reading a transaction
+ * hash needs one.
+ */
+const V9_EPOCH = ProtocolVersion.epochOf(DefaultForkSchedule.v9, DefaultForkSchedule.v9);
 
 export const calculateFaucetState = (state: WalletState): FaucetState => {
   const unshieldedToken = ledger.unshieldedToken().raw;
@@ -219,9 +234,7 @@ export const mkRequestTokens = (
     const requestLogger = logger.child(fullContext);
     requestLogger.debug("Handling request for tokens");
 
-    const shieldedSeed = WalletSeedUtils.getShieldedSeed(config.walletSeed);
     const unshieldedSeed = WalletSeedUtils.getUnshieldedSeed(config.walletSeed);
-    const dustSeed = WalletSeedUtils.getDustSeed(config.walletSeed);
 
     const unshieldedSenderKeystore = createKeystore(
       { kind: "schnorr", secret: unshieldedSeed },
@@ -276,16 +289,8 @@ export const mkRequestTokens = (
 
     const attemptTransfer = async (): Promise<TransferResult> => {
       const ttl = new Date(Date.now() + 30 * 60 * 1000);
-      const recipe = await wallet.transferTransaction(
-        tokenTransfer,
-        {
-          shieldedSecretKeys: ZswapSecretKeys.fromSeed(shieldedSeed),
-          dustSecretKey: DustSecretKey.fromSeed(dustSeed),
-        },
-        {
-          ttl,
-        },
-      );
+      // The facade holds the wallets' keys from `start()`, so the recipe no longer takes them.
+      const recipe = await wallet.transferTransaction(tokenTransfer, { ttl });
 
       try {
         const signedTxRecipe = await wallet.signRecipe(recipe, (payload) =>
@@ -293,7 +298,15 @@ export const mkRequestTokens = (
         );
 
         const finalizedTx = await wallet.finalizeRecipe(signedTxRecipe);
-        const finalizedTxHash = finalizedTx.transactionHash().toString();
+        const unwrapped = WalletTransaction.unwrapWithin<{
+          transactionHash(): { toString(): string };
+        }>(finalizedTx, V9_EPOCH);
+        if (unwrapped._tag === "Left") {
+          logger.info("We have a recipe to submit");
+
+          throw unwrapped.left;
+        }
+        const finalizedTxHash = unwrapped.right.transactionHash().toString();
 
         logger.info("We have a recipe to submit");
         const submittedTxHash = await wallet.submitTransaction(finalizedTx);

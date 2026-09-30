@@ -8,10 +8,14 @@ import { NetworkId, NoOpTransactionHistoryStorage } from "@midnightntwrk/wallet-
 import { URL } from "node:url";
 import pino from "pino";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
-import { type DefaultConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import {
+  type ResolvedConfiguration,
+  DefaultForkSchedule,
+  WalletFacade,
+} from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import { DustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
-import { DustSecretKey, LedgerParameters, ZswapSecretKeys } from "@midnightntwrk/ledger-v9";
+import { LedgerParameters } from "@midnightntwrk/ledger-v9";
 import { pipe, Resource, Task } from "@midnightntwrk/faucet-utils";
 
 export const DustOptions = {
@@ -133,7 +137,7 @@ const buildWalletFacade = async (
   serializedState?: CompositeSerializedState,
   logger?: pino.Logger,
 ): Promise<WalletFacade> => {
-  const config: DefaultConfiguration = {
+  const config: ResolvedConfiguration = {
     indexerClientConnection: {
       indexerHttpUrl: urls.indexerURL.toString(),
       indexerWsUrl: urls.indexerSubscriptionURL.toString(),
@@ -150,6 +154,8 @@ const buildWalletFacade = async (
       feeBlocksMargin: DustOptions.feeBlocksMargin,
     },
     txHistoryStorage: new NoOpTransactionHistoryStorage(),
+    // The per-wallet configurations require a fork schedule; only the facade presets one.
+    forks: DefaultForkSchedule,
   };
 
   // Shielded wallet
@@ -239,10 +245,11 @@ export const WalletFactory = (
         ),
         Task.flatMapPromise(async (wallet: FaucetWallet) => {
           try {
-            await wallet.start(
-              ZswapSecretKeys.fromSeed(shieldedSeed),
-              DustSecretKey.fromSeed(dustSeed),
-            );
+            await wallet.start({
+              shielded: shieldedSeed,
+              unshielded: unshieldedSeed,
+              dust: dustSeed,
+            });
             return wallet;
           } catch (error: unknown) {
             let errorInfo: unknown = error;
@@ -308,10 +315,11 @@ export const WalletFactory = (
         Task.flatMapPromise(async (wallet: FaucetWallet) => {
           logger.debug("Starting faucet from Serialized state");
           try {
-            await wallet.start(
-              ZswapSecretKeys.fromSeed(shieldedSeed),
-              DustSecretKey.fromSeed(dustSeed),
-            );
+            await wallet.start({
+              shielded: shieldedSeed,
+              unshielded: unshieldedSeed,
+              dust: dustSeed,
+            });
             return wallet;
           } catch (error: unknown) {
             let errorInfo: unknown = error;
