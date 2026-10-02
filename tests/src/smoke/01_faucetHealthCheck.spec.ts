@@ -26,8 +26,11 @@ interface DripResponse {
 describe("Faucet Smoke Tests", () => {
   const getFixture = useTestContainersFixture();
   const seed = randomBytes(32).toString("hex");
-  const shieldedSecretKey = ledger.ZswapSecretKeys.fromSeed(utils.getShieldedSeed(seed));
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(utils.getDustSeed(seed));
+  const walletSeeds = {
+    shielded: utils.getShieldedSeed(seed),
+    unshielded: utils.getUnshieldedSeed(seed),
+    dust: utils.getDustSeed(seed),
+  };
   const shieldedTokenRaw = ledger.shieldedToken().raw;
   const unshieldedTokenRaw = ledger.unshieldedToken().raw;
   // const filenameWallet = `${seed.substring(0, 7)}-${TestContainersFixture.network}.state`;
@@ -47,7 +50,7 @@ describe("Faucet Smoke Tests", () => {
     networkId = walletConfig.networkId;
     faucetUrl = fixture.getFaucetUrl();
     wallet = await utils.buildWalletFacade(seed, walletConfig);
-    await wallet.start(shieldedSecretKey, dustSecretKey);
+    await wallet.start(walletSeeds);
   }, timeout);
 
   afterAll(async () => {

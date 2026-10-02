@@ -3,13 +3,20 @@ import { BehaviorSubject, firstValueFrom } from "rxjs";
 import pino from "pino";
 import { createKeystore } from "@midnightntwrk/wallet-sdk-unshielded-wallet";
 import { unshieldedToken } from "@midnightntwrk/ledger-v9";
-import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
+import { NetworkId, WalletTransaction } from "@midnightntwrk/wallet-sdk-abstractions";
 
 import { FaucetConfig, InsufficientFundsError, mkRequestTokens } from "../FaucetImpl.js";
-import type { FaucetWallet } from "../WalletFactory.js";
+import { LedgerV9OnlySchedule, type FaucetWallet } from "../WalletFactory.js";
 import * as WalletSeedUtils from "../WalletSeedUtils.js";
 
 const TX_HASH = "txhash-abc";
+
+// Declared outside the `adopt` call so it is not a fresh object literal there: `adopt` takes a
+// `Serializable`, and excess property checking would reject `transactionHash` inline.
+const carriedTransaction = {
+  serialize: () => new Uint8Array(),
+  transactionHash: () => ({ toString: () => TX_HASH }),
+};
 
 const logger = pino({ level: "silent" });
 
@@ -106,10 +113,15 @@ const makeFakeWallet = (available: UnshieldedCoin[]) => {
       return wallet.signError ? Promise.reject(wallet.signError) : Promise.resolve(recipe);
     },
 
+    // The SDK hands back a transaction sealed with the protocol version it was built at, not a bare
+    // one, and the faucet has to unwrap it at the version it acts in — so the fake stamps one too.
+    // Stamped at the floor, which is where the single-variant wallets the faucet composes seal theirs.
     finalizeRecipe: () =>
       wallet.finalizeError
         ? Promise.reject(wallet.finalizeError)
-        : Promise.resolve({ transactionHash: () => ({ toString: () => TX_HASH }) }),
+        : Promise.resolve(
+            WalletTransaction.adopt("Finalized", carriedTransaction, LedgerV9OnlySchedule.v9),
+          ),
 
     submitTransaction: () =>
       wallet.submitError ? Promise.reject(wallet.submitError) : Promise.resolve(TX_HASH),

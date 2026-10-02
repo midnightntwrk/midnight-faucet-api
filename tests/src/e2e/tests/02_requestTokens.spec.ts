@@ -25,8 +25,11 @@ test.describe("Possible to request tokens from UI", () => {
   let wallet: WalletFacade;
   const { seed } = config.wallet;
   const constants = utils.getConstants(config.networkId);
-  const shieldedSecretKey = ledger.ZswapSecretKeys.fromSeed(utils.getShieldedSeed(seed));
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(utils.getDustSeed(seed));
+  const walletSeeds = {
+    shielded: utils.getShieldedSeed(seed),
+    unshielded: utils.getUnshieldedSeed(seed),
+    dust: utils.getDustSeed(seed),
+  };
   const unshieldedTokenRaw = ledger.unshieldedToken().raw;
   // const filenameWallet = `${seed.substring(0, 7)}-${process.env.NETWORK!}.state`;
 
@@ -35,7 +38,7 @@ test.describe("Possible to request tokens from UI", () => {
 
     wallet = await utils.buildWalletFacade(seed, walletConfig);
 
-    await wallet.start(shieldedSecretKey, dustSecretKey);
+    await wallet.start(walletSeeds);
   });
 
   test("Request tokens from UI @PM-8163", async ({ page }) => {

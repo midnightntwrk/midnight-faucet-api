@@ -34,8 +34,11 @@ interface DripInfoResponse {
 describe("Third-Party API Smoke Tests", () => {
   const getFixture = useTestContainersFixture();
   const seed = randomBytes(32).toString("hex");
-  const shieldedSecretKey = ledger.ZswapSecretKeys.fromSeed(utils.getShieldedSeed(seed));
-  const dustSecretKey = ledger.DustSecretKey.fromSeed(utils.getDustSeed(seed));
+  const walletSeeds = {
+    shielded: utils.getShieldedSeed(seed),
+    unshielded: utils.getUnshieldedSeed(seed),
+    dust: utils.getDustSeed(seed),
+  };
   const unshieldedTokenRaw = ledger.unshieldedToken().raw;
   // The third-party API denominates amounts in the token's smallest unit, and
   // this is the deployment's default drip (DROP_AMOUNT) expressed in it.
@@ -87,7 +90,7 @@ describe("Third-Party API Smoke Tests", () => {
     network = `midnight_${String(networkId).toLowerCase()}`;
     faucetUrl = fixture.getFaucetUrl();
     wallet = await utils.buildWalletFacade(seed, walletConfig);
-    await wallet.start(shieldedSecretKey, dustSecretKey);
+    await wallet.start(walletSeeds);
 
     const state = await utils.waitForUnshieldedSync(wallet);
     walletAddress = utils.getUnshieldedAddress(networkId, state.unshielded.address);

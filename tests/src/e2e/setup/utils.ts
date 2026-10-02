@@ -4,7 +4,7 @@ import * as fsAsync from "node:fs/promises";
 import pinoPretty from "pino-pretty";
 import pino from "pino";
 import { createWriteStream, existsSync } from "node:fs";
-import { type DefaultConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
+import { type ResolvedConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
 import {
   createKeystore,
   PublicKey,
@@ -47,7 +47,10 @@ const logger = await createLogger(
   path.resolve(currentDir, "..", "logs", "utils", `${new Date().toISOString()}.log`),
 );
 
-export const buildWalletFacade = async (walletSeed: string, walletConfig: DefaultConfiguration) => {
+export const buildWalletFacade = async (
+  walletSeed: string,
+  walletConfig: ResolvedConfiguration,
+) => {
   const unshieldedKeyStore = createKeystore(
     { kind: "schnorr", secret: getUnshieldedSeed(walletSeed) },
     walletConfig.networkId,
@@ -97,7 +100,7 @@ const restoreShieldedWallet = async (
 
 const restoreUnshieldedWallet = async (
   path: string,
-  walletConfig: DefaultConfiguration,
+  walletConfig: ResolvedConfiguration,
   readIfExists: (path: string) => Promise<string | undefined>,
 ) => {
   try {
@@ -121,7 +124,7 @@ const restoreUnshieldedWallet = async (
 
 const restoreDustWallet = async (
   path: string,
-  walletConfig: DefaultConfiguration,
+  walletConfig: ResolvedConfiguration,
   readIfExists: (path: string) => Promise<string | undefined>,
 ) => {
   try {
@@ -144,7 +147,7 @@ const restoreDustWallet = async (
 export const provideWallet = async (
   filename: string,
   seed: string,
-  walletConfig: DefaultConfiguration,
+  walletConfig: ResolvedConfiguration,
 ): Promise<WalletFacade> => {
   const Wallet = ShieldedWallet(walletConfig);
   const directoryPath = process.env["SYNC_CACHE"];
