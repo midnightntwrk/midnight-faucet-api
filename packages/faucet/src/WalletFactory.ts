@@ -14,8 +14,7 @@ import { URL } from "node:url";
 import pino from "pino";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
 import { type ResolvedConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
-import { CustomShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
-import { V2Builder as ShieldedV2Builder } from "@midnightntwrk/wallet-sdk-shielded/v2";
+import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
 import {
   CustomDustWallet,
   makeEventLessSyncCapability,
@@ -37,20 +36,54 @@ export const DustOptions = {
 };
 
 /**
- * The faucet's chain is ledger-v9 from its first block, so its timeline has a single epoch and no v8 side.
+ * The schedule the **facade** and the **dust wallet** run on: a single epoch, v9 everywhere.
  *
  * A boundary at the floor is how the SDK expresses that: `epochOf` collapses to one range when the handover is at
  * or below the minimum supported version, and the facade's `authoring()` then resolves to v9 for every version it
  * can ever observe.
  *
- * This is what makes the single-variant wallets below usable. Each registers its one variant at the minimum
- * supported version and stamps every transaction there, and the facade has to accept those alongside each other
- * when it merges balancing transactions. The price is that this wallet cannot follow a chain across the v8 → v9
- * fork — pointing the faucet at a pre-fork network means the forking wallets and `DefaultForkSchedule` again.
+ * The facade needs this for a reason that has nothing to do with the chain. Its `currentVersion` is the *lowest* of
+ * its three wallets, and the eventless dust capability never annotates a protocol version — dust reports `0n`
+ * forever. Under a schedule with a real boundary that minimum would sit on the v8 side, so the facade would author
+ * ledger-v8 transactions and refuse the ledger-v9 ones its own shielded wallet built. Collapsing its boundary puts
+ * every version in one epoch, so the mismatch cannot arise and authoring is always v9.
+ *
+ * The dust wallet needs it because eventless sync is a ledger-v9-only capability and can therefore only run as a
+ * single variant. It costs dust nothing: projections never read the event log, so where the boundary sits is not a
+ * question dust has to answer.
+ *
+ * What must **not** use this is a wallet that reads the chain's event log — see {@link ForkCrossingSchedule}.
  */
 export const LedgerV9OnlySchedule: ProtocolVersion.ForkSchedule = {
   v9: ProtocolVersion.MinSupportedVersion,
 };
+
+/**
+ * The schedule the **shielded wallet** runs on: a real v8 → v9 boundary at {@link ProtocolVersion.V9NativeForkVersion}.
+ *
+ * A chain being v9 *at the tip* does not mean it is v9 *from genesis*. devnet forked in place at block 169496 —
+ * blocks below it report protocol version `1000300` and carry `midnight:event[v9]` bytes, blocks above report
+ * `2001000` and carry `event[v14]`. Only a chain born on ledger-v9 has the single epoch {@link LedgerV9OnlySchedule}
+ * describes.
+ *
+ * That distinction is invisible to dust and fatal to shielded, because finding a shielded coin means trial-decrypting
+ * every output with the viewing key — there is no projections shortcut, so the shielded wallet must read the log.
+ * Given a boundary at the floor it believes it owns the whole timeline: nothing defers at a boundary that isn't
+ * there, and with no preceding variant there is no `fromPreviousVersion` hand-over to inherit a cursor from. So it
+ * starts at cursor zero and reads pre-fork bytes with the v9 reader, which is the SDK's own description of the
+ * failure — "rewinding to zero would park it on a stretch of history that this ledger version's events do not
+ * occupy".
+ *
+ * With a real boundary the wallet registers a variant either side. The default `ShieldedWallet` probes the chain
+ * before choosing one, so on a chain already past the fork it begins on the ledger-v9 variant immediately; if the
+ * probe goes unanswered it begins on ledger-v8 and is handed over — with its cursor — at the first post-fork batch.
+ * Either way it never asks the v9 reader for v8 bytes.
+ *
+ * `V9NativeForkVersion` (`2000000`) is the right boundary for devnet even though devnet enacted the hand-over at
+ * `2001000`: the boundary only has to separate the epochs, and `1000300 < 2000000 <= 2001000` does that.
+ */
+export const ForkCrossingSchedule: ProtocolVersion.ForkSchedule =
+  ProtocolVersion.V9NativeForkSchedule;
 
 /**
  * How long the eventless dust sync waits between passes.
@@ -244,12 +277,15 @@ const buildWalletFacade = async (
     forks: LedgerV9OnlySchedule,
   };
 
-  // Shielded wallet
-  const shieldedWallet = CustomShieldedWallet(config, new ShieldedV2Builder().withDefaults());
+  // Shielded wallet — the one wallet here that replays the chain's event log, and so the one that needs a real
+  // fork boundary rather than the facade's collapsed one. See `ForkCrossingSchedule`.
+  const shieldedWallet = ShieldedWallet({ ...config, forks: ForkCrossingSchedule });
 
+  // `restore` is synchronous; the fresh start is not, because choosing a variant means asking the chain which side
+  // of the boundary it is on. Neither begins synchronization — the facade's `start` does that for both.
   const shielded = serializedState?.shielded
     ? shieldedWallet.restore(serializedState.shielded)
-    : shieldedWallet.startWithSeed(shieldedSeed);
+    : await shieldedWallet.startWithSeed(shieldedSeed);
 
   if (serializedState?.shielded) {
     logger?.info("Started shielded wallet from serialized state");
@@ -397,10 +433,12 @@ export const WalletFactory = (
             serializedState,
             logger,
           ).catch((error: unknown) => {
-            // A snapshot these wallets cannot read is an ordinary thing to meet, not a bug: the single-variant
-            // compositions read ledger-v9 only, so anything written by a wallet running the ledger-v8 variant is
-            // bytes they have no reader for. Syncing from the seed is slow but correct, and the alternative is a
-            // start that throws before there is a wallet for the stuck-sync detector to recover.
+            // A snapshot these wallets cannot read is an ordinary thing to meet, not a bug: the dust and unshielded
+            // compositions are single-variant and read ledger-v9 only, so anything written by a wallet running the
+            // ledger-v8 variant is bytes they have no reader for. (The shielded wallet registers both sides and so
+            // reads either, but it shares the fallback — one unreadable member fails the whole build.) Syncing from
+            // the seed is slow but correct, and the alternative is a start that throws before there is a wallet for
+            // the stuck-sync detector to recover.
 
             // The reason is spelled out rather than logged as `{ error }`: the SDK raises Effect tagged errors,
             // whose own properties are non-enumerable, so pino renders them as `{}` and the cause is lost.
