@@ -67,6 +67,3 @@ temp
 .direnv
 .claude
 .claude/
-
-# release-notes skill scratch output
-.rn-drafts/

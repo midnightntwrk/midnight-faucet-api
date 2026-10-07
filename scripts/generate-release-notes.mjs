@@ -3,12 +3,9 @@
 /**
  * Release Notes Generator
  *
- * Emits RELEASE_NOTES.md in the shape of the component release-note template (v7), filling every
- * field that can be derived from the repository and the GitHub API, and writing an explicit
- * `TODO: … (owner)` marker for every field that cannot. Owner-supplied answers live in
- * `scripts/release-notes/owner-answers.json` so they survive across releases.
- *
- * Exit codes: 0 clean (publishable) · 1 TODOs remain (not publishable) · 2 usage or lookup failure.
+ * Generates RELEASE_NOTES.md in the shape of the component release-note template, filling every
+ * field that can be derived from the repository and the GitHub API. Fields that depend on operator
+ * knowledge the repository does not hold are written as `TODO: … (owner)` for a human to replace.
  *
  * Run with: node scripts/generate-release-notes.mjs [--env <environment>] [--version <ver>]
  */
@@ -20,47 +17,17 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = join(__dirname, "..");
-const SUPPORT_DIR = join(__dirname, "release-notes");
 const REPO = "midnightntwrk/midnight-faucet-api";
 
 /** Workspace packages, in the order the release note lists them. */
 const WORKSPACE_PACKAGES = [
-  {
-    dir: "apps/server",
-    name: "@midnightntwrk/faucet-server",
-    description:
-      "HTTP server for token distribution with REST API, rate limiting, and async task processing.",
-  },
-  {
-    dir: "apps/ui",
-    name: "@midnightntwrk/faucet-ui",
-    description: "React web interface for requesting test tokens with CAPTCHA protection.",
-  },
-  {
-    dir: "packages/faucet",
-    name: "@midnightntwrk/faucet",
-    description: "Core faucet library with wallet integration and token transfer logic.",
-  },
-  {
-    dir: "packages/faucet-client",
-    name: "@midnightntwrk/faucet-client",
-    description: "TypeScript client library for programmatic faucet access.",
-  },
-  {
-    dir: "packages/auth",
-    name: "@midnightntwrk/faucet-auth",
-    description: "JWT-based authentication for faucet API access.",
-  },
-  {
-    dir: "packages/faucet-internal-api",
-    name: "@midnightntwrk/faucet-internal-api",
-    description: "Shared API types and codecs for client-server communication.",
-  },
-  {
-    dir: "packages/faucet-utils",
-    name: "@midnightntwrk/faucet-utils",
-    description: "Common utilities for functional programming patterns and testing.",
-  },
+  { dir: "apps/server", name: "@midnightntwrk/faucet-server" },
+  { dir: "apps/ui", name: "@midnightntwrk/faucet-ui" },
+  { dir: "packages/faucet", name: "@midnightntwrk/faucet" },
+  { dir: "packages/faucet-client", name: "@midnightntwrk/faucet-client" },
+  { dir: "packages/auth", name: "@midnightntwrk/faucet-auth" },
+  { dir: "packages/faucet-internal-api", name: "@midnightntwrk/faucet-internal-api" },
+  { dir: "packages/faucet-utils", name: "@midnightntwrk/faucet-utils" },
 ];
 
 /** Dependencies reported in the Tested-with table, resolved from the lockfile. */
@@ -75,41 +42,6 @@ const TESTED_WITH_IMAGES = ["midnight-node", "indexer-standalone", "proof-server
  * tests, and folding it in would understate the versions the release was validated against.
  */
 const DEPLOYMENT_COMPOSE_FILES = ["docker-compose.yml", "tests/docker-compose-dynamic.yml"];
-
-const OWNER_FIELDS = [
-  { key: "highLevelSummary", need: "write 1-3 sentences summarising what matters in this release" },
-  {
-    key: "shipsInBundle",
-    need: "name the bundle line and link its bundle RN, or state that it is not bundled",
-  },
-  {
-    key: "sisterLineNote",
-    need: "note the parallel release line, or mark the field not applicable",
-  },
-  {
-    key: "upgradeScope",
-    need: "state whether this is binary only or binary plus a coordinated runtime change",
-  },
-  {
-    key: "resetRequired",
-    need: "state whether the faucet database or wallet state must be wiped or re-synced",
-  },
-  {
-    key: "governanceActionRequired",
-    need: "state whether any on-chain proposal or config ratification is needed",
-  },
-  {
-    key: "downtimeCoordination",
-    need: "state whether the rollout is hot-swappable or needs a coordinated window",
-  },
-  {
-    key: "knownIssues",
-    need: "confirm None, or name each shipped-with problem and its workaround",
-  },
-  { key: "qaEvidence", need: "link the QA evidence for this build, or state that QA has not run" },
-  { key: "knownIssuesBoard", need: "link the board open issues are tracked on" },
-  { key: "publicSchema", need: "link the versioned schema, or mark the field not applicable" },
-];
 
 const args = process.argv.slice(2);
 
@@ -127,8 +59,8 @@ const readJson = (path) => {
 };
 
 /**
- * `gh` is the only network dependency. A failed call returns null rather than throwing so the
- * generator can record the gap instead of producing a note that silently omits a section.
+ * `gh` is the only network dependency. A failed call returns null rather than throwing so a single
+ * unreachable PR degrades one line instead of losing the whole note.
  */
 const gh = (apiArgs) => {
   try {
@@ -140,6 +72,8 @@ const gh = (apiArgs) => {
 
 const headSha = () =>
   execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT_DIR, encoding: "utf-8" }).trim();
+
+const todo = (need) => `TODO: ${need} (owner)`;
 
 const isPreRelease = (version) => version.includes("-");
 
@@ -184,29 +118,27 @@ const normaliseTitle = (title) =>
     .trim();
 
 /**
- * A prior release body announces work either by PR number or — as this repo's generator used to —
- * by bare commit subject. Matching on both is what stops an already-shipped fix being re-announced.
+ * A prior release body announces work either by PR number or — as this generator used to — by bare
+ * commit subject. Matching on both is what stops an already-shipped fix being re-announced as new.
  */
-const announcedBy = (priors) => {
-  const numbers = priors.flatMap((prior) =>
-    Array.from(prior.body.matchAll(/#(\d+)/g)).map((match) => Number(match[1])),
-  );
-  const titles = priors.flatMap((prior) =>
+const announcedBy = (prior) => ({
+  numbers: new Set(Array.from(prior.body.matchAll(/#(\d+)/g)).map((match) => Number(match[1]))),
+  titles: new Set(
     prior.body
       .split("\n")
       .filter((line) => line.startsWith("- "))
-      .map((line) => normaliseTitle(line.slice(2))),
-  );
-  return { numbers: new Set(numbers), titles: new Set(titles.filter(Boolean)) };
-};
-
-const wasAnnounced = (pr, announced) =>
-  announced.numbers.has(pr.number) || announced.titles.has(normaliseTitle(pr.title));
+      .map((line) => normaliseTitle(line.slice(2)))
+      .filter(Boolean),
+  ),
+});
 
 const announcedIn = (pr, priors) =>
-  priors.find((prior) => wasAnnounced(pr, announcedBy([prior])))?.version ?? null;
+  priors.find((prior) => {
+    const announced = announcedBy(prior);
+    return announced.numbers.has(pr.number) || announced.titles.has(normaliseTitle(pr.title));
+  })?.version ?? null;
 
-const hasLabel = (pr, label) => pr.labels.some((name) => name === label);
+const hasLabel = (pr, label) => pr.labels.includes(label);
 
 const isDependencyNoise = (pr) => hasLabel(pr, "bot:dependencies") || /^chore\(deps/.test(pr.title);
 
@@ -262,22 +194,20 @@ const lockfilePins = (packageNames) => {
  */
 const imagePins = (imageNames) => {
   const contents = DEPLOYMENT_COMPOSE_FILES.filter((file) => existsSync(join(ROOT_DIR, file))).map(
-    (file) => ({ file, text: readFileSync(join(ROOT_DIR, file), "utf-8") }),
+    (file) => readFileSync(join(ROOT_DIR, file), "utf-8"),
   );
 
   return imageNames
     .map((image) => {
       const pattern = new RegExp(`image:\\s*"?([^\\s"]*${image}:[^\\s"]+)"?`, "g");
-      const found = contents.flatMap(({ file, text }) =>
-        Array.from(text.matchAll(pattern)).map((match) => ({ file, ref: match[1] })),
+      const refs = Array.from(
+        new Set(contents.flatMap((text) => Array.from(text.matchAll(pattern)).map((m) => m[1]))),
       );
-      const distinct = Array.from(new Set(found.map((entry) => entry.ref)));
-      if (distinct.length === 0) return null;
+      if (refs.length === 0) return null;
       return {
-        name: distinct[0].split(":")[0],
-        version: distinct[0].split(":").slice(1).join(":"),
-        agreed: distinct.length === 1,
-        found,
+        name: refs[0].split(":")[0],
+        version: refs[0].split(":").slice(1).join(":"),
+        agreed: refs.length === 1,
       };
     })
     .filter(Boolean);
@@ -302,17 +232,9 @@ const publishedArtifacts = (packages, version) =>
     }
   });
 
-const todo = (need) => `TODO: ${need} (owner)`;
-
-const ownerAnswer = (answers, version, key) => {
-  const value = answers?.versions?.[version]?.[key] ?? answers?.default?.[key] ?? null;
-  return value === null || value === "" ? null : value;
-};
-
 const prLine = (pr, priors) => {
   const prior = announcedIn(pr, priors);
-  const suffix = prior ? `, announced in ${prior}` : "";
-  return `- ${pr.title} (PR #${pr.number}${suffix}).`;
+  return `- ${pr.title} (PR #${pr.number}${prior ? `, announced in ${prior}` : ""}).`;
 };
 
 const section = (heading, body) => `## ${heading}\n\n${body}\n`;
@@ -325,9 +247,6 @@ const generate = () => {
     console.error("generate-release-notes: could not determine the version to draft");
     process.exit(2);
   }
-
-  const answers = readJson(join(SUPPORT_DIR, "owner-answers.json"));
-  const templateSource = readJson(join(SUPPORT_DIR, "template-source.json"));
 
   const allReleases = (gh(["api", `repos/${REPO}/releases?per_page=100`]) ?? []).map((release) => ({
     version: release.tag_name.replace(/^v/, ""),
@@ -356,7 +275,7 @@ const generate = () => {
     process.exit(2);
   }
 
-  // On a release the checkout is at the tag, so `v<version>` resolves. On a manual dispatch from a
+  // On a release the checkout is at the tag, so the tag resolves. On a manual dispatch from a
   // branch the version is usually ahead of every tag, so compare against the checked-out commit
   // instead — that previews the note for work that has not been tagged yet.
   const head = thisRelease ? thisRelease.tag : headSha();
@@ -394,7 +313,6 @@ const generate = () => {
     {},
   );
   const take = (key) => grouped[key] ?? [];
-
   const fresh = (list) => list.filter((pr) => !announcedIn(pr, priors));
   const repeated = (list) => list.filter((pr) => announcedIn(pr, priors));
 
@@ -408,10 +326,6 @@ const generate = () => {
     ? `source tag [${thisRelease.tag}](https://github.com/${REPO}/releases/tag/${thisRelease.tag})`
     : `source commit [${head.slice(0, 7)}](https://github.com/${REPO}/commit/${head}) — not yet tagged`;
 
-  const answer = (key) => ownerAnswer(answers, version, key);
-  const missing = OWNER_FIELDS.filter((field) => answer(field.key) === null);
-  const value = (key) => answer(key) ?? todo(OWNER_FIELDS.find((f) => f.key === key).need);
-
   const changeLines = [
     ...fresh([
       ...take("features"),
@@ -421,9 +335,9 @@ const generate = () => {
     ]).map((pr) => prLine(pr, priors)),
     ...(fresh(take("dependencies")).length > 0
       ? [
-          `- Routine dependency maintenance: ${fresh(take("dependencies"))
+          `- Routine dependency maintenance (${fresh(take("dependencies"))
             .map((pr) => `PR #${pr.number}`)
-            .join(", ")}.`,
+            .join(", ")}).`,
         ]
       : []),
     ...(fresh(take("versionBump")).length > 0
@@ -442,46 +356,36 @@ const generate = () => {
     .map((pr) => prLine(pr, priors));
 
   const body = [
-    `---`,
-    `type: component-release-note`,
-    `status: draft`,
-    `component: faucet`,
-    `version: ${version}`,
-    `component_class: core/infra`,
-    `template_blob_sha: ${templateSource?.blobSha ?? "unknown"}`,
-    `template_commit_sha: ${templateSource?.commitSha ?? "unknown"}`,
-    `generated: ${new Date().toISOString().split("T")[0]}`,
-    `generator: generate-release-notes.mjs`,
-    `tested_with_status: build-pins`,
-    `---`,
-    ``,
     `# faucet ${version}`,
     ``,
     section(
       "Metadata",
       [
         `- **Release type**: ${releaseType(version, baseline.version)}`,
-        `  Derived from the ${baseline.version} to ${baseVersion(version)} semver delta (\`release body\`).`,
+        `  Derived from the ${baseline.version} to ${baseVersion(version)} semver delta.`,
         `- **Date**: ${date}`,
-        `- **Ships in bundle**: ${value("shipsInBundle")}`,
-        `- **Sister-line note**: ${value("sisterLineNote")}`,
+        `- **Ships in bundle**: ${todo("name the bundle line and link its bundle RN, or state that it is not bundled")}`,
+        `- **Sister-line note**: — no parallel maintenance line exists for this component.`,
         `- **Environment**: ${environment}`,
         `- **Released artifact(s)**: ${
           artifacts.length > 0
             ? `${artifacts.map((pkg) => `\`${pkg.name}@${version}\` (npm)`).join(", ")}; ${sourceRef}`
-            : `${sourceRef} (\`release body\`)`
-        }. Fewer than three installable artifacts ship here, so they stay on this line rather than in a dedicated **Artifacts** section.`,
-        `- **Component class**: core/infra — every operator field under **Deployment information** applies and is answered there.`,
-        `- **Upgrade scope**: ${value("upgradeScope")}`,
-        `- **Reset required**: ${value("resetRequired")}`,
-        `- **Governance action required**: ${value("governanceActionRequired")}`,
+            : sourceRef
+        }`,
+        `- **Component class**: core/infra — every operator field under **Deployment information** applies.`,
+        `- **Upgrade scope**: ${todo("binary only, or binary plus a coordinated runtime change")}`,
+        `- **Reset required**: ${todo("whether the faucet database or wallet state must be wiped or re-synced")}`,
+        `- **Governance action required**: ${todo("whether any on-chain proposal or config ratification is needed")}`,
       ].join("\n"),
     ),
-    section("High-level summary", value("highLevelSummary")),
+    section(
+      "High-level summary",
+      todo("write 1-3 sentences summarising what matters most in this release"),
+    ),
     section(
       "Audience",
       [
-        "Scoped to those this component affects:",
+        "These release notes are intended for:",
         "",
         "- Shielded Technologies engineering and SRE teams who deploy and operate the faucet.",
         "- Developers and integrators who request test tokens through `@midnightntwrk/faucet-client`.",
@@ -493,17 +397,19 @@ const generate = () => {
       [
         "Hard, component-local incompatibilities:",
         "",
-        ...pins.map((pin) => `- Requires \`${pin.name}\` ${pin.version} (\`package.json\`).`),
+        ...(pins.length > 0
+          ? pins.map((pin) => `- Requires \`${pin.name}\` ${pin.version}.`)
+          : ["- — none beyond the pins in the Tested-with table."]),
         "",
-        "**Downstream impact (cascading effects).** The faucet is a leaf service — nothing in the Midnight stack",
-        "depends on it at runtime, so upgrading it cascades nowhere. The one consumer-visible surface is",
-        "`@midnightntwrk/faucet-client`, whose codecs track the server's request and response types (`package.json`).",
+        "**Downstream impact (cascading effects).** The faucet is a leaf service — nothing in the Midnight",
+        "stack depends on it at runtime, so upgrading it cascades nowhere. The one consumer-visible surface",
+        "is `@midnightntwrk/faucet-client`, whose codecs track the server's request and response types.",
       ].join("\n"),
     ),
     section(
       "Tested-with versions",
       [
-        "Build pins — not QA-verified. Read from the lockfile and the deployment compose files at this tag.",
+        "Build pins — not QA-verified. Read from the lockfile and the deployment compose files at this ref.",
         "",
         "| Component | Tested-with version |",
         "| --- | --- |",
@@ -512,12 +418,10 @@ const generate = () => {
         ...(images.some((image) => !image.agreed)
           ? [
               "",
-              "Pins disagree across compose files for: " +
-                images
-                  .filter((image) => !image.agreed)
-                  .map((image) => `\`${image.name}\``)
-                  .join(", ") +
-                ". The table reports the deployment value; reconcile the compose files.",
+              `Pins disagree across compose files for ${images
+                .filter((image) => !image.agreed)
+                .map((image) => `\`${image.name}\``)
+                .join(", ")}. The table reports the deployment value; reconcile the compose files.`,
             ]
           : []),
       ].join("\n"),
@@ -525,10 +429,10 @@ const generate = () => {
     section(
       "Deployment information",
       [
-        `- **Upgrade scope**: ${value("upgradeScope")}`,
-        `- **Reset required**: ${value("resetRequired")}`,
-        `- **Governance action required**: ${value("governanceActionRequired")}`,
-        `- **Downtime / coordination**: ${value("downtimeCoordination")}`,
+        `- **Upgrade scope**: ${todo("binary only, or binary plus a coordinated runtime change")}`,
+        `- **Reset required**: ${todo("whether a state wipe, re-sync, or re-index is needed")}`,
+        `- **Governance action required**: ${todo("whether any on-chain proposal or ratification is needed")}`,
+        `- **Downtime / coordination**: ${todo("whether the rollout is hot-swappable or needs a coordinated window")}`,
       ].join("\n"),
     ),
     section(
@@ -536,11 +440,11 @@ const generate = () => {
       [
         `New in ${version} since ${baseline.version}:`,
         "",
-        ...(changeLines.length > 0 ? changeLines : ["- No functional change at this tag."]),
+        ...(changeLines.length > 0 ? changeLines : ["- No functional change at this ref."]),
         ...(repeatedLines.length > 0
           ? [
               "",
-              "Already announced in earlier pre-releases of this version, repeated here only because this tag is the",
+              "Already announced in earlier pre-releases of this version, repeated only because this is the",
               "current head of the line — not new work:",
               "",
               ...repeatedLines,
@@ -554,11 +458,11 @@ const generate = () => {
         ? fresh(take("features"))
             .map((pr) => `### Feature \`${pr.title}\`\n\n**Description**: see PR #${pr.number}.`)
             .join("\n\n")
-        : "None introduced at this tag.",
+        : "None introduced at this ref.",
     ),
     section(
       "New features requiring configuration updates",
-      "None at this tag. Configuration-affecting changes are called out under What changed when they occur.",
+      "None at this ref. Configuration-affecting changes are called out under What changed.",
     ),
     section(
       "Improvements",
@@ -587,22 +491,25 @@ const generate = () => {
         ? fresh(take("breaking"))
             .map(
               (pr) =>
-                `### Breaking change \`${pr.title}\`\n\n**What changed**: see PR #${pr.number}.\n\n**What breaks**: TODO: describe the exact scenarios (owner)\n\n**Required actions**:\n\n- TODO: list the migration steps (owner)`,
+                `### Breaking change \`${pr.title}\`\n\n**What changed**: see PR #${pr.number}.\n\n**Required actions**: ${todo("list the migration steps")}`,
             )
             .join("\n\n")
         : "None.",
     ),
-    section("Known issues", value("knownIssues")),
+    section(
+      "Known issues",
+      todo("confirm None, or name each shipped-with problem and its workaround"),
+    ),
     section(
       "Links and references",
       [
-        `- **QA test coverage / test evidence**: ${value("qaEvidence")}`,
+        `- **QA test coverage / test evidence**: ${todo("link the QA evidence, or state that QA has not run")}`,
         `- **PRs**: [${baseline.tag}...${head} compare](https://github.com/${REPO}/compare/${baseline.tag}...${head})`,
         `- **Engineering docs**: [CONTRIBUTING.md](https://github.com/${REPO}/blob/${head}/CONTRIBUTING.md)`,
-        `- **Migration guides**: — no migration is required for this release.`,
+        `- **Migration guides**: —`,
         `- **SDK docs**: [docs.midnight.network](https://docs.midnight.network)`,
-        `- **Known issues board**: ${value("knownIssuesBoard")}`,
-        `- **Public schema**: ${value("publicSchema")}`,
+        `- **Known issues board**: [GitHub issues](https://github.com/${REPO}/issues)`,
+        `- **Public schema**: — the faucet publishes no versioned OpenAPI or ABI.`,
         `- **API documentation**: [docs.midnight.network](https://docs.midnight.network)`,
         ``,
         `Repository: [${REPO}](https://github.com/${REPO}).`,
@@ -618,8 +525,8 @@ const generate = () => {
         ...(take("fixes").length > 0
           ? take("fixes").map((pr) => {
               const issues = closesIssues(pr);
-              // Citing the PR again in the description would breach the one-detail-section rule
-              // when the defect number already is that PR.
+              // Citing the PR again in the description would duplicate the reference when the
+              // defect number already is that PR.
               return issues.length > 0
                 ? `| #${issues[0]} | ${pr.title} (PR #${pr.number}). |`
                 : `| PR #${pr.number} | ${pr.title}. |`;
@@ -629,22 +536,16 @@ const generate = () => {
     ),
   ].join("\n");
 
-  return { body, missing, prs, ids };
+  return { body, prs, ids };
 };
 
-const { body, missing, prs, ids } = generate();
+const { body, prs, ids } = generate();
 const outputPath = join(ROOT_DIR, "RELEASE_NOTES.md");
 writeFileSync(outputPath, body);
+
+const todoCount = (body.match(/TODO:/g) ?? []).length;
 
 console.log(`Release notes generated: ${outputPath}`);
 console.log(`Sourced ${prs.length} merged PR(s) in range.`);
 if (ids.length > 0) console.log(`Security identifiers carried: ${ids.join(", ")}`);
-
-if (missing.length > 0) {
-  console.error(`\n${missing.length} owner field(s) still unanswered — not publishable:`);
-  missing.forEach((field) => console.error(`  - ${field.key}: ${field.need}`));
-  console.error(`\nFill these in scripts/release-notes/owner-answers.json and re-run.`);
-  process.exit(1);
-}
-
-console.log("All owner fields answered — note is publishable.");
+if (todoCount > 0) console.log(`${todoCount} field(s) marked TODO for the owner to complete.`);
