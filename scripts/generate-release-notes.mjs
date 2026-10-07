@@ -12,7 +12,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { execFileSync } from "child_process";
-import { join, dirname } from "path";
+import { join, dirname, resolve, sep } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -173,19 +173,57 @@ const securityIds = (prs) =>
     ),
   );
 
-/** Resolved lockfile versions — build pins, not QA-verified. */
+/**
+ * Resolves a path inside the repository and refuses anything that escapes it. Every caller passes a
+ * module-level constant, so this never fires in practice — it keeps that guarantee enforced rather
+ * than assumed if the inputs ever become dynamic.
+ */
+const repoPath = (...segments) => {
+  const resolved = resolve(ROOT_DIR, ...segments);
+  if (resolved !== ROOT_DIR && !resolved.startsWith(ROOT_DIR + sep)) {
+    throw new Error(`generate-release-notes: path escapes the repository: ${segments.join("/")}`);
+  }
+  return resolved;
+};
+
+const readIfPresent = (...segments) => {
+  const path = repoPath(...segments);
+  return existsSync(path) ? readFileSync(path, "utf-8") : null;
+};
+
+/**
+ * Resolved lockfile versions — build pins, not QA-verified. Scanned line by line rather than with a
+ * regex built from the package name, so no pattern is compiled from a variable.
+ */
 const lockfilePins = (packageNames) => {
-  const lockfile = existsSync(join(ROOT_DIR, "yarn.lock"))
-    ? readFileSync(join(ROOT_DIR, "yarn.lock"), "utf-8")
-    : "";
+  const lines = (readIfPresent("yarn.lock") ?? "").split("\n");
   return packageNames
     .map((name) => {
-      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const match = lockfile.match(new RegExp(`"${escaped}@npm:[^"]*":\\n  version: (\\S+)`));
-      return match ? { name, version: match[1] } : null;
+      const entry = lines.findIndex(
+        (line) => line.startsWith(`"${name}@npm:`) && line.endsWith('":'),
+      );
+      if (entry === -1) return null;
+      const versionLine = lines
+        .slice(entry + 1, entry + 6)
+        .find((line) => line.startsWith("  version: "));
+      return versionLine ? { name, version: versionLine.slice("  version: ".length).trim() } : null;
     })
     .filter(Boolean);
 };
+
+/** Pulls every `image:` reference out of a compose file without compiling a dynamic pattern. */
+const imageRefs = (text) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("image:"))
+    .map((line) =>
+      line
+        .slice("image:".length)
+        .trim()
+        .replace(/^["']|["']$/g, ""),
+    )
+    .filter(Boolean);
 
 /**
  * Stack image pins, read from the deployment compose files. A pin only enters the table when every
@@ -193,21 +231,26 @@ const lockfilePins = (packageNames) => {
  * because claiming one of two versions would misstate what the release was tested against.
  */
 const imagePins = (imageNames) => {
-  const contents = DEPLOYMENT_COMPOSE_FILES.filter((file) => existsSync(join(ROOT_DIR, file))).map(
-    (file) => readFileSync(join(ROOT_DIR, file), "utf-8"),
-  );
+  const refs = DEPLOYMENT_COMPOSE_FILES.flatMap((file) => {
+    const text = readIfPresent(file);
+    return text === null ? [] : imageRefs(text);
+  });
 
   return imageNames
     .map((image) => {
-      const pattern = new RegExp(`image:\\s*"?([^\\s"]*${image}:[^\\s"]+)"?`, "g");
-      const refs = Array.from(
-        new Set(contents.flatMap((text) => Array.from(text.matchAll(pattern)).map((m) => m[1]))),
+      const matching = Array.from(
+        new Set(
+          refs.filter((ref) => {
+            const repository = ref.split(":")[0];
+            return repository === image || repository.endsWith(`/${image}`);
+          }),
+        ),
       );
-      if (refs.length === 0) return null;
+      if (matching.length === 0) return null;
       return {
-        name: refs[0].split(":")[0],
-        version: refs[0].split(":").slice(1).join(":"),
-        agreed: refs.length === 1,
+        name: matching[0].split(":")[0],
+        version: matching[0].split(":").slice(1).join(":"),
+        agreed: matching.length === 1,
       };
     })
     .filter(Boolean);
@@ -219,7 +262,7 @@ const imagePins = (imageNames) => {
  */
 const publishedArtifacts = (packages, version) =>
   packages.filter((pkg) => {
-    const manifest = readJson(join(ROOT_DIR, pkg.dir, "package.json"));
+    const manifest = readJson(repoPath(pkg.dir, "package.json"));
     if (!manifest || manifest.private === true) return false;
     try {
       execFileSync("npm", ["view", `${pkg.name}@${version}`, "version"], {
@@ -241,7 +284,7 @@ const section = (heading, body) => `## ${heading}\n\n${body}\n`;
 
 const generate = () => {
   const environment = flag("env", "Preprod, Preview");
-  const rootPkg = readJson(join(ROOT_DIR, "package.json"));
+  const rootPkg = readJson(repoPath("package.json"));
   const version = flag("version", rootPkg?.version);
   if (!version) {
     console.error("generate-release-notes: could not determine the version to draft");
@@ -540,7 +583,7 @@ const generate = () => {
 };
 
 const { body, prs, ids } = generate();
-const outputPath = join(ROOT_DIR, "RELEASE_NOTES.md");
+const outputPath = repoPath("RELEASE_NOTES.md");
 writeFileSync(outputPath, body);
 
 const todoCount = (body.match(/TODO:/g) ?? []).length;
