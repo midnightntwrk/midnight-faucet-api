@@ -152,7 +152,7 @@ export const defaultRoot = (
         {
           liveness: {
             /**
-             * Checking if available balance allows to cover a single request + fees with some buffer is the only liveness check, this should happen
+             * Checking if available balance allows to cover a single request + fees with some buffer is the only liveness concern, this should happen
              * only if the sync progress is close to the tip because the coins might not be fully synced otherwise.
              * Given in some circumstances all coins may be used, a 3 minutes window should be given before
              * forcing a restart (it is the time it should take for a transaction from being requested to change
@@ -163,17 +163,28 @@ export const defaultRoot = (
              *   - connectivity issues should be gracefully handled and do not indicate faucet is in a state mandating restart
              *   - faucet is able to serve requests even if there is no connection to the indexer for some time
              *   - faucet startup takes time due to sync up needed; thus restarts should be triggered only when necessary
+             *
+             * The two failure modes are separate named checks so the health
+             * endpoint can report which one fired: a wallet that has not
+             * started syncing is not a balance problem, and reporting it as
+             * WALLET_BALANCE_LOW sends operators chasing funds that may be
+             * fine (see #78). The group's combined status is unchanged: it
+             * fails exactly when the previous single check failed.
              */
-            "faucet-wallet": HealthService.checkFromObservable(
+            // if sync hasn't started we're alive but not ready
+            "faucet-wallet-sync": HealthService.checkFromObservable(
+              pipe(
+                faucet.state$,
+                rx.map((state) => (state.unshielded.syncProgress ? "ok" : "not_ok")),
+              ),
+            ),
+            // if it's fully synced and we don't have enough balance we're not alive
+            "faucet-wallet-balance": HealthService.checkFromObservable(
               pipe(
                 faucet.state$,
                 rx.map((state) => {
                   const { unshielded } = state;
 
-                  // if sync hasn't started we're alive but not ready
-                  if (!unshielded.syncProgress) return "not_ok";
-
-                  // if it's fully synced and we have enough balance we're not alive
                   if (
                     unshielded.isSynced &&
                     unshielded.availableBalance < 2n * BigInt(faucet.dropAmount)
