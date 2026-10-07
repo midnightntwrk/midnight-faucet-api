@@ -351,6 +351,30 @@ describe("Task Repository", () => {
       expect(await repository().failTimedOutTasks()).toEqual([]);
       expect(await statusOf(id)).toBe("scheduled");
     });
+
+    it("never sweeps a finished task, however old", async () => {
+      // Every arm's age and stall conditions hold here — both rows are a day old and
+      // nothing has been picked since — so only the status check keeps a repeat
+      // requester's history out of the sweep. Rewriting it would also refund a slot
+      // for a drip that was already settled.
+      const dayAgo = 24 * 60;
+      const succeeded = await insertTask({
+        address: createAddress(),
+        status: "success",
+        startedMinutesAgo: dayAgo,
+        state: JSON.stringify({ transactionIdentifier: "earlier-drip" }),
+      });
+      const failed = await insertTask({
+        address: createAddress(),
+        status: "failure",
+        startedMinutesAgo: dayAgo,
+        state: JSON.stringify(TIMED_OUT_MESSAGE),
+      });
+
+      expect(await repository().failTimedOutTasks()).toEqual([]);
+      expect(await statusOf(succeeded)).toBe("success");
+      expect(await statusOf(failed)).toBe("failure");
+    });
   });
 
   describe("pick", () => {

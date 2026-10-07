@@ -15,7 +15,11 @@ export type PostgresqlConfig = Readonly<{
   ssl?: ConnectionOptions | boolean;
 }>;
 
-const migrationsDirectory = fileURLToPath(new URL("../dist/migrations/", import.meta.url));
+export const migrationConfig: Knex.MigratorConfig = {
+  directory: fileURLToPath(new URL("../dist/migrations/", import.meta.url)),
+  extension: ".js",
+  loadExtensions: [".js"],
+};
 
 export type MigrationResult = { status: "success" } | { status: "failure"; message: string };
 
@@ -23,11 +27,7 @@ export const runMigrations = async (knex: Knex, logger: pino.Logger): Promise<Mi
   try {
     logger.info("Running migrations");
 
-    await knex.migrate.latest({
-      directory: migrationsDirectory,
-      extension: ".js",
-      loadExtensions: [".js"],
-    });
+    await knex.migrate.latest(migrationConfig);
 
     return {
       status: "success",
