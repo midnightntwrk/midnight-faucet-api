@@ -31,6 +31,7 @@ build
 # misc
 .DS_Store
 *.pem
+.rn-drafts/
 
 # debug
 npm-debug.log*
@@ -66,3 +67,6 @@ temp
 .direnv
 .claude
 .claude/
+
+# release-notes skill scratch output
+.rn-drafts/
