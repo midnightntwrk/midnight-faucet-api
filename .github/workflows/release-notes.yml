@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      # The generator reads PR titles, bodies and labels to source and classify changes.
+      pull-requests: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -32,11 +34,15 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
+      # Exits non-zero when the note still has unanswered owner fields, which fails the job and so
+      # skips the publish steps below — the release body is left untouched until the gaps are filled.
       - name: Generate release notes
         env:
+          GH_TOKEN: ${{ github.token }}
           RELEASE_ENV: ${{ inputs.environment || 'Preprod, Preview' }}
         run: |
           node scripts/generate-release-notes.mjs --env "$RELEASE_ENV"
+
       - name: Update GitHub Release with generated notes
         if: github.event_name == 'release'
         env:
