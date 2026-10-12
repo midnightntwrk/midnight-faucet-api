@@ -36,7 +36,7 @@
     "eslint": "10.11.0",
     "fast-check": "4.10.2",
     "testcontainers": "12.2.0",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   },
   "peerDependencies": {
     "@midnightntwrk/wallet-sdk-address-format": "^4.0.0-canary.20260702133504-1f7aaca",
