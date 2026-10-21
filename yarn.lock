@@ -993,7 +993,7 @@ __metadata:
     rxjs: "npm:^7.8.1"
     ts-loader: "npm:9.6.2"
     typescript: "npm:6.0.3"
-    vite: "npm:8.3.2"
+    vite: "npm:8.3.3"
     vite-plugin-wasm: "npm:3.6.0"
   languageName: unknown
   linkType: soft
