@@ -46,7 +46,7 @@ jobs:
       # is still created *private* on first push — visibility is not inherited — so a
       # one-time manual flip to public in the package settings is required.
       - name: Log in to GitHub Container registry
-        uses: docker/login-action@783ae9cac559640a24c9212dfa6cd9e998252f9a
+        uses: docker/login-action@d3b9cdfa580156c018ca5e745c1bf653d8ea46b5
         with:
           registry: "https://ghcr.io"
           username: ${{ github.actor }}
