@@ -12,6 +12,7 @@ import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { HealthService } from "../health.js";
 import { thirdPartyHttpRequestTimer } from "../metrics/index.js";
 import { createDripRoutes, type DripRouteDeps } from "../api/drip-routes.js";
+import { STARS_PER_NIGHT } from "../units.js";
 import type { SyncStuckDetector } from "../sync-stuck-detector.js";
 
 export interface ThirdPartyDeps {
@@ -24,6 +25,8 @@ export interface ThirdPartyDeps {
   logger: pino.Logger;
   networkId: NetworkId.NetworkId;
   maxDailyRequests: number;
+  /** The deployment's drip, in STAR. */
+  dropAmount: bigint;
 }
 
 export const thirdPartyRouter = (deps: ThirdPartyDeps): express.Router => {
@@ -48,6 +51,12 @@ export const thirdPartyRouter = (deps: ThirdPartyDeps): express.Router => {
     next();
   });
 
+  // `thirdPartyApi.maxAmount` may only tighten the ceiling, never raise it: a
+  // partner request must not exceed the drip the deployment hands out, however
+  // THIRD_PARTY_MAX_AMOUNT is set.
+  const configuredCeiling = BigInt(deps.config.maxAmount) * STARS_PER_NIGHT;
+  const dropAmount = configuredCeiling < deps.dropAmount ? configuredCeiling : deps.dropAmount;
+
   // Shared drip routes (POST /drips, GET /drips/:dripId, GET /health)
   const dripDeps: DripRouteDeps = {
     taskManager: deps.taskManager,
@@ -58,7 +67,7 @@ export const thirdPartyRouter = (deps: ThirdPartyDeps): express.Router => {
     logger: deps.logger,
     networkId: deps.networkId,
     maxDailyRequests: deps.maxDailyRequests,
-    maxAmount: deps.config.maxAmount,
+    dropAmount,
   };
   router.use(createDripRoutes(dripDeps));
 

@@ -12,6 +12,7 @@ import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { thirdPartyRouter } from "./third-party/router.js";
 import { createDripRoutes, type DripRouteDeps } from "./api/drip-routes.js";
 import { RateLimitConfig } from "./rate-limiting/rate-limiting.js";
+import { starToWholeTNight } from "./units.js";
 
 export const metricsAppRouter = (deps: CompositionRoot) => {
   const router: express.Router = express.Router();
@@ -95,7 +96,6 @@ export const apiRouter = (
   });
 
   // Shared drip routes (POST /drips, GET /drips/:dripId, GET /health)
-  const TNIGHT_UNIT = 5_000_000n;
   const dripDeps: DripRouteDeps = {
     taskManager: deps.taskManager,
     taskRepository: deps.stateContext.taskRepository,
@@ -105,7 +105,7 @@ export const apiRouter = (
     logger: deps.logger,
     networkId,
     maxDailyRequests: rateLimitingConfig.maxDailyRequests,
-    maxAmount: Number(dropAmount / TNIGHT_UNIT),
+    dropAmount,
   };
   router.use(createDripRoutes(dripDeps));
 
@@ -149,12 +149,19 @@ export const appRouter = (config: ServerConfig, root: CompositionRoot): express.
     logger: root.logger,
     networkId: config.networkId,
     maxDailyRequests: config.rateLimiting.maxDailyRequests,
+    dropAmount: BigInt(config.dropAmount),
   });
   const ui = express.static(config.uiPath);
 
   const router = express.Router();
 
-  router.use(runtimeConfigMiddleware(config.uiPath, String(config.networkId)));
+  router.use(
+    runtimeConfigMiddleware(
+      config.uiPath,
+      String(config.networkId),
+      starToWholeTNight(BigInt(config.dropAmount)),
+    ),
+  );
 
   router.use(
     cors({

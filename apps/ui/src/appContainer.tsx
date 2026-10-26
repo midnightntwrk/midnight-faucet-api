@@ -3,15 +3,22 @@ import { DripResponse, FaucetClientRequests } from "@midnight-ntwrk/faucet-inter
 import { RequestTokensForm } from "./requestTokensForm.js";
 import { useSubmit } from "./submit.js";
 import { useHealthStatus } from "./useHealthStatus.js";
+import { runtimeConfig } from "./runtimeConfig.js";
 
-const DROP_AMOUNT_TNIGHT = "1000";
+/**
+ * Used only if the server served a page without injecting its own drip, which
+ * would mean `runtimeConfigMiddleware` did not run. Matches the `dropAmount`
+ * default in the server's config.ts.
+ */
+const FALLBACK_DROP_AMOUNT_TNIGHT = "5000";
 
 export function AppContainer(props: { client: FaucetClientRequests }) {
   const isHealthy = useHealthStatus(props.client.healthStatus$);
+  const dropAmountTNight = runtimeConfig().dropAmountTNight ?? FALLBACK_DROP_AMOUNT_TNIGHT;
   const tokenRequestSubmit = useSubmit<{ address: string; captchaToken: string }, DripResponse>(
     async (request) =>
       props.client
-        .requestTokens(request.address, request.captchaToken, DROP_AMOUNT_TNIGHT)
+        .requestTokens(request.address, request.captchaToken, dropAmountTNight)
         .catch((error) => {
           if (error instanceof ClientError) {
             switch (error.type) {
@@ -28,5 +35,11 @@ export function AppContainer(props: { client: FaucetClientRequests }) {
         }),
   );
 
-  return <RequestTokensForm submit={tokenRequestSubmit} isHealthy={isHealthy} />;
+  return (
+    <RequestTokensForm
+      submit={tokenRequestSubmit}
+      isHealthy={isHealthy}
+      dropAmountTNight={dropAmountTNight}
+    />
+  );
 }

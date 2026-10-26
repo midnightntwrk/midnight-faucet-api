@@ -118,9 +118,9 @@ export const schema = {
     arg: "metrics-port",
   },
   dropAmount: {
-    doc: "Amount of tokens provided in a single request",
+    doc: "Amount of tokens provided in a single request, in STAR (1 tNIGHT = 1,000,000 STAR). Also the per-request ceiling on both /api and /v1.",
     format: String,
-    default: "5000000000", // 1000_000_000n tNight
+    default: "5000000000", // 5,000 tNIGHT
     env: "DROP_AMOUNT",
     arg: "drop-amount",
   },
@@ -367,7 +367,7 @@ export const schema = {
       arg: "third-party-allowed-origins",
     },
     maxAmount: {
-      doc: "Maximum allowed drip amount",
+      doc: "Maximum drip a third-party request may ask for, in whole tNIGHT. Clamped to 'dropAmount' — it can only lower the ceiling, never raise it.",
       format: "nat",
       default: 5000,
       env: "THIRD_PARTY_MAX_AMOUNT",

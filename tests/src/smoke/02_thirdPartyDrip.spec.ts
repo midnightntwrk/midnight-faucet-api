@@ -247,9 +247,8 @@ describe("Third-Party API Smoke Tests", () => {
     }, 20_000);
 
     test("Request drip returns 400 for amount just above the maximum", async () => {
-      // The third-party API limit (THIRD_PARTY_MAX_AMOUNT) defaults to 5000,
-      // which is distinct from the public route limit (dropAmount / TNIGHT_UNIT = 1000).
-      // 5001 is the smallest value that should be rejected on /v1/drips.
+      // Both routes cap at the deployment's `dropAmount`, 5,000 tNIGHT by
+      // default, so 5001 is the smallest value that should be rejected.
       const response = await axios.post<ErrorResponse>(
         `${faucetUrl}/v1/drips`,
         { recipientAddress: walletAddress, amount: "5001" },
@@ -402,14 +401,20 @@ describe("Third-Party API Smoke Tests", () => {
     test(
       "Verify that wallet balance was increased after drip",
       async () => {
-        const expectedAmount = BigInt(requestedDripAmount) * 3_000_000n;
+        // `amount` is whole tNIGHT, and one tNIGHT is 1,000,000 STAR. This read
+        // 3_000_000n while the server multiplied by 5_000_000n, so it passed as
+        // a lower bound against the wrong unit (mnf-stl-support#370).
+        const expectedAmount = BigInt(requestedDripAmount) * 1_000_000n;
         const finalBalance = await utils.waitForBalanceIncrease(
           wallet,
           unshieldedTokenRaw,
           unshieldedBalanceInitial,
           expectedAmount,
         );
-        expect(finalBalance).toBeGreaterThanOrEqual(unshieldedBalanceInitial + expectedAmount);
+        // Exact, not a lower bound: a wrong unit still clears `>=`, which is how
+        // the 5x multiply went unnoticed. This wallet is freshly seeded per run
+        // and receives only this drip, so the delta is the drip.
+        expect(finalBalance).toBe(unshieldedBalanceInitial + expectedAmount);
       },
       timeout,
     );

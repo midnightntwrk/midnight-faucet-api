@@ -22,6 +22,7 @@ import { PostgresqlRateCountRepository } from "../rate-counts/rate-counts-reposi
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { HealthService } from "../health.js";
 import { statePersistenceStatus } from "../metrics/index.js";
+import { STARS_PER_NIGHT } from "../units.js";
 import type { SyncStuckDetector } from "../sync-stuck-detector.js";
 
 class DecodingError extends Error {
@@ -44,7 +45,26 @@ const parseWithCodec =
       ),
     );
 
-const TNIGHT_UNIT = 5_000_000n;
+/**
+ * Turns a caller's `amount` into the STAR the faucet transfers.
+ *
+ * `amount` is whole tNIGHT on both routes. It was once multiplied by a
+ * `TNIGHT_UNIT` of 5,000,000 STAR — an undocumented unit of 5 tNIGHT — so a
+ * request for 1000 dispensed 5,000 (shieldedtech/mnf-stl-support#370).
+ *
+ * `dropAmount` is the deployment's drip in STAR, and doubles as the ceiling: no
+ * single request may exceed what the faucet is configured to hand out. The page
+ * asks for the whole drop, so `dripRequestCodec` keeps `amount` required rather
+ * than defaulting it here.
+ */
+export const resolveDripAmount = (amount: bigint, dropAmount: bigint): bigint => {
+  const ceilingTNight = dropAmount / STARS_PER_NIGHT;
+  if (amount <= 0n || amount > ceilingTNight) {
+    throw new ValidationError(`Invalid amount. Must be between 1 and ${ceilingTNight} tNIGHT`);
+  }
+
+  return amount * STARS_PER_NIGHT;
+};
 
 // RFC 4122 UUID format. Matches what `crypto.randomUUID()` produces in
 // `TaskId.generate()`. Validation is structural only — preventing malformed
@@ -74,7 +94,8 @@ export interface DripRouteDeps {
   logger: pino.Logger;
   networkId: NetworkId.NetworkId;
   maxDailyRequests: number;
-  maxAmount: number;
+  /** The drip this route may dispense, in STAR. Also the per-request ceiling. */
+  dropAmount: bigint;
 }
 
 /**
@@ -98,28 +119,19 @@ export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
     await deps.rateCountRepository.reset(address);
   };
 
-  const validateAmount = (amount: bigint): void => {
-    if (amount <= 0n || amount > BigInt(deps.maxAmount)) {
-      throw new ValidationError(`Invalid amount. Must be between 1 and ${deps.maxAmount}`);
-    }
-  };
-
   // POST /drips — Request a drip
   router.post("/drips", async (req, res) => {
     await pipe(
       req,
       parseWithCodec(dripRequestCodec),
       Task.flatMapPromise(async (request) => {
-        validateAmount(request.amount);
+        const star = resolveDripAmount(request.amount, deps.dropAmount);
         verifyAddress({ unshieldedAddress: request.recipientAddress, networkId: deps.networkId });
         await validateRateLimit(request.recipientAddress);
-        return request;
+        return { ...request, star };
       }),
       Task.flatMapPromise(async (request) => {
-        const dripId = await deps.taskManager.registerTask(
-          request.recipientAddress,
-          request.amount * TNIGHT_UNIT,
-        );
+        const dripId = await deps.taskManager.registerTask(request.recipientAddress, request.star);
         // Increment rate count at creation time to prevent bypass via not polling
         await deps.rateCountRepository.increment(request.recipientAddress);
         return dripId;
