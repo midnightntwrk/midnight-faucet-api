@@ -82,21 +82,21 @@ describe("serialize and save state", () => {
     ).toThrow();
   });
 
-  it("should return undefined when it cannot save to the database", async () => {
+  it("should reject when it cannot save to the database", async () => {
     await teardownInfrastructure();
-    const state = await saveState({
-      encryptionKey,
-      shieldedState: "",
-      unshieldedState: "",
-      dustState: "",
-      stateContext: {
-        stateSnapshots: repository,
-        taskRepository: {} as PostgresqlTaskRepository,
-        rateCountRepository: {} as PostgresqlRateCountRepository,
-      },
-      logger,
-    });
-
-    expect(state).toBeUndefined();
+    await expect(
+      saveState({
+        encryptionKey,
+        shieldedState: "",
+        unshieldedState: "",
+        dustState: "",
+        stateContext: {
+          stateSnapshots: repository,
+          taskRepository: {} as PostgresqlTaskRepository,
+          rateCountRepository: {} as PostgresqlRateCountRepository,
+        },
+        logger,
+      }),
+    ).rejects.toThrow();
   });
 });
