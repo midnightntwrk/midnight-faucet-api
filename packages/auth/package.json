@@ -23,7 +23,7 @@
     "dist/"
   ],
   "devDependencies": {
-    "eslint": "10.11.0",
+    "eslint": "10.13.0",
     "fast-check": "4.10.2",
     "typescript": "6.0.3"
   },
@@ -32,7 +32,7 @@
     "@types/jsonwebtoken": "^9.0.4",
     "date-fns": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
-    "vitest": "^4.1.12"
+    "vitest": "^5.0.5"
   },
   "peerDependencies": {
     "fp-ts": "*",

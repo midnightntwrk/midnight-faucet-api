@@ -53,6 +53,9 @@ config.*.json5
 .turbo
 turbo_cache
 
+# vitest (v5 writes a per-workspace cache dir)
+.vitest
+
 # vercel
 .vercel
 
