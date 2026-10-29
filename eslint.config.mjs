@@ -10,7 +10,8 @@ export default tsLint.config(
   esLint.configs.recommended,
   ...tsLint.configs.recommendedTypeChecked,
   {
-    ignores: ["dist/**"],
+    // vitest 5 writes its HTML coverage report to .vitest/, where vitest 4 used coverage/.
+    ignores: ["dist/**", ".vitest/**"],
   },
   {
     languageOptions: {
