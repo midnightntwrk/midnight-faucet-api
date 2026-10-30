@@ -3,6 +3,7 @@
   "private": true,
   "resolutions": {
     "@midnightntwrk/ledger-v9": "^1.0.0-rc.5",
+    "body-parser": "^2.4.0",
     "cross-spawn": "^7.0.6",
     "glob": "^10.5.0",
     "ws": "^8.18.0",
@@ -66,24 +67,24 @@
   "devDependencies": {
     "-": "^0.0.1",
     "@eslint/js": "10.0.1",
-    "@turbo/gen": "2.11.5",
+    "@turbo/gen": "2.11.10",
     "@types/yargs": "17.0.35",
-    "@vitest/coverage-v8": "4.1.12",
+    "@vitest/coverage-v8": "5.0.5",
     "@vitest/eslint-plugin": "1.6.27",
-    "@vitest/runner": "4.1.12",
-    "@vitest/ui": "4.1.12",
+    "@vitest/ui": "5.0.5",
     "D": "1.0.0",
-    "eslint": "10.11.0",
+    "eslint": "10.13.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-config-turbo": "2.11.5",
-    "eslint-plugin-prettier": "5.5.6",
-    "prettier": "3.9.9",
-    "turbo": "2.11.5",
+    "eslint-config-turbo": "2.11.10",
+    "eslint-plugin-prettier": "5.5.7",
+    "prettier": "3.9.10",
+    "turbo": "2.11.10",
     "typedoc": "0.28.20",
-    "typedoc-plugin-markdown": "4.13.1",
+    "typedoc-plugin-markdown": "4.14.1",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.71.0",
-    "vitest": "4.1.12"
+    "typescript-eslint": "8.72.0",
+    "vite": "^8.0.8",
+    "vitest": "5.0.5"
   },
   "name": "midnight-faucet",
   "packageManager": "yarn@4.18.1+sha512.b2e1e7524f654f2749d32b4ebcb4622473cb5bcbc485df2007e12a154e50162a4d795526768bc5f5b8f81717bfd79deb2472813d86fb5ae2eb551fa9c872b08f",
@@ -93,6 +94,6 @@
     "tests"
   ],
   "dependencies": {
-    "@types/node": "^26.6.3"
+    "@types/node": "^26.6.5"
   }
 }

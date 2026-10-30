@@ -10,7 +10,12 @@ export default tsLint.config(
   esLint.configs.recommended,
   ...tsLint.configs.recommendedTypeChecked,
   {
-    ignores: ["dist/**"],
+    // vitest 5's `html` reporter stages the Vitest UI bundle in .vitest/ on top of honouring
+    // `outputFile`; coverage itself still goes to `coverage/` via `reportsDirectory`.
+    // This only ignores globally when the object is left alone: the workspace configs spread
+    // it through `.map()` and attach `files:`, which demotes it to a scoped config — so each
+    // workspace must repeat `.vitest/**` in its own ignores rather than inherit it here.
+    ignores: ["dist/**", ".vitest/**"],
   },
   {
     languageOptions: {
