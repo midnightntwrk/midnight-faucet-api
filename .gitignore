@@ -53,7 +53,7 @@ config.*.json5
 .turbo
 turbo_cache
 
-# vitest (v5 writes a per-workspace cache dir)
+# vitest (v5's html reporter stages the UI bundle here, on top of `outputFile`)
 .vitest
 
 # vercel
