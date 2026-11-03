@@ -34,31 +34,38 @@ const blockTime = vi.hoisted(() => ({ tip: new Date("2026-06-01T12:00:00.000Z") 
 
 // The one thing a running variant needs from the indexer when balancing is the tip. Stubbing it is what lets these
 // tests go through the real variant, capability and ledger without a chain.
-vi.mock("@midnightntwrk/wallet-sdk-dust-wallet", async (importOriginal) => {
-  const dustWallet = await importOriginal<typeof import("@midnightntwrk/wallet-sdk-dust-wallet")>();
+//
+// Mocked on the `/v2` subpath because that is where `WalletFactory` reaches the eventless sync service: the module the
+// mock replaces has to be the module the code under test imports, or the stub is never reached and balancing asks a
+// real indexer for the tip.
+vi.mock("@midnightntwrk/wallet-sdk-dust-wallet/v2", async (importOriginal) => {
+  const dustV2 = await importOriginal<typeof import("@midnightntwrk/wallet-sdk-dust-wallet/v2")>();
   const { Effect } = await import("effect");
   const { LedgerParameters } = await import("@midnightntwrk/ledger-v9");
 
   return {
-    ...dustWallet,
-    makeEventLessSyncService: (
-      ...args: Parameters<typeof dustWallet.makeEventLessSyncService>
-    ): ReturnType<typeof dustWallet.makeEventLessSyncService> => ({
-      ...dustWallet.makeEventLessSyncService(...args),
-      blockData: () =>
-        Effect.succeed({
-          hash: "",
-          height: 1,
-          protocolVersion: 0,
-          ledgerParameters: LedgerParameters.initialParameters(),
-          timestamp: blockTime.tip,
-          zswapEndIndex: 1,
-          dustCommitmentEndIndex: 1,
-          dustGenerationEndIndex: 1,
-          dustCommitmentMerkleTreeRoot: "",
-          dustGenerationMerkleTreeRoot: "",
-        }),
-    }),
+    ...dustV2,
+    SyncService: {
+      ...dustV2.SyncService,
+      makeEventLessSyncService: (
+        ...args: Parameters<typeof dustV2.SyncService.makeEventLessSyncService>
+      ): ReturnType<typeof dustV2.SyncService.makeEventLessSyncService> => ({
+        ...dustV2.SyncService.makeEventLessSyncService(...args),
+        blockData: () =>
+          Effect.succeed({
+            hash: "",
+            height: 1,
+            protocolVersion: 0,
+            ledgerParameters: LedgerParameters.initialParameters(),
+            timestamp: blockTime.tip,
+            zswapEndIndex: 1,
+            dustCommitmentEndIndex: 1,
+            dustGenerationEndIndex: 1,
+            dustCommitmentMerkleTreeRoot: "",
+            dustGenerationMerkleTreeRoot: "",
+          }),
+      }),
+    },
   };
 });
 
