@@ -15,11 +15,7 @@ import pino from "pino";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
 import { type ResolvedConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
-import {
-  CustomDustWallet,
-  makeEventLessSyncCapability,
-  makeEventLessSyncService,
-} from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { CustomDustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import {
   type DefaultV2Configuration,
   type V2Variant,
@@ -103,7 +99,7 @@ export const DUST_BACKGROUND_SYNC_INTERVAL_MS = 5_000;
  * inferred type would otherwise reference it and be unwriteable in the emitted declarations.
  */
 type EventlessDustUpdate =
-  ReturnType<typeof makeEventLessSyncService> extends DustSyncService.SyncService<
+  ReturnType<typeof DustSyncService.makeEventLessSyncService> extends DustSyncService.SyncService<
     infer _State,
     infer _StartAux,
     infer Update
@@ -131,7 +127,7 @@ export const eventlessDustVariantBuilder = (): VariantBuilder.VariantBuilder<
 > =>
   new DustV2Builder()
     .withDefaults()
-    .withSync(makeEventLessSyncService, makeEventLessSyncCapability)
+    .withSync(DustSyncService.makeEventLessSyncService, DustSyncService.makeEventLessSyncCapability)
     // `withSync` drops the seed-to-key derivation, because it is typed against the start-aux of the sync service
     // being replaced. The eventless service starts from a `DustSecretKey` like the default one, so the default
     // derivation is what belongs here — but it has to be restated, and only `build()` will say so.
@@ -311,9 +307,13 @@ const buildWalletFacade = async (
     logger?.info("Started unshielded wallet from seed");
   }
 
-  const Dust = CustomDustWallet(config, eventlessDustVariantBuilder());
-
+  // The facade's `dustParameters` is plain generation/decay rates, because a forking dust wallet has to hand each of
+  // its variants its own ledger version's rebuild of them. A single-variant V2 wallet is past that question and wants
+  // the ledger-v9 object itself, so the field is replaced rather than passed through.
   const dustParameters = LedgerParameters.initialParameters().dust;
+
+  const Dust = CustomDustWallet({ ...config, dustParameters }, eventlessDustVariantBuilder());
+
   const dust = serializedState?.dust
     ? Dust.restore(serializedState.dust)
     : Dust.startWithSeed(dustSeed, dustParameters);
