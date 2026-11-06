@@ -15,16 +15,13 @@ import pino from "pino";
 import * as WalletSeedUtils from "./WalletSeedUtils.js";
 import { type ResolvedConfiguration, WalletFacade } from "@midnightntwrk/wallet-sdk-facade";
 import { ShieldedWallet } from "@midnightntwrk/wallet-sdk-shielded";
-import {
-  CustomDustWallet,
-  makeEventLessSyncCapability,
-  makeEventLessSyncService,
-} from "@midnightntwrk/wallet-sdk-dust-wallet";
+import { CustomDustWallet } from "@midnightntwrk/wallet-sdk-dust-wallet";
 import {
   type DefaultV2Configuration,
   type V2Variant,
   V2Builder as DustV2Builder,
   SyncService as DustSyncService,
+  Transacting as DustTransacting,
 } from "@midnightntwrk/wallet-sdk-dust-wallet/v2";
 import { VariantBuilder } from "@midnightntwrk/wallet-sdk-runtime/abstractions";
 import { DustSecretKey, FinalizedTransaction, LedgerParameters } from "@midnightntwrk/ledger-v9";
@@ -103,7 +100,7 @@ export const DUST_BACKGROUND_SYNC_INTERVAL_MS = 5_000;
  * inferred type would otherwise reference it and be unwriteable in the emitted declarations.
  */
 type EventlessDustUpdate =
-  ReturnType<typeof makeEventLessSyncService> extends DustSyncService.SyncService<
+  ReturnType<typeof DustSyncService.makeEventLessSyncService> extends DustSyncService.SyncService<
     infer _State,
     infer _StartAux,
     infer Update
@@ -114,6 +111,77 @@ type EventlessDustUpdate =
 /** The configuration {@link eventlessDustVariantBuilder} builds against. */
 export type EventlessDustConfiguration = DefaultV2Configuration &
   DustSyncService.DefaultSyncConfiguration;
+
+/**
+ * How old a declared time can be and still find its dust roots. The ledger prunes them after `global_ttl`, which
+ * `LedgerParameters` does not expose, so this assumes its 1 hour default, less a margin for proving and inclusion.
+ * Remove with this workaround once midnight-wallet#804 is fixed.
+ */
+const DUST_ROOT_HISTORY_SECONDS = 55n * 60n;
+
+/**
+ * The time a dust spend declares, which picks the Merkle roots the ledger checks its proof against.
+ *
+ * The proof is built from the wallet's trees, and `syncTime` is the block those trees belong to. Declaring anything
+ * later fails with `InvalidDustSpendProof` once the chain's dust trees have moved past the wallet's last pass.
+ *
+ * An old `syncTime` would always be rejected: past the grace period it is outside the ledger's window, and past
+ * {@link DUST_ROOT_HISTORY_SECONDS} its roots are gone. That covers a stale snapshot and a wallet before its first
+ * pass, whose `syncTime` is the epoch. `currentTime` is the better bet there: it only fails if the trees changed.
+ */
+const dustSpendDeclaredTime = (
+  syncTime: Date,
+  currentTime: Date,
+  gracePeriodSeconds: bigint,
+): Date => {
+  const maxAgeSeconds =
+    gracePeriodSeconds < DUST_ROOT_HISTORY_SECONDS ? gracePeriodSeconds : DUST_ROOT_HISTORY_SECONDS;
+  return currentTime.getTime() - syncTime.getTime() > Number(maxAgeSeconds) * 1_000
+    ? currentTime
+    : syncTime;
+};
+
+/**
+ * The SDK's transacting capability, declaring dust spends at {@link dustSpendDeclaredTime} rather than at the indexer
+ * tip's time.
+ *
+ * This has to happen here rather than in the caller: the capability runs inside the wallet's state update, so the time
+ * and the trees are read from one snapshot.
+ *
+ * The SDK's capability is a class instance, so its methods are forwarded one by one; spreading it would drop them.
+ */
+export const makeSyncTimeTransactingCapability: typeof DustTransacting.makeDefaultTransactingCapability =
+  (config, getContext) => {
+    const transacting = DustTransacting.makeDefaultTransactingCapability(config, getContext);
+
+    return {
+      networkId: transacting.networkId,
+      costParams: transacting.costParams,
+      createDustGenerationTransaction: (...args) =>
+        transacting.createDustGenerationTransaction(...args),
+      splitNightUtxosForDustRegistration: (...args) =>
+        transacting.splitNightUtxosForDustRegistration(...args),
+      attachDustRegistration: (...args) => transacting.attachDustRegistration(...args),
+      addDustGenerationSignature: (...args) => transacting.addDustGenerationSignature(...args),
+      addDustRegistrationSignature: (...args) => transacting.addDustRegistrationSignature(...args),
+      calculateFee: (...args) => transacting.calculateFee(...args),
+      estimateFee: (...args) => transacting.estimateFee(...args),
+      balanceTransactions: (secretKey, state, transactions, ttl, currentTime, ledgerParams) =>
+        transacting.balanceTransactions(
+          secretKey,
+          state,
+          transactions,
+          ttl,
+          dustSpendDeclaredTime(
+            state.state.syncTime,
+            currentTime,
+            ledgerParams.dust.dustGracePeriodSeconds,
+          ),
+          ledgerParams,
+        ),
+      revertTransaction: (...args) => transacting.revertTransaction(...args),
+    };
+  };
 
 /**
  * The dust variant the faucet runs: projections-based ("eventless") sync rather than a replay of the indexer's dust
@@ -131,11 +199,12 @@ export const eventlessDustVariantBuilder = (): VariantBuilder.VariantBuilder<
 > =>
   new DustV2Builder()
     .withDefaults()
-    .withSync(makeEventLessSyncService, makeEventLessSyncCapability)
+    .withSync(DustSyncService.makeEventLessSyncService, DustSyncService.makeEventLessSyncCapability)
     // `withSync` drops the seed-to-key derivation, because it is typed against the start-aux of the sync service
     // being replaced. The eventless service starts from a `DustSecretKey` like the default one, so the default
     // derivation is what belongs here — but it has to be restated, and only `build()` will say so.
-    .withStartAuxDefaults();
+    .withStartAuxDefaults()
+    .withTransacting(makeSyncTimeTransactingCapability);
 
 export type FaucetWallet = WalletFacade;
 
@@ -311,9 +380,13 @@ const buildWalletFacade = async (
     logger?.info("Started unshielded wallet from seed");
   }
 
-  const Dust = CustomDustWallet(config, eventlessDustVariantBuilder());
-
+  // The facade's `dustParameters` is plain generation/decay rates, because a forking dust wallet has to hand each of
+  // its variants its own ledger version's rebuild of them. A single-variant V2 wallet is past that question and wants
+  // the ledger-v9 object itself, so the field is replaced rather than passed through.
   const dustParameters = LedgerParameters.initialParameters().dust;
+
+  const Dust = CustomDustWallet({ ...config, dustParameters }, eventlessDustVariantBuilder());
+
   const dust = serializedState?.dust
     ? Dust.restore(serializedState.dust)
     : Dust.startWithSeed(dustSeed, dustParameters);
