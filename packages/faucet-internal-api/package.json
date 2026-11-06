@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet-internal-api",
-  "version": "1.2.0-rc.1",
+  "version": "1.2.1",
   "description": "Midnight faucet library",
   "type": "module",
   "main": "./dist/index.js",
@@ -39,7 +39,7 @@
     "typescript": "6.0.3"
   },
   "peerDependencies": {
-    "@midnightntwrk/wallet-sdk-address-format": "^4.0.0-canary.20260702133504-1f7aaca",
+    "@midnightntwrk/wallet-sdk-address-format": "^4.0.0",
     "fp-ts": "^2.16.0",
     "io-ts": "^2.2.20",
     "luxon": "^3.4.3",
