@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="82.318768875">
+    <testsuite name="src/smoke/01_faucetHealthCheck.spec.ts" timestamp="2026-11-06T10:35:20.984Z" hostname="local" tests="6" failures="0" errors="0" skipped="0" time="82.318768875">
+        <testcase classname="src/smoke/01_faucetHealthCheck.spec.ts" name="Faucet Smoke Tests &gt; Faucet Readiness Check" time="0.017148209">
+            <system-out>
+Readiness status: ok { &apos;faucet-sync&apos;: &apos;ok&apos;, &apos;indexer-past-genesis&apos;: &apos;ok&apos; }
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/01_faucetHealthCheck.spec.ts" name="Faucet Smoke Tests &gt; Faucet Health Check" time="0.014462833">
+            <system-out>
+Health status: SERVING null
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/01_faucetHealthCheck.spec.ts" name="Faucet Smoke Tests &gt; Verify initial wallet balance" time="29.14110675">
+            <system-out>
+Initial shielded token balance =undefined
+Initial unshielded token balance =0
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/01_faucetHealthCheck.spec.ts" name="Faucet Smoke Tests &gt; Request tokens from Faucet" time="0.282296625">
+            <system-out>
+dripId=c165ff57-f58f-48d2-949a-d1ea2972a324
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/01_faucetHealthCheck.spec.ts" name="Faucet Smoke Tests &gt; Verify Polling request" time="25.044068583">
+            <system-out>
+{
+  dripId: &apos;c165ff57-f58f-48d2-949a-d1ea2972a324&apos;,
+  status: &apos;PENDING&apos;,
+  taskStatus: &apos;in_progress&apos;,
+  transactionHash: null,
+  error: null
+}
+
+{
+  dripId: &apos;c165ff57-f58f-48d2-949a-d1ea2972a324&apos;,
+  status: &apos;PENDING&apos;,
+  taskStatus: &apos;in_progress&apos;,
+  transactionHash: null,
+  error: null
+}
+
+{
+  dripId: &apos;c165ff57-f58f-48d2-949a-d1ea2972a324&apos;,
+  status: &apos;PENDING&apos;,
+  taskStatus: &apos;in_progress&apos;,
+  transactionHash: null,
+  error: null
+}
+
+{
+  dripId: &apos;c165ff57-f58f-48d2-949a-d1ea2972a324&apos;,
+  status: &apos;PENDING&apos;,
+  taskStatus: &apos;in_progress&apos;,
+  transactionHash: null,
+  error: null
+}
+
+{
+  dripId: &apos;c165ff57-f58f-48d2-949a-d1ea2972a324&apos;,
+  status: &apos;CONFIRMED&apos;,
+  taskStatus: &apos;success&apos;,
+  transactionHash: &apos;00e394df004900f4b47581d882344661d199c0aafb12d140a9dc3605224cb6e6c6&apos;,
+  error: null
+}
+txId=00e394df004900f4b47581d882344661d199c0aafb12d140a9dc3605224cb6e6c6
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/01_faucetHealthCheck.spec.ts" name="Faucet Smoke Tests &gt; Verify that wallet balance was increased" time="0.008247709">
+        </testcase>
+    </testsuite>
+</testsuites>
