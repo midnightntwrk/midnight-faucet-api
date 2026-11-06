@@ -1,6 +1,6 @@
 services:
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0-rc.8"
+    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0"
     container_name: proof-server_$TESTCONTAINERS_UID
     security_opt:
       - no-new-privileges:true
