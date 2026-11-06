@@ -1,0 +1,1114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="232" failures="0" errors="0" time="56.624180544">
+    <testsuite name="src/api/spec/drip-routes.spec.ts" timestamp="2026-11-06T10:33:56.837Z" hostname="local" tests="9" failures="0" errors="0" skipped="0" time="0.048534916">
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="GET /health — state clearing on restart signal &gt; clears state_snapshots once, however many times the probe is polled" time="0.039986542">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="GET /health — state clearing on restart signal &gt; does not clear anything while the detector is not signalling a restart" time="0.003414667">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="GET /health — state clearing on restart signal &gt; clears even when connectivity is down and SERVICES_DOWN wins the response" time="0.001443625">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="GET /health — state clearing on restart signal &gt; still reports the restart signal when the clear fails" time="0.00154675">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="mkClearStateForRestart &gt; truncates once across repeated calls" time="0.000193792">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="mkClearStateForRestart &gt; shares a single truncate between concurrent callers" time="0.000087833">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="mkClearStateForRestart &gt; retries a failing truncate but stops at the attempt cap" time="0.000112458">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="mkClearStateForRestart &gt; never rejects, so the health probe is unaffected by a failing clear" time="0.000352083">
+        </testcase>
+        <testcase classname="src/api/spec/drip-routes.spec.ts" name="mkClearStateForRestart &gt; succeeds on a later attempt once the DB recovers" time="0.000103875">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/auth/spec/postgresql-user-repository.spec.ts" timestamp="2026-11-06T10:33:56.839Z" hostname="local" tests="4" failures="0" errors="0" skipped="0" time="1.771838417">
+        <testcase classname="src/auth/spec/postgresql-user-repository.spec.ts" name="postgres user repository &gt; returns a user after saving it" time="0.127001667">
+        </testcase>
+        <testcase classname="src/auth/spec/postgresql-user-repository.spec.ts" name="postgres user repository &gt; returns null if user was not saved" time="0.03662825">
+        </testcase>
+        <testcase classname="src/auth/spec/postgresql-user-repository.spec.ts" name="postgres user repository &gt; overrides previous value on save" time="0.123651625">
+        </testcase>
+        <testcase classname="src/auth/spec/postgresql-user-repository.spec.ts" name="postgres user repository &gt; returns an error if user name and id don&apos;t match on save" time="0.168162458">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/helpers/spec/verify-address.spec.ts" timestamp="2026-11-06T10:33:56.839Z" hostname="local" tests="7" failures="0" errors="0" skipped="0" time="0.003193917">
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="InvalidAddressError &gt; sets the message and keeps the failing address" time="0.00095475">
+        </testcase>
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="verifyAddress &gt; accepts valid address: { …(2) }" time="0.000802458">
+        </testcase>
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="verifyAddress &gt; accepts valid address: { …(2) }" time="0.000129084">
+        </testcase>
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="verifyAddress &gt; throws InvalidAddressError for mn_shield-addr_dddds8cv5nz4pw45ane8lhccv7eamvvfkxdhshjew3t4zlej479j6auqxqzqfn89wwz7h3hayrhwlcvu6tutnuc3kllr4nvj26lncwjugsehmvgvuca8" time="0.00011475">
+        </testcase>
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="verifyAddress &gt; throws InvalidAddressError for mn_unshielded-addr_test1s8cv5nz4pw45ane8lhccv7eamvvfkxdhshjew3t4zlej479j6auqxqzqfn89wwz7h3hayrhwlcvu6tutnuc3kllr4nvj26lncwjugsehmvgvuca8" time="0.000132458">
+        </testcase>
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="verifyAddress &gt; throws InvalidAddressError for mn_unshielded-addr_test1s8cv5nz4pw45ane8lhccv7eamvvfkxdhshjew3t4zlej479j6auqxqzqfn89wwz7h3hayrhwlcvu6tutnuc3kllr4nvj26lncwjugsehmvgvuaaaasdasdccca8" time="0.000122208">
+        </testcase>
+        <testcase classname="src/helpers/spec/verify-address.spec.ts" name="verifyAddress &gt; throws InvalidAddressError for mn_shield-addr_test1s8cv5nz4pw45ane8lhccv7eamvvfkxdhshjew3t4zlej479j6auqxqzqfn89wwz7h3hayrhwlcvu6tutnuc3kllr4nvj26lncwjugsehmv" time="0.00010775">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/migrations/spec/009_tasks_active_address_unique.spec.ts" timestamp="2026-11-06T10:33:56.839Z" hostname="local" tests="3" failures="0" errors="0" skipped="0" time="1.280600417">
+        <testcase classname="src/migrations/spec/009_tasks_active_address_unique.spec.ts" name="Migration 009: one active task per address &gt; keeps the oldest active task per address and fails the rest" time="0.029755208">
+        </testcase>
+        <testcase classname="src/migrations/spec/009_tasks_active_address_unique.spec.ts" name="Migration 009: one active task per address &gt; leaves finished history alone" time="0.029107458">
+        </testcase>
+        <testcase classname="src/migrations/spec/009_tasks_active_address_unique.spec.ts" name="Migration 009: one active task per address &gt; enforces one active task per address once applied" time="0.031392667">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/rate-counts/spec/rate-counts-repository.spec.ts" timestamp="2026-11-06T10:33:56.840Z" hostname="local" tests="22" failures="0" errors="0" skipped="0" time="1.416135583">
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should create and initialize a RateCount if not already present for an address" time="0.018210125">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should increment the count by one on each reservation" time="0.002218208">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should return the window anchor the row now carries" time="0.001358041">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should deny a reservation once the daily limit is spent" time="0.002436541">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should deny every reservation when the limit is zero" time="0.001032084">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should roll the window over rather than increment when the day has changed" time="0.003431458">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; tryReserve &gt; should grant no more than the daily limit under concurrent reservations" time="0.011364125">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; increment &gt; should spend a slot regardless of how many the address has already used" time="0.004215792">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; increment &gt; should create and initialize a RateCount if not already present for an address" time="0.001852">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; increment &gt; should return the window anchor it wrote" time="0.001827375">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should refund a slot reserved in the current window" time="0.005245292">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should free the slot for a new reservation" time="0.006342208">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should no-op when the slot belongs to an earlier window (#595)" time="0.002394833">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should not create a row for an address that never reserved a slot (#595)" time="0.001319916">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should not move the window anchor (updated_at)" time="0.002888333">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should refund against the anchor the reservation returned" time="0.002567625">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should no-op when the slot belongs to a later window" time="0.002290667">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; decrement &gt; should never take the count below zero" time="0.004278584">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; concurrent access &gt; should keep every reservation that races another" time="0.005223">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; concurrent access &gt; should apply refunds and reservations that race each other exactly once" time="0.010947791">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; concurrent access &gt; should create a single row when concurrent callers race the insert" time="0.002085083">
+        </testcase>
+        <testcase classname="src/rate-counts/spec/rate-counts-repository.spec.ts" name="Rate Counts Repository &gt; all updates should set date/time updated" time="0.003370667">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/TaskManager.spec.ts" timestamp="2026-11-06T10:33:56.841Z" hostname="local" tests="9" failures="0" errors="0" skipped="9" time="0">
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; limits number of tasks processed in parallel to a configured amount" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; captures sync errors" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; captures errors" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; does not stop on errors" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; with dependant values &gt; returns in-progress Task for equal dependant values" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; with dependant values &gt; returns new Task for independent values" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; with dependant values &gt; returns new Task for equal dependant values when prior Task has completed" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; with dependant values &gt; returns new Task post completed Task eviction" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/TaskManager.spec.ts" name="Task Manager &gt; does not run tasks when not ready" time="0">
+            <skipped/>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/config.spec.ts" timestamp="2026-11-06T10:33:56.842Z" hostname="local" tests="3" failures="0" errors="0" skipped="0" time="0.00720325">
+        <testcase classname="src/spec/config.spec.ts" name="config &gt; DB_SSL ca cert &gt; includes ca cert in ssl options when DB_SSL=true" time="0.003864417">
+            <system-out>
+Loading path apps/server/config.json5
+Loading file from FAUCET_CONFIG_FILE environment variable
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/spec/config.spec.ts" name="config &gt; DB_SSL ca cert &gt; does not include ca cert when DB_SSL=false" time="0.000744125">
+            <system-out>
+Loading path apps/server/config.json5
+Loading file from FAUCET_CONFIG_FILE environment variable
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/spec/config.spec.ts" name="config &gt; help &gt; mentions every bit of configuration schema" time="0.001651459">
+            <system-out>
+Loading path apps/server/config.json5
+Loading file from FAUCET_CONFIG_FILE environment variable
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/faucet.spec.ts" timestamp="2026-11-06T10:33:56.842Z" hostname="local" tests="9" failures="0" errors="0" skipped="0" time="0.002559958">
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; uses WS for HTTP setting" time="0.001206792">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; uses WSS for HTTPS setting" time="0.000111833">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url https://localhost:8088/api/v4/graphql" time="0.000074083">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url https://localhost/api/v4/graphql" time="0.000052917">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url http://localhost:8088/api/v4/graphql" time="0.000048083">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url http://localhost/api/v4/graphql" time="0.000042167">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url http://localhost:8088/foo" time="0.00003875">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url http://localhost:8088/foo/" time="0.000037833">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet configuration &gt; handling PubSub subscription protocol &gt; adds /ws to the pathname of url http://localhost:8088/foo/1" time="0.0000505">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/health.spec.ts" timestamp="2026-11-06T10:33:56.842Z" hostname="local" tests="9" failures="0" errors="0" skipped="0" time="0.589454334">
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; returns ok status when all checks pass" time="0.002455125">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; returns not_ok status when some checks pass and some not" time="0.000287083">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; returns not_ok status when all checks fail" time="0.000257042">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; treats timed-out checks as failing" time="0.503729666">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; has groups of checks" time="0.000756416">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; makes group of checks fail independently of each other" time="0.000492458">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; runs them independently" time="0.073058375">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; building check from observable &gt; returns first observed value" time="0.001557291">
+        </testcase>
+        <testcase classname="src/spec/health.spec.ts" name="HealthService &gt; building check from observable &gt; returns not_ok if error occurs" time="0.005784625">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/server.spec.ts" timestamp="2026-11-06T10:33:56.843Z" hostname="local" tests="25" failures="0" errors="0" skipped="0" time="31.366052625">
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; responds to request made using the client" time="0.674736041">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; responds with decoding error in case of wrong structure of a request" time="0.138467125">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; allows to repeat request after e.g. decoding error, so no rate limits are hit" time="0.258575792">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; does not consume the daily rate limit when the dispense fails (#595)" time="0.686221916">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; keeps refunding across repeated failures in the same day" time="1.699905">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; refunds the daily rate limit when a stuck task is failed by the timeout sweep (#595)" time="0.169595834">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; lets a requester retry the same day once the sweep refunds their stranded drip" time="0.711963792">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; does not move the daily window when it refunds a stranded slot" time="0.160563541">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; does not consume extra rate-limit slots for deduped duplicate requests (#595)" time="0.290149667">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; does not consume extra slots for simultaneous duplicate requests" time="0.130954042">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; refunds a failed drip&apos;s slot only once when the sweep strands it mid-dispense" time="0.965065667">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; re-consumes the slot when a drip succeeds after the sweep refunded it" time="0.976436">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; refunds a stranded slot even while the wallet cannot pick tasks (#595)" time="0.1681635">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; fails and refunds a scheduled task no wallet ever picked up (#622)" time="0.301130333">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; fails an in-progress task whose start_time is null (#622)" time="0.177254375">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; responds with rate limit error once exhausted" time="0.656839541">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; allows rate limit to reset on a new day" time="0.838193542">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; responds with error in case of error coming from faucet" time="0.323406166">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; serves configured directory at /" time="0.3216635">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; polling &gt; immediately returns registered drip id to be polled for status separately" time="0.361498167">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; polling &gt; returns saved response upon task completion" time="7.076517292">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; polling &gt; returns captured error upon task failure" time="4.685059">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; polling &gt; surfaces the underlying cause when a dispense fails" time="5.904500708">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; polling &gt; picks requests only when it has enough available coins to cover it" time="1.183348334">
+        </testcase>
+        <testcase classname="src/spec/server.spec.ts" name="Faucet Server &gt; polling &gt; holds a drip in the queue until the indexer is past genesis, then dispenses it" time="1.14525325">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/sync-stuck-detector.spec.ts" timestamp="2026-11-06T10:33:56.845Z" hostname="local" tests="15" failures="0" errors="0" skipped="0" time="0.009729917">
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; does nothing when no errors are emitted" time="0.003632416">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; does not truncate before threshold elapsed" time="0.000695542">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; truncates and sets needsRestart after threshold with good connectivity" time="0.000705">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; resets timer when connectivity is not OK" time="0.000265625">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; does not truncate again once needsRestart is set" time="0.000902667">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; handles truncate failure gracefully" time="0.000444">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; corrupted state errors &gt; only records firstErrorTime on the first error" time="0.000297">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; stalled sync progress &gt; triggers recovery when appliedId stalls with a large gap" time="0.000304041">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; stalled sync progress &gt; does not trigger when appliedId is progressing" time="0.0001995">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; stalled sync progress &gt; does not trigger when gap is small" time="0.0001605">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; stalled sync progress &gt; resets stall timer during connectivity issues" time="0.000168125">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; stalled sync progress &gt; does not trigger before stall threshold" time="0.000208917">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; hygiene truncate &gt; triggers recovery after hygieneTruncateMs of uptime" time="0.000243">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; hygiene truncate &gt; does not trigger before hygieneTruncateMs" time="0.000300625">
+        </testcase>
+        <testcase classname="src/spec/sync-stuck-detector.spec.ts" name="SyncStuckDetector &gt; stop() unsubscribes and clears interval" time="0.000109875">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/task-manager-slot-recovery.spec.ts" timestamp="2026-11-06T10:33:56.846Z" hostname="local" tests="30" failures="0" errors="0" skipped="0" time="1.098825625">
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that delivered but could not be finalized &gt; re-consumes the slot the sweep refunded when the success is reclaimed" time="0.057004208">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that delivered but could not be finalized &gt; keeps the reclaimed success when re-consuming the slot fails" time="0.051899083">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that delivered but could not be finalized &gt; retries the finalize when the write threw and the task is still in progress" time="0.052120125">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that delivered but could not be finalized &gt; falls through to the retry when the reclaim write itself throws" time="0.05128775">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that delivered but could not be finalized &gt; alerts the operator when neither write records the delivered drip" time="0.053077125">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that failed &gt; refunds the slot it reserved" time="0.052974833">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that failed &gt; does not refund again when the sweep already refunded it" time="0.052551541">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that failed &gt; does not let a failing refund mask the task result" time="0.052615958">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that failed &gt; retries the finalize before deciding the sweep already refunded" time="0.05266325">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that failed &gt; stops once the retry shows the sweep got there first" time="0.05137525">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; a drip that failed &gt; leaves the slot to the sweep when the finalize outcome stays unknown" time="0.051300584">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the message a failed drip records &gt; keeps the whole cause chain, not just the outermost wrapper" time="0.051804125">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the message a failed drip records &gt; reports every attempt an aggregate failure carries" time="0.05151325">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the message a failed drip records &gt; reads a thrown string" time="0.050459458">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the message a failed drip records &gt; falls back to a reason when there is no message" time="0.051020125">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the message a failed drip records &gt; terminates on a cause that points back at itself" time="0.050426792">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the message a failed drip records &gt; says something even when the failure carries nothing legible" time="0.103133417">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the timeout sweep &gt; refunds every task it strands, not just the first" time="0.051758917">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the timeout sweep &gt; refunds the rest of a batch when one refund fails" time="0.051423959">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the timeout sweep &gt; still refunds when the wallet state never emits at all" time="0.051917917">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; the timeout sweep &gt; does not pick tasks while the wallet state never emits" time="0.000598208">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; refunds the slot it reserved when the task row cannot be created" time="0.001586291">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; does not reserve a second slot for a request deduped onto a live task" time="0.0003095">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; dedupes onto a task that is queued but not yet picked" time="0.000224125">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; reserves a slot for a request following a settled task" time="0.000558709">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; reports a refused reservation instead of scheduling a task" time="0.000227959">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; returns the id of the task it scheduled" time="0.000246459">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; registerTask &gt; schedules nothing when the reservation itself fails" time="0.000263083">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; getStatus &gt; reports a generic failure when the stored state is not a message" time="0.000224042">
+        </testcase>
+        <testcase classname="src/spec/task-manager-slot-recovery.spec.ts" name="TaskManager rate-limit slot recovery &gt; getStatus &gt; reports a failure for a task it cannot find" time="0.000198084">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/state-persistence/spec/encryption.spec.ts" timestamp="2026-11-06T10:33:56.848Z" hostname="local" tests="6" failures="0" errors="0" skipped="0" time="0.00438625">
+        <testcase classname="src/state-persistence/spec/encryption.spec.ts" name="state persistence encryption &gt; should encrypt data and return the encrypted content" time="0.002179125">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/encryption.spec.ts" name="state persistence encryption &gt; should decrypt data and return the decrypted content" time="0.000437958">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/encryption.spec.ts" name="state persistence encryption &gt; throws when decrypting modified ciphertext" time="0.000449542">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/encryption.spec.ts" name="state persistence encryption &gt; throws when decrypting with wrong key" time="0.000127541">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/encryption.spec.ts" name="state persistence encryption &gt; throws when decrypting truncated ciphertext" time="0.000095333">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/encryption.spec.ts" name="state persistence encryption &gt; throws when encrypting with invalid key length" time="0.000104833">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/state-persistence/spec/get-and-deserialize-state.spec.ts" timestamp="2026-11-06T10:33:56.849Z" hostname="local" tests="4" failures="0" errors="0" skipped="1" time="1.358465875">
+        <testcase classname="src/state-persistence/spec/get-and-deserialize-state.spec.ts" name="serialize and save state &gt; should return state after saving it" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/state-persistence/spec/get-and-deserialize-state.spec.ts" name="serialize and save state &gt; should return undefined when it can&apos;t find any state" time="0.004545416">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/get-and-deserialize-state.spec.ts" name="serialize and save state &gt; should throw when the stored data cannot be decrypted" time="0.004147667">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/get-and-deserialize-state.spec.ts" name="serialize and save state &gt; should return undefined when it can&apos;t find any state after teardown" time="0.156065625">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/state-persistence/spec/serialize-and-save-state.spec.ts" timestamp="2026-11-06T10:33:56.849Z" hostname="local" tests="3" failures="0" errors="0" skipped="1" time="1.211811375">
+        <testcase classname="src/state-persistence/spec/serialize-and-save-state.spec.ts" name="serialize and save state &gt; should return state after saving it" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/state-persistence/spec/serialize-and-save-state.spec.ts" name="serialize and save state &gt; should throw when encryption key is invalid" time="0.002937042">
+        </testcase>
+        <testcase classname="src/state-persistence/spec/serialize-and-save-state.spec.ts" name="serialize and save state &gt; should return undefined when it cannot save to the database" time="0.117378333">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/tasks-in-memory/spec/task-repository.spec.ts" timestamp="2026-11-06T10:33:56.849Z" hostname="local" tests="12" failures="0" errors="0" skipped="0" time="0.016056959">
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; getByAddress &gt; ignores tasks that already finished" time="0.012831917">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; getByAddress &gt; returns nothing when every task for the address has finished" time="0.000351583">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; getByAddress &gt; returns the oldest active task, matching what pick would run first" time="0.000219333">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; getByAddress &gt; does not match another address&apos;s task" time="0.000166791">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; pick &gt; takes the oldest scheduled task and marks it in progress" time="0.000239875">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; pick &gt; claims the task, so a second pick does not hand out the same one" time="0.000143125">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; pick &gt; does not leave a picked task exposed to the scheduled sweep" time="0.000307042">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; failTimedOutTasks &gt; fails a scheduled task nothing ever picked up" time="0.00019125">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; failTimedOutTasks &gt; leaves an over-age scheduled task alone while the poller is still picking" time="0.000160958">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; failTimedOutTasks &gt; leaves a scheduled task inside its window queued" time="0.000140416">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; failTimedOutTasks &gt; fails an in-progress task past the shorter in-progress window" time="0.000140417">
+        </testcase>
+        <testcase classname="src/tasks-in-memory/spec/task-repository.spec.ts" name="InMemoryTaskRepository &gt; failTimedOutTasks &gt; leaves an in-progress task inside its window alone, despite an older created_at" time="0.000125167">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/tasks/spec/task-repository.spec.ts" timestamp="2026-11-06T10:33:56.850Z" hostname="local" tests="29" failures="0" errors="0" skipped="0" time="1.425413542">
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; finalizeIfInProgress &gt; transitions a task that is still in progress" time="0.005089292">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; finalizeIfInProgress &gt; matches nothing on a second call, so a slot is refunded once" time="0.003296416">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; finalizeIfInProgress &gt; matches nothing once the sweep has already failed the task" time="0.002564083">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; finalizeIfInProgress &gt; matches nothing for a task that was never picked" time="0.002257084">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; succeedIfFailed &gt; reclaims a task the sweep marked as failed" time="0.002597">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; succeedIfFailed &gt; matches nothing on a second call, so a slot is re-consumed once" time="0.003261334">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; succeedIfFailed &gt; refuses a task that is still in progress" time="0.002238958">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; fails and reports every task it strands, not just the first" time="0.0052255">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; reports a stranded task to one sweep only" time="0.003615209">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; concurrent sweeps strand a task exactly once between them" time="0.002871541">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; fails an in-progress task that never had a start_time" time="0.00353675">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; stamps end_time when it gives up on a task" time="0.003092958">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; leaves a task that has not yet timed out" time="0.00282175">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; fails a scheduled task nothing drained within its window" time="0.004007792">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; leaves an over-age scheduled task queued while the poller is still picking" time="0.003977625">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; leaves a scheduled task inside its window queued" time="0.002353541">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; never sweeps a finished task, however old" time="0.002923292">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; failTimedOutTasks &gt; fails an over-age queued task after a drip that outlasted the stall window" time="0.004255833">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; pick &gt; returns nothing when no task is scheduled" time="0.002230417">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; pick &gt; takes the oldest scheduled task and marks it in progress" time="0.003240125">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; pick &gt; hands a task to one worker only" time="0.002809167">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; create &gt; schedules a task with no amount" time="0.001228209">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; create &gt; keeps the requested amount" time="0.000992834">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; getById &gt; returns nothing for an unknown task" time="0.00083575">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; getByAddress &gt; finds the live task for an address requesting for the first time" time="0.001885625">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; getByAddress &gt; ignores an address whose only task success" time="0.002971417">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; getByAddress &gt; ignores an address whose only task failure" time="0.001737792">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; getByAddress &gt; finds the active task for an address that has already been served" time="0.002622">
+        </testcase>
+        <testcase classname="src/tasks/spec/task-repository.spec.ts" name="Task Repository &gt; getByAddress &gt; ignores tasks belonging to other addresses" time="0.001331084">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/third-party/spec/router.spec.ts" timestamp="2026-11-06T10:33:56.852Z" hostname="local" tests="33" failures="0" errors="0" skipped="0" time="15.013917584">
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; Authentication &gt; returns 401 INVALID_API_KEY when the key is missing" time="0.364776375">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:434:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:434:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; Authentication &gt; returns 401 INVALID_API_KEY when the key is wrong" time="0.321336375">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:444:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:444:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; Authentication &gt; accepts a request with no Origin header" time="0.570600542">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:459:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; Origin allow-list (when enforced) &gt; rejects a request with no Origin header" time="0.331789083">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:474:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:474:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; Origin allow-list (when enforced) &gt; rejects an origin outside the allow-list" time="0.341757125">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:484:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:484:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; Origin allow-list (when enforced) &gt; allows an origin on the allow-list" time="0.587744667">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:497:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; answers with the dripId alone" time="0.582078">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:509:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; accepts a request that omits the amount" time="0.590736208">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:520:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; accepts a null amount" time="0.579532459">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:530:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; accepts an opaque fulfillmentContext" time="0.579636291">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:539:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; matches network and token case-insensitively" time="0.565564292">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:549:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 UNSUPPORTED_NETWORK for another network" time="0.341785208">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:563:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:563:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 UNSUPPORTED_TOKEN for another token" time="0.336735917">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:573:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:573:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 INVALID_ADDRESS for a malformed address" time="0.333938875">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:582:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:582:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 INVALID_REQUEST when required fields are missing" time="0.338497917">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:592:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 INVALID_REQUEST for a non-numeric amount" time="0.341197125">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:602:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:602:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 INVALID_REQUEST for an amount above the maximum" time="0.344890042">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:613:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:613:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 400 INVALID_REQUEST for a zero amount" time="0.360304334">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:623:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:623:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; answers a duplicate in-flight request with the same dripId" time="0.5878095">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:635:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 429 RATE_LIMIT_EXCEEDED once the daily limit is spent" time="0.79770675">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:653:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; does not consume the daily rate limit when the dispense fails" time="0.775166583">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:677:21
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 503 INSUFFICIENT_FUNDS when the wallet is drained" time="0.061780583">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:691:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:691:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; POST /v1/drips &gt; returns 503 SERVICE_UNAVAILABLE when the wallet is behind" time="0.056592416">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:701:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:701:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/drips/:dripId &gt; reports a registered drip" time="0.561623833">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:713:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/drips/:dripId &gt; answers 200 with an error object for an unknown dripId" time="0.34107675">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:729:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/drips/:dripId &gt; answers 200 with an error object for a malformed dripId" time="0.338115292">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:739:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/drip-info/:network/:token &gt; reports the configured drip amount" time="0.342326166">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:751:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/drip-info/:network/:token &gt; returns 400 UNSUPPORTED_NETWORK for another network" time="0.337699125">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:760:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/drip-info/:network/:token &gt; returns 400 UNSUPPORTED_TOKEN for another token" time="0.34844925">
+            <system-out>
+Acquire connection error: Error: aborted
+    at PendingOperation.abort (node_modules/tarn/dist/PendingOperation.js:29:21)
+    at node_modules/tarn/dist/Pool.js:213:25
+    at Array.map (&lt;anonymous&gt;)
+    at node_modules/tarn/dist/Pool.js:212:53
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Client_PG.destroy (node_modules/knex/lib/client.js:522:9)
+    at apps/server/src/third-party/spec/router.spec.ts:769:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-out>
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:769:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/health &gt; reports SERVING when the wallet is synced and funded" time="0.590090792">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:780:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/health &gt; reports NODE_DESYNCED when the wallet is behind" time="0.080230875">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:789:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/health &gt; reports NODE_DESYNCED while the indexer has not indexed past genesis" time="0.561972041">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:798:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+        <testcase classname="src/third-party/spec/router.spec.ts" name="Third-Party API &gt; GET /v1/health &gt; reports WALLET_BALANCE_LOW when the wallet is drained" time="0.072029459">
+            <system-err>
+Caught error while releasing resource, ignoring... TypeError: root.healthService.dispose is not a function
+    at apps/server/src/server.ts:210:32
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:16:21)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:120:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at Object.&lt;anonymous&gt; (packages/faucet-utils/src/task.ts:69:25)
+    at packages/faucet-utils/src/task.ts:70:50
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at apps/server/src/third-party/spec/router.spec.ts:813:22
+    at async file://node_modules/vitest/dist/chunks/run.BPv-BBRv.js:2801:20
+
+            </system-err>
+        </testcase>
+    </testsuite>
+</testsuites>
