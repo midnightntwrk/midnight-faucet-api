@@ -6,6 +6,7 @@ export default [
       '*.mjs',
       "dist/**",
       "coverage/**",
+      ".vitest/**",
       "reports/**",
     ]
   },

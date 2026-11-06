@@ -5,6 +5,7 @@ export default [
     ignores: [
       '*.mjs',
       '**/*/*.mjs',
+      '.vitest/**',
       'reports/report/**',
     ]
   },

@@ -31,6 +31,7 @@ build
 # misc
 .DS_Store
 *.pem
+.rn-drafts/
 
 # debug
 npm-debug.log*
@@ -51,6 +52,9 @@ config.*.json5
 # turbo
 .turbo
 turbo_cache
+
+# vitest (v5's html reporter stages the UI bundle here, on top of `outputFile`)
+.vitest
 
 # vercel
 .vercel

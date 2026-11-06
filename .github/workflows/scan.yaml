@@ -36,6 +36,12 @@ jobs:
         uses: midnightntwrk/upload-sarif-github-action@362d0346b194663004cb371e8e8523bd1c910917
         with:
           fail_severity: "high"
+          # The absolute gate blocks every PR while any finding is outstanding,
+          # including the PRs that fix them one at a time. A fix can also be
+          # unavailable: npmMinimalAgeGate quarantines a patch for 7 days, so a
+          # fresh advisory is unfixable here for a week. Pass PRs that strictly
+          # reduce the count; unrelated PRs stay blocked.
+          differential_gate: "true"
           # Checks supported by Scorecard's local mode; unset means all checks,
           # and locally-unsupported ones score -1, which the gate reads as high.
           scorecard_checks: Binary-Artifacts,Dangerous-Workflow,Dependency-Update-Tool,License,Pinned-Dependencies,Security-Policy,Token-Permissions,Vulnerabilities
