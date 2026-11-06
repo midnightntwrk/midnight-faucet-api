@@ -46,7 +46,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-faucet}
 
   proof-server:
-    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0-rc.8"
+    image: "ghcr.io/midnight-ntwrk/proof-server:9.0.0"
     container_name: proof-server_$TESTCONTAINERS_UID
     cap_drop:
       - ALL
