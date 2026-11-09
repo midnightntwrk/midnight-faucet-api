@@ -73,7 +73,7 @@
     "@vitest/eslint-plugin": "1.6.28",
     "@vitest/ui": "5.0.5",
     "D": "1.0.0",
-    "eslint": "10.13.0",
+    "eslint": "10.14.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-config-turbo": "2.11.10",
     "eslint-plugin-prettier": "5.5.7",
