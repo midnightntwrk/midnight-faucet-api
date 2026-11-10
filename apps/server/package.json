@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet-server",
-  "version": "1.2.1",
+  "version": "1.2.2-alpha.1",
   "private": true,
   "description": "Midnight faucet server",
   "type": "module",
@@ -37,7 +37,7 @@
     "@midnightntwrk/faucet-internal-api": "workspace:^",
     "@midnightntwrk/faucet-ui": "workspace:^",
     "@midnightntwrk/faucet-utils": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "^2.0.0",
+    "@midnightntwrk/wallet-sdk": "^2.0.1-canary.20261110114404-173e4d8",
     "@types/convict": "^6.1.5",
     "@types/cors": "^2.8.15",
     "@types/express": "^5.0.0",
