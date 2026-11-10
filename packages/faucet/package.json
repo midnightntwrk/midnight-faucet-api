@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet",
-  "version": "1.2.1",
+  "version": "1.2.2-alpha.1",
   "private": true,
   "description": "Midnight faucet library",
   "type": "module",
@@ -35,7 +35,7 @@
     "@midnightntwrk/faucet-internal-api": "workspace:^",
     "@midnightntwrk/faucet-utils": "workspace:^",
     "@midnightntwrk/ledger-v9": "^1.0.0",
-    "@midnightntwrk/wallet-sdk": "^2.0.0",
+    "@midnightntwrk/wallet-sdk": "^2.0.1-canary.20261110114404-173e4d8",
     "@types/lodash": "^4.17.27",
     "lodash": "^4.18.1",
     "vite": "^8.3.5",
