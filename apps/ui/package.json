@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet-ui",
-  "version": "1.2.2-alpha.1",
+  "version": "1.2.2-alpha.2",
   "private": true,
   "description": "Midnight faucet server",
   "type": "module",

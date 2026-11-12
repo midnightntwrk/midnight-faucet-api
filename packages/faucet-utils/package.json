@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet-utils",
-  "version": "1.2.2-alpha.1",
+  "version": "1.2.2-alpha.2",
   "private": true,
   "description": "Midnight faucet library",
   "type": "module",
