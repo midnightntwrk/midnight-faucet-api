@@ -2,7 +2,7 @@
   "version": "1.2.2-alpha.2",
   "private": true,
   "resolutions": {
-    "@midnightntwrk/ledger-v9": "^1.0.0",
+    "@midnightntwrk/ledger-v9": "^1.0.2-rc.0",
     "body-parser": "^2.4.0",
     "cross-spawn": "^7.0.6",
     "glob": "^14.0.0",

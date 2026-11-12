@@ -23,7 +23,7 @@
     "vitest": "^5.0.5"
   },
   "dependencies": {
-    "@midnightntwrk/ledger-v9": "^1.0.0",
+    "@midnightntwrk/ledger-v9": "^1.0.2-rc.0",
     "@midnightntwrk/wallet-sdk": "^2.0.1-canary.20261110114404-173e4d8",
     "@playwright/test": "^1.64.1",
     "axios": "^1.21.0",
