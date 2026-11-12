@@ -15,13 +15,13 @@ export interface Config {
 export class DevnetConfig implements Config {
   networkId = NetworkId.NetworkId.DevNet;
 
-  faucetUi = "https://faucet.devnet.midnight.network?isTesting=true";
+  faucetUi = "https://faucet.devnet.shielded.tools?isTesting=true";
 
-  nodeAddress = "wss://rpc.devnet.midnight.network";
+  nodeAddress = "wss://rpc.devnet.shielded.tools";
 
-  indexerAddress = "https://indexer.devnet.midnight.network/api/v4/graphql";
+  indexerAddress = "https://indexer.devnet.shielded.tools/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.devnet.midnight.network/api/v4/graphql/ws";
+  indexerWsAddress = "wss://indexer.devnet.shielded.tools/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -31,13 +31,13 @@ export class DevnetConfig implements Config {
 export class QanetConfig implements Config {
   networkId = NetworkId.NetworkId.QaNet;
 
-  faucetUi = "https://faucet.qanet.midnight.network?isTesting=true";
+  faucetUi = "https://faucet.qanet.shielded.tools?isTesting=true";
 
-  nodeAddress = "wss://rpc.qanet.midnight.network";
+  nodeAddress = "wss://rpc.qanet.shielded.tools";
 
-  indexerAddress = "https://indexer.qanet.midnight.network/api/v4/graphql";
+  indexerAddress = "https://indexer.qanet.shielded.tools/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.qanet.midnight.network/api/v4/graphql/ws";
+  indexerWsAddress = "wss://indexer.qanet.shielded.tools/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
@@ -65,11 +65,11 @@ export class PreProdConfig implements Config {
 
   faucetUi = "https://faucet.preprod.midnight.network?isTesting=true";
 
-  nodeAddress = "wss://rpc.preprod.midnight.network";
+  nodeAddress = "wss://rpc.preprod.shielded.tools";
 
-  indexerAddress = "https://indexer.preprod.midnight.network/api/v4/graphql";
+  indexerAddress = "https://indexer.preprod.shielded.tools/api/v4/graphql";
 
-  indexerWsAddress = "wss://indexer.preprod.midnight.network/api/v4/graphql/ws";
+  indexerWsAddress = "wss://indexer.preprod.shielded.tools/api/v4/graphql/ws";
 
   proofServerAddress = "http://localhost:6300";
 
