@@ -328,3 +328,9 @@ def wait_for_drip(drip_id: str) -> str:
 | `THIRD_PARTY_MAX_AMOUNT`      | `DROP_AMOUNT`        | Largest accepted `amount`, smallest denomination.                   |
 | `THIRD_PARTY_REQUIRE_ORIGIN`  | `false`              | Enforce the origin allow-list (browser-side partners only).         |
 | `THIRD_PARTY_ALLOWED_ORIGINS` | _(empty)_            | Comma-separated origins, used only when the allow-list is enforced. |
+
+Both amounts are integer strings in the token's **smallest denomination** — `THIRD_PARTY_MAX_AMOUNT` meant whole
+tNIGHT before v1.2.0, so a value carried over from an older deployment is a 5,000,000x tighter cap than it looks.
+`THIRD_PARTY_MAX_AMOUNT` must be at least `THIRD_PARTY_DEFAULT_AMOUNT`; otherwise the server refuses to start, since
+`/v1/drip-info` would advertise a drip that `/v1/drips` rejects. Leaving both unset keeps them in step with
+`DROP_AMOUNT`.
