@@ -943,7 +943,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@midnightntwrk/faucet-smoke-test@workspace:tests"
   dependencies:
-    "@midnightntwrk/ledger-v9": "npm:^1.0.0"
+    "@midnightntwrk/ledger-v9": "npm:^1.0.2-rc.0"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.1-canary.20261110114404-173e4d8"
     "@playwright/test": "npm:^1.64.1"
     "@types/node": "npm:^26.6.6"
@@ -1013,7 +1013,7 @@ __metadata:
   dependencies:
     "@midnightntwrk/faucet-internal-api": "workspace:^"
     "@midnightntwrk/faucet-utils": "workspace:^"
-    "@midnightntwrk/ledger-v9": "npm:^1.0.0"
+    "@midnightntwrk/ledger-v9": "npm:^1.0.2-rc.0"
     "@midnightntwrk/wallet-sdk": "npm:^2.0.1-canary.20261110114404-173e4d8"
     "@types/lodash": "npm:^4.17.27"
     eslint: "npm:10.13.0"
@@ -1040,10 +1040,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@midnightntwrk/ledger-v9@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@midnightntwrk/ledger-v9@npm:1.0.0"
-  checksum: 10/7847ac3b0fa5c9cd43a79d6d664d44f53e097a9e0807b32327ed33969ee3304d887119199df62cf868df2a42d00978a1daced77b0c8e9f5df24d584069b62304
+"@midnightntwrk/ledger-v9@npm:^1.0.2-rc.0":
+  version: 1.0.2-rc.0
+  resolution: "@midnightntwrk/ledger-v9@npm:1.0.2-rc.0"
+  checksum: 10/2bf81158ccd4160117deaaccabb45d63042b91a1ecb9d5d56d6a68d1f6cbc89eeebe905bd577caf8299cbe4f4d13fb951b3c1fb09dd1f080802992df10dcb7ac
   languageName: node
   linkType: hard
 
