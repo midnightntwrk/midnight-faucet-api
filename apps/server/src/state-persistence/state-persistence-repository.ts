@@ -56,7 +56,7 @@ export class PostgresqlStateSnapshotsRepository {
     shielded: string;
     unshielded: string;
     dust: string;
-  }): Promise<Pick<StateDataType, "id"> | undefined> {
+  }): Promise<Pick<StateDataType, "id">> {
     return this.knex
       .transaction(async (trx) => {
         const [inserted] = await trx<StateDataType>("state_snapshots")
@@ -76,8 +76,8 @@ export class PostgresqlStateSnapshotsRepository {
         return inserted;
       })
       .catch((error: Error) => {
-        logger.error({ error }, "Error while saving faucet state snapshot data to DB");
-        return undefined;
+        logger.error({ err: error }, "Error while saving faucet state snapshot data to DB");
+        throw error;
       });
   }
 }
