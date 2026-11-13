@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet-smoke-test",
-  "version": "1.2.2-alpha.2",
+  "version": "1.2.2-alpha.3",
   "private": true,
   "description": "Faucet smoke test",
   "type": "module",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@midnightntwrk/ledger-v9": "^1.0.2-rc.0",
-    "@midnightntwrk/wallet-sdk": "^2.0.1-canary.20261110114404-173e4d8",
+    "@midnightntwrk/wallet-sdk": "^2.0.0-rc.0",
     "@playwright/test": "^1.64.1",
     "axios": "^1.21.0",
     "dotenv": "^18.0.9",
