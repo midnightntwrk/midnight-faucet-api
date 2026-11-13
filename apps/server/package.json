@@ -37,7 +37,7 @@
     "@midnightntwrk/faucet-internal-api": "workspace:^",
     "@midnightntwrk/faucet-ui": "workspace:^",
     "@midnightntwrk/faucet-utils": "workspace:^",
-    "@midnightntwrk/wallet-sdk": "^2.0.0-rc.0",
+    "@midnightntwrk/wallet-sdk": "^2.0.1-rc.0",
     "@types/convict": "^6.1.5",
     "@types/cors": "^2.8.15",
     "@types/express": "^5.0.0",
