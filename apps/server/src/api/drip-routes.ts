@@ -19,7 +19,7 @@ import { verifyAddress, InvalidAddressError } from "../helpers/verify-address.js
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { PostgresqlStateSnapshotsRepository } from "../state-persistence/state-persistence-repository.js";
-import { HealthService } from "../health.js";
+import { HealthService, type CheckStatus } from "../health.js";
 import { statePersistenceStatus } from "../metrics/index.js";
 import type { SyncStuckDetector } from "../sync-stuck-detector.js";
 
@@ -136,6 +136,28 @@ export const mkClearStateForRestart = (
  * Both public and third-party routers mount these routes,
  * each applying their own auth middleware beforehand.
  */
+/**
+ * Map a failed liveness group to the health reason that actually caused it.
+ *
+ * The liveness group answers two different questions — has the wallet started
+ * syncing, and can it cover a drip — but the health endpoint used to report
+ * every failure as `WALLET_BALANCE_LOW`. That mislabels a wallet that has not
+ * started syncing (and any future liveness check) as a funds problem, which
+ * sends operators chasing a balance that may be fine (see #78). The sync
+ * failure wins when both checks fail: both read the same wallet state stream,
+ * so if it cannot be read at all, no balance figure from it is trustworthy.
+ * Anything unrecognised gets a generic reason rather than a guessed one.
+ */
+export const livenessFailureReason = (details: Record<string, CheckStatus>): string => {
+  if (details["faucet-wallet-sync"] === "not_ok") {
+    return "WALLET_NOT_SYNCED";
+  }
+  if (details["faucet-wallet-balance"] === "not_ok") {
+    return "WALLET_BALANCE_LOW";
+  }
+  return "LIVENESS_CHECK_FAILED";
+};
+
 export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
   const router: express.Router = express.Router();
 
@@ -298,7 +320,7 @@ export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
       if (livenessResult.status === "not_ok") {
         const response: DripHealthResponse = {
           status: "NOT_SERVING",
-          reason: "WALLET_BALANCE_LOW",
+          reason: livenessFailureReason(livenessResult.details),
           needsRestart,
         };
         return res.status(503).json(dripHealthResponseCodec.encode(response));
