@@ -128,6 +128,30 @@ const amountInSmallestDenomination = (value: string, name: string): string => {
   return value;
 };
 
+/**
+ * `/v1/drip-info` advertises `defaultAmount` while `/v1/drips` caps an explicit
+ * `amount` at `maxAmount`, and a request omitting `amount` is served the default
+ * without consulting the cap. A cap below the advertised drip is therefore two
+ * bugs at once: the faucet refuses the amount it just advertised, and the cap
+ * goes unenforced on every request that omits one. Refuse to start instead —
+ * the unit of `THIRD_PARTY_MAX_AMOUNT` changed from whole tNIGHT to the
+ * smallest denomination in v1.2.x, so a stale value reads as a 5,000,000x
+ * tighter cap and nothing else would surface it.
+ */
+const thirdPartyAmounts = (
+  maxAmount: string,
+  defaultAmount: string,
+): { maxAmount: string; defaultAmount: string } => {
+  if (BigInt(maxAmount) < BigInt(defaultAmount)) {
+    throw new Error(
+      `Expected 'thirdPartyApi.maxAmount' (${maxAmount}) to be at least ` +
+        `'thirdPartyApi.defaultAmount' (${defaultAmount}). Both are in the token's smallest ` +
+        `denomination — THIRD_PARTY_MAX_AMOUNT is no longer whole tNIGHT.`,
+    );
+  }
+  return { maxAmount, defaultAmount };
+};
+
 export const schema = {
   host: {
     doc: "Host to expose the server on",
@@ -522,13 +546,15 @@ export const loadConfig = (): ServerConfig => {
         config.get("thirdPartyApi.network") ||
         `midnight_${String(config.get("networkId")).toLowerCase()}`,
       token: config.get("thirdPartyApi.token"),
-      maxAmount: amountInSmallestDenomination(
-        config.get("thirdPartyApi.maxAmount") || config.get("dropAmount"),
-        "thirdPartyApi.maxAmount",
-      ),
-      defaultAmount: amountInSmallestDenomination(
-        config.get("thirdPartyApi.defaultAmount") || config.get("dropAmount"),
-        "thirdPartyApi.defaultAmount",
+      ...thirdPartyAmounts(
+        amountInSmallestDenomination(
+          config.get("thirdPartyApi.maxAmount") || config.get("dropAmount"),
+          "thirdPartyApi.maxAmount",
+        ),
+        amountInSmallestDenomination(
+          config.get("thirdPartyApi.defaultAmount") || config.get("dropAmount"),
+          "thirdPartyApi.defaultAmount",
+        ),
       ),
       apiKey: config.get("thirdPartyApi.apiKey"),
     },
