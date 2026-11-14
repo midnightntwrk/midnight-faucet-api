@@ -25,7 +25,7 @@
     "dist/"
   ],
   "devDependencies": {
-    "eslint": "10.13.0",
+    "eslint": "10.14.0",
     "fast-check": "4.10.2",
     "pino-pretty": "13.2.0",
     "testcontainers": "12.2.1",
