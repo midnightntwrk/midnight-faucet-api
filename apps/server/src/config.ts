@@ -135,7 +135,7 @@ const amountInSmallestDenomination = (value: string, name: string): string => {
  * bugs at once: the faucet refuses the amount it just advertised, and the cap
  * goes unenforced on every request that omits one. Refuse to start instead —
  * the unit of `THIRD_PARTY_MAX_AMOUNT` changed from whole tNIGHT to the
- * smallest denomination in v1.2.x, so a stale value reads as a 5,000,000x
+ * smallest denomination in v1.0.0, so a stale value reads as a 5,000,000x
  * tighter cap and nothing else would surface it.
  */
 const thirdPartyAmounts = (
@@ -146,7 +146,8 @@ const thirdPartyAmounts = (
     throw new Error(
       `Expected 'thirdPartyApi.maxAmount' (${maxAmount}) to be at least ` +
         `'thirdPartyApi.defaultAmount' (${defaultAmount}). Both are in the token's smallest ` +
-        `denomination — THIRD_PARTY_MAX_AMOUNT is no longer whole tNIGHT.`,
+        `denomination — check THIRD_PARTY_MAX_AMOUNT and THIRD_PARTY_DEFAULT_AMOUNT; ` +
+        `the cap is no longer whole tNIGHT.`,
     );
   }
   return { maxAmount, defaultAmount };

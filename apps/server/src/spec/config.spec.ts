@@ -86,10 +86,12 @@ describe("config", () => {
     });
 
     it("compares amounts beyond Number.MAX_SAFE_INTEGER exactly", () => {
-      vi.stubEnv("THIRD_PARTY_MAX_AMOUNT", "9007199254740993");
-      vi.stubEnv("THIRD_PARTY_DEFAULT_AMOUNT", "9007199254740992");
+      // Both round to 9007199254740992 as a Number, so only an exact comparison
+      // sees the default exceed the cap.
+      vi.stubEnv("THIRD_PARTY_MAX_AMOUNT", "9007199254740992");
+      vi.stubEnv("THIRD_PARTY_DEFAULT_AMOUNT", "9007199254740993");
 
-      expect(loadConfig().thirdPartyApi.maxAmount).toBe("9007199254740993");
+      expect(() => loadConfig()).toThrow(/maxAmount.*at least.*defaultAmount/s);
     });
   });
 
