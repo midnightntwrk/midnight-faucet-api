@@ -1,6 +1,6 @@
 {
   "name": "@midnightntwrk/faucet-internal-api",
-  "version": "1.2.0",
+  "version": "1.2.2-alpha.3",
   "description": "Midnight faucet library",
   "type": "module",
   "main": "./dist/index.js",
@@ -33,7 +33,7 @@
   ],
   "devDependencies": {
     "@types/luxon": "3.7.6",
-    "eslint": "10.13.0",
+    "eslint": "10.14.0",
     "fast-check": "4.10.2",
     "testcontainers": "12.2.1",
     "typescript": "6.0.3"

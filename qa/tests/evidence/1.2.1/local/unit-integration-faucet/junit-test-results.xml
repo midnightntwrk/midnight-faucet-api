@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="115" failures="0" errors="0" time="13.65098758">
+    <testsuite name="src/spec/corrupted-state-error.spec.ts" timestamp="2026-11-06T10:32:45.985Z" hostname="local" tests="10" failures="0" errors="0" skipped="0" time="0.004204458">
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns true for Wallet.Other with non-linearly inserted commitment tree error" time="0.001734542">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for Wallet.Other with a different cause message" time="0.000168625">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for Wallet.Sync errors" time="0.000113583">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for Wallet.Error errors" time="0.000106125">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false when cause is not an Error instance" time="0.000096">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for null" time="0.000074834">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for undefined" time="0.000070042">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for plain Error" time="0.000081042">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false for non-object values" time="0.000114042">
+        </testcase>
+        <testcase classname="src/spec/corrupted-state-error.spec.ts" name="isCorruptedStateError &gt; returns false when _tag is missing" time="0.000090458">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/dust-spend-declared-time.spec.ts" timestamp="2026-11-06T10:32:45.986Z" hostname="local" tests="15" failures="0" errors="0" skipped="0" time="1.135927666">
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; declares the time the wallet is synced to, not the tip&apos;s" time="0.140846417">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; prices coins at the declared time, which is what the ledger values them at" time="0.089839292">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; declares the same time for back-to-back spends with no sync pass between them" time="0.098250625">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; declares a syncTime exactly as old as the ledger is assumed to keep its roots" time="0.06991475">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; declares a syncTime ahead of the fetched tip, as a pass can finish after the tip is read" time="0.063034625">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; falling back to the time it was given &gt; before the first pass, when syncTime is the epoch" time="0.061482416">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; falling back to the time it was given &gt; when syncTime is older than the ledger is assumed to keep its roots" time="0.059834417">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; falling back to the time it was given &gt; when syncTime is inside the grace period but its roots are gone" time="0.060246417">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; falling back to the time it was given &gt; when syncTime is older than the grace period" time="0.062352791">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; falling back to the time it was given &gt; when a restored snapshot carries a syncTime two hours old" time="0.073203125">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; still declares the syncTime of a restored snapshot whose roots the ledger keeps" time="0.071496667">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; still answers everything else the SDK&apos;s capability does" time="0.071141708">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="makeSyncTimeTransactingCapability &gt; releases the coin a reverted spend reserved" time="0.073981458">
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="eventlessDustVariantBuilder &gt; declares the synced time on the wallet&apos;s own balancing path" time="0.075247334">
+            <system-out>
+timestamp=2026-11-06T10:32:34.287Z level=WARN fiber=#0 message=&quot;Dated a Dust spend at block 1 without checking its Dust roots, because the block reports none. A source that reports roots and stops will see its spends rejected.&quot;
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/spec/dust-spend-declared-time.spec.ts" name="eventlessDustVariantBuilder &gt; falls back to the tip&apos;s time on the wallet&apos;s own balancing path" time="0.061908">
+            <system-out>
+timestamp=2026-11-06T10:32:34.350Z level=WARN fiber=#4 message=&quot;Dated a Dust spend at block 1 without checking its Dust roots, because the block reports none. A source that reports roots and stops will see its spends rejected.&quot;
+
+            </system-out>
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/eventless-dust-variant.spec.ts" timestamp="2026-11-06T10:32:45.988Z" hostname="local" tests="2" failures="0" errors="0" skipped="0" time="0.029136792">
+        <testcase classname="src/spec/eventless-dust-variant.spec.ts" name="eventlessDustVariantBuilder &gt; builds a complete variant" time="0.004868958">
+        </testcase>
+        <testcase classname="src/spec/eventless-dust-variant.spec.ts" name="eventlessDustVariantBuilder &gt; derives the dust key from a seed, which is what the facade starts it with" time="0.022385417">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/faucet.spec.ts" timestamp="2026-11-06T10:32:45.988Z" hostname="local" tests="20" failures="0" errors="0" skipped="1" time="12.206677708">
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; creates and submits transaction that sends tokens to provided address" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; service check &gt; fail on 4xx code from provingServer" time="0.00890675">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; service check &gt; fail on 4xx code from indexer" time="0.001855084">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; service check &gt; fail on 4xx code from node" time="0.000412667">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; service check &gt; fail on wrong protocol being used with proving server" time="0.007811083">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; service check &gt; fail on wrong protocol being used with indexer" time="0.00304975">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="Faucet transacting &amp; connectivity &gt; service check &gt; fail on wrong protocol being used with node" time="0.002479291">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; InsufficientFundsError &gt; should create error with transfer value" time="0.000218">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; InsufficientFundsError &gt; should accept cause option" time="0.000062">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; InsufficientFundsError &gt; should detect wallet insufficient funds errors" time="0.00005375">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; InsufficientFundsError &gt; should not match unrelated errors" time="0.00004025">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; calculateFaucetState &gt; should handle empty coin arrays" time="0.0016665">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; Coin snapshot and freshness validation &gt; should identify coin by intentHash and outputNo" time="0.000091834">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; Coin snapshot and freshness validation &gt; should detect when coin no longer exists" time="0.000076417">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; Coin snapshot and freshness validation &gt; should handle empty coin snapshot" time="0.000083667">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; Transaction history validation &gt; should find SUCCESS status in history" time="0.000201084">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; Transaction history validation &gt; should handle undefined history entries" time="0.000097292">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; Transaction history validation &gt; should not match non-SUCCESS statuses" time="0.000057666">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; getFaucetState - memoization behavior &gt; should emit faucet state when wallet emits" time="0.303071417">
+        </testcase>
+        <testcase classname="src/spec/faucet.spec.ts" name="FaucetImpl - Memoization and Validation &gt; getFaucetState - memoization behavior &gt; should apply auditTime throttling" time="0.301432292">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/fork-crossing-schedule.spec.ts" timestamp="2026-11-06T10:32:45.990Z" hostname="local" tests="6" failures="0" errors="0" skipped="0" time="0.00461675">
+        <testcase classname="src/spec/fork-crossing-schedule.spec.ts" name="ForkCrossingSchedule &gt; keeps a real boundary rather than collapsing to one epoch" time="0.001717666">
+        </testcase>
+        <testcase classname="src/spec/fork-crossing-schedule.spec.ts" name="ForkCrossingSchedule &gt; separates devnet&apos;s pre-fork history from its post-fork history" time="0.000781334">
+        </testcase>
+        <testcase classname="src/spec/fork-crossing-schedule.spec.ts" name="ForkCrossingSchedule &gt; assigns devnet&apos;s pre-fork history to the ledger-v8 side" time="0.000221333">
+        </testcase>
+        <testcase classname="src/spec/fork-crossing-schedule.spec.ts" name="ForkCrossingSchedule &gt; assigns devnet&apos;s post-fork history to the ledger-v9 side" time="0.000100125">
+        </testcase>
+        <testcase classname="src/spec/fork-crossing-schedule.spec.ts" name="ForkCrossingSchedule &gt; holds even though devnet enacted its hand-over above the boundary" time="0.000084375">
+        </testcase>
+        <testcase classname="src/spec/fork-crossing-schedule.spec.ts" name="ForkCrossingSchedule &gt; is the distinction the facade&apos;s collapsed schedule cannot make" time="0.000122875">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/indexer-past-genesis.spec.ts" timestamp="2026-11-06T10:32:45.991Z" hostname="local" tests="4" failures="0" errors="0" skipped="0" time="0.031357708">
+        <testcase classname="src/spec/indexer-past-genesis.spec.ts" name="isIndexerPastGenesis &gt; is false while the indexer&apos;s latest block is genesis" time="0.027775083">
+        </testcase>
+        <testcase classname="src/spec/indexer-past-genesis.spec.ts" name="isIndexerPastGenesis &gt; is true once the indexer has indexed block 1" time="0.001314291">
+        </testcase>
+        <testcase classname="src/spec/indexer-past-genesis.spec.ts" name="isIndexerPastGenesis &gt; is false when the indexer cannot be reached" time="0.000298416">
+        </testcase>
+        <testcase classname="src/spec/indexer-past-genesis.spec.ts" name="isIndexerPastGenesis &gt; is false when the response carries no block height" time="0.000388625">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/ledger-v9-only-schedule.spec.ts" timestamp="2026-11-06T10:32:45.991Z" hostname="local" tests="4" failures="0" errors="0" skipped="0" time="0.005244166">
+        <testcase classname="src/spec/ledger-v9-only-schedule.spec.ts" name="LedgerV9OnlySchedule &gt; collapses the timeline to a single epoch" time="0.002706167">
+        </testcase>
+        <testcase classname="src/spec/ledger-v9-only-schedule.spec.ts" name="LedgerV9OnlySchedule &gt; puts both the version wallets stamp and the version the chain reports in that epoch" time="0.000329916">
+        </testcase>
+        <testcase classname="src/spec/ledger-v9-only-schedule.spec.ts" name="LedgerV9OnlySchedule &gt; never resolves to ledger-v8 authoring" time="0.000152583">
+        </testcase>
+        <testcase classname="src/spec/ledger-v9-only-schedule.spec.ts" name="LedgerV9OnlySchedule &gt; accepts a transaction sealed at the floor, which DefaultForkSchedule would refuse" time="0.000516083">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/observe-tx-finality.spec.ts" timestamp="2026-11-06T10:32:45.991Z" hostname="local" tests="24" failures="0" errors="0" skipped="0" time="0.05493025">
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reads a missing entry as absent" time="0.004809667">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reads an entry with no status yet as pending, not as a failure" time="0.004418917">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; distinguishes a finalized entry with no status from one still pending" time="0.000285583">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reads a successful entry as success" time="0.000301541">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reads FAILURE as settled" time="0.000166834">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reads PARTIAL_SUCCESS as settled" time="0.000093041">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reads a rejected entry as rejected, carrying the reason" time="0.000136208">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="classifyHistoryEntry &gt; reports a rejection with no stated reason rather than dropping it" time="0.000097875">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; resolves as soon as the transaction succeeds, without waiting for the deadline" time="0.010052958">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; reports a finalized failure as such instead of as a timeout" time="0.001153917">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; reports a network rejection with its reason" time="0.001071333">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; resolves pending when the transaction is in history but never finalizes" time="0.005598167">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; resolves absent when the transaction never reaches history" time="0.003011916">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; keeps watching after a failed lookup rather than giving up" time="0.001546125">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; paces lookups by their duration rather than by the poll interval" time="0.001649833">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; never runs more than one lookup at a time" time="0.003506958">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; reports history as of when the lookup ran, not when its tick fired" time="0.001862667">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; reports unobservable, not absent, when every lookup fails" time="0.002260084">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="observeTxFinality &gt; reports unobservable when no lookup answers before the deadline" time="0.001641">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="logTxFinalityOutcome &gt; says nothing louder than debug about a confirmed transaction" time="0.002337542">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="logTxFinalityOutcome &gt; warns that a finalized transaction did not succeed, naming the status" time="0.000365833">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="logTxFinalityOutcome &gt; warns that the network rejected the transaction, carrying the reason" time="0.00029225">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="logTxFinalityOutcome &gt; distinguishes a still-pending transaction from a finalized unreported one" time="0.001119208">
+        </testcase>
+        <testcase classname="src/spec/observe-tx-finality.spec.ts" name="logTxFinalityOutcome &gt; does not report an unreadable history as a missing transaction" time="0.002126792">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/request-tokens.spec.ts" timestamp="2026-11-06T10:32:45.992Z" hostname="local" tests="8" failures="0" errors="0" skipped="0" time="0.069202583">
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; returns a transaction hash when the wallet has exactly enough available coins" time="0.028084834">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; submits even though building the transfer left no coins available" time="0.005887542">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; releases reserved coins back to available when submission fails, instead of leaving them stuck in pending" time="0.006508666">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; releases reserved coins when a pre-submit step fails (reserved but never submitted)" time="0.004212083">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; releases reserved coins when finalizing the transaction fails" time="0.005022291">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; releases exactly the recipe that reserved the coins" time="0.006422209">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; propagates the original failure, not the revert error, when releasing reserved coins itself fails" time="0.004045833">
+        </testcase>
+        <testcase classname="src/spec/request-tokens.spec.ts" name="mkRequestTokens - coin reservation handling &gt; maps a wallet balancing failure to InsufficientFundsError without reverting (nothing was reserved)" time="0.007137708">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/wallet-factory.spec.ts" timestamp="2026-11-06T10:32:45.993Z" hostname="local" tests="14" failures="0" errors="0" skipped="0" time="0.021447458">
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; doCheck &gt; should successfully check a healthy endpoint" time="0.00685675">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; doCheck &gt; should fail when endpoint returns non-ok status" time="0.002058708">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; doCheck &gt; should fail when fetch throws an error" time="0.000635291">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; doCheck &gt; should include service name and URL in error message" time="0.000514542">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; doCheck &gt; should handle various HTTP error statuses" time="0.002975541">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkNode &gt; should create correct health endpoint URL for node" time="0.00283075">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkNode &gt; should handle node URL with path" time="0.000498166">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkNode &gt; should fail with appropriate error message when node is unhealthy" time="0.000437125">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkIndexer &gt; should create correct health endpoint URL for indexer" time="0.000351709">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkIndexer &gt; should handle indexer URL with existing path" time="0.000239292">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkIndexer &gt; should fail with appropriate error message when indexer is not ready" time="0.000317959">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkProofServer &gt; should create correct health endpoint URL for proof server" time="0.000407625">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkProofServer &gt; should handle proof server URL with port and path" time="0.000289291">
+        </testcase>
+        <testcase classname="src/spec/wallet-factory.spec.ts" name="Health check functions &gt; checkProofServer &gt; should fail with appropriate error message when proof server is unhealthy" time="0.000381834">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/wallet-seed-utils.spec.ts" timestamp="2026-11-06T10:32:45.994Z" hostname="local" tests="8" failures="0" errors="0" skipped="0" time="0.088242041">
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with valid seed &gt; getShieldedSeed returns a Uint8Array" time="0.059146333">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with valid seed &gt; getUnshieldedSeed returns a Uint8Array" time="0.005055083">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with valid seed &gt; getDustSeed returns a Uint8Array" time="0.005932875">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with valid seed &gt; derives different seeds for different roles" time="0.014359125">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with invalid seed &gt; getShieldedSeed throws a clear error for too-short seed" time="0.000853">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with invalid seed &gt; getUnshieldedSeed throws a clear error for too-short seed" time="0.000173792">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with invalid seed &gt; getDustSeed throws a clear error for too-short seed" time="0.000142">
+        </testcase>
+        <testcase classname="src/spec/wallet-seed-utils.spec.ts" name="WalletSeedUtils &gt; with invalid seed &gt; throws for empty seed" time="0.000136917">
+        </testcase>
+    </testsuite>
+</testsuites>
