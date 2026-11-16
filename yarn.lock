@@ -824,7 +824,7 @@ __metadata:
     fast-check: "npm:4.10.2"
     jsonwebtoken: "npm:^9.0.2"
     typescript: "npm:6.0.3"
-    vite: "npm:^8.3.6"
+    vite: "npm:^8.3.7"
     vitest: "npm:^5.1.0"
   peerDependencies:
     fp-ts: "*"
@@ -914,7 +914,7 @@ __metadata:
     testcontainers: "npm:12.2.1"
     tsx: "npm:4.23.15"
     typescript: "npm:6.0.3"
-    vite: "npm:^8.3.6"
+    vite: "npm:^8.3.7"
     vitest: "npm:^5.1.0"
     yargs: "npm:^18.2.0"
   bin:
@@ -943,7 +943,7 @@ __metadata:
     testcontainers: "npm:^12.2.1"
     ts-node: "npm:^10.9.2"
     typescript: "npm:^6.0.2"
-    vite: "npm:^8.3.6"
+    vite: "npm:^8.3.7"
     vitest: "npm:^5.1.0"
   languageName: unknown
   linkType: soft
@@ -972,7 +972,7 @@ __metadata:
     rxjs: "npm:^7.8.1"
     ts-loader: "npm:9.6.2"
     typescript: "npm:6.0.3"
-    vite: "npm:8.3.6"
+    vite: "npm:8.3.7"
     vite-plugin-wasm: "npm:3.6.0"
   languageName: unknown
   linkType: soft
@@ -1005,7 +1005,7 @@ __metadata:
     pino-pretty: "npm:13.2.0"
     testcontainers: "npm:12.2.1"
     typescript: "npm:6.0.3"
-    vite: "npm:^8.3.6"
+    vite: "npm:^8.3.7"
     vitest: "npm:^5.1.0"
   peerDependencies:
     fp-ts: ^2.16.0
@@ -5439,7 +5439,7 @@ __metadata:
     typedoc-plugin-markdown: "npm:4.14.1"
     typescript: "npm:6.0.3"
     typescript-eslint: "npm:8.72.1"
-    vite: "npm:8.3.6"
+    vite: "npm:8.3.7"
     vitest: "npm:5.1.0"
   languageName: unknown
   linkType: soft
@@ -6567,7 +6567,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rolldown@npm:~1.2.16":
+"rolldown@npm:~1.2.18":
   version: 1.2.18
   resolution: "rolldown@npm:1.2.18"
   dependencies:
@@ -7518,15 +7518,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:8.3.6":
-  version: 8.3.6
-  resolution: "vite@npm:8.3.6"
+"vite@npm:8.3.7":
+  version: 8.3.7
+  resolution: "vite@npm:8.3.7"
   dependencies:
     fsevents: "npm:~2.3.3"
     lightningcss: "npm:^1.33.0"
     picomatch: "npm:^4.0.7"
     postcss: "npm:^8.5.32"
-    rolldown: "npm:~1.2.16"
+    rolldown: "npm:~1.2.18"
     tinyglobby: "npm:^0.2.17"
   peerDependencies:
     "@types/node": ^20.19.0 || >=22.12.0
@@ -7571,7 +7571,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10/94d44b037ede5510d7f9732a9f1748df6994d1530b8a0160ecbdd555fb5e2181dd4d9a702c6143da67abfc816d87b27f507062e030fa0be166bc21232455ad1f
+  checksum: 10/18803d5c9977dd179a17cffef22bf5365f23f815f5bab78e461b3a7d9f213cbf2ccaa5995d4bc01d7bf408c48114e61932ddfd3fab539cbf47444817626b000e
   languageName: node
   linkType: hard
 
