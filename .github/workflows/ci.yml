@@ -33,9 +33,6 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Update NPM
-        run: npm install -g npm@12.2.2
-
       - name: Enable Corepack
         run: corepack enable
 
