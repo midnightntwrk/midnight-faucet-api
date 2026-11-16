@@ -33,14 +33,11 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: Update NPM
-        run: npm install -g npm@12.2.1
-
       - name: Enable Corepack
         run: corepack enable
 
       - name: Log in to GitHub Container registry
-        uses: docker/login-action@783ae9cac559640a24c9212dfa6cd9e998252f9a
+        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab
         with:
           registry: "https://ghcr.io"
           username: ntwrk-bot
@@ -118,7 +115,7 @@ jobs:
           reporter: java-junit
 
       - name: Publish Test Summary
-        uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2
+        uses: EnricoMi/publish-unit-test-result-action@da5b7be67623cd59bbbd1a0ce4f022050a55605f # v2
         if: success() || failure()
         with:
           check_name: Vitest Tests Results
