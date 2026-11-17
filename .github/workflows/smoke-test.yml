@@ -105,21 +105,6 @@ jobs:
           username: ntwrk-bot
           password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
 
-      - name: Configure yarn
-        env:
-          GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-        run: |
-          # The @midnight-ntwrk scope's deps span two registries: most are pinned to
-          # GitHub Packages archiveUrls in the lockfile, but three v8-stack deps
-          # (wallet-sdk-abstractions, wallet-sdk-hd, zkir-v2) are only on public npm and
-          # carry no archiveUrl. Point the scope at public npm so those three resolve.
-          # yarn ties download auth to the *scope* registry (not the archiveUrl host), so
-          # keep the token on the scope; with npmAlwaysAuth off it is sent only when a host
-          # returns 401 (GitHub Packages, via the archiveUrls) and never to public npm.
-          yarn config set 'npmScopes.midnight-ntwrk.npmRegistryServer' 'https://registry.npmjs.org'
-          yarn config set 'npmScopes.midnight-ntwrk.npmAlwaysAuth' false
-          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
-
       - name: Dependencies cache restore
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

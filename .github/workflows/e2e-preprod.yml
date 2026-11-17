@@ -19,11 +19,6 @@ jobs:
     uses: ./.github/workflows/e2e-test.yml
     with:
       network: preprod
-      # Pinned: the deployed preprod/preview/qanet envs run the ledger v8 stack, but main
-      # moved to ledger v9 (#574 onward), which breaks wallet sync against these envs.
-      # f27b171 is the last commit on the v8 stack (@midnight-ntwrk/ledger-v8). Revert to
-      # main once the environments are upgraded to ledger v9.
-      branch: f27b17138c42a9f931f31b1ad04b240705007137
     secrets:
       MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
       TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}

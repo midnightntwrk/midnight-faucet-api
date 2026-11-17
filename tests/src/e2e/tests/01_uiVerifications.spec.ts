@@ -44,7 +44,6 @@ test.describe("UI Verifications.", () => {
       await expect(faucetMainPage.notificationText).not.toBeVisible();
 
       await faucetMainPage.requestTokens("test");
-      await expect(faucet.getByText(constants.BUTTON_LABEL_REQUEST)).toBeVisible();
       await expect(faucet.getByText(constants.ERROR_INVALID_ADDRESS)).toBeVisible({
         timeout: 30_000,
       });

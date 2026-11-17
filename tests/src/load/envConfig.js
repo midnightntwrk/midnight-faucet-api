@@ -1,25 +1,25 @@
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 
 export class DevnetConfig {
-  faucetUrl = "https://faucet.devnet.midnight.network";
+  faucetUrl = "https://faucet.devnet.shielded.tools";
 
-  nodeUrl = "wss://rpc.devnet.midnight.network";
+  nodeUrl = "wss://rpc.devnet.shielded.tools";
 
-  indexerURL = "https://indexer.devnet.midnight.network/api/v4/graphql";
+  indexerURL = "https://indexer.devnet.shielded.tools/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.devnet.midnight.network/api/v4/graphql";
+  indexerSubscriptionURL = "wss://indexer.devnet.shielded.tools/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.DevNet;
 }
 
 export class QanetConfig {
-  faucetUrl = "https://faucet.qanet.midnight.network";
+  faucetUrl = "https://faucet.qanet.shielded.tools";
 
-  nodeUrl = "wss://rpc.qanet.midnight.network";
+  nodeUrl = "wss://rpc.qanet.shielded.tools";
 
-  indexerURL = "https://indexer.qanet.midnight.network/api/v4/graphql";
+  indexerURL = "https://indexer.qanet.shielded.tools/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.qanet.midnight.network/api/v4/graphql";
+  indexerSubscriptionURL = "wss://indexer.qanet.shielded.tools/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.QaNet;
 }
@@ -39,11 +39,11 @@ export class PreviewConfig {
 export class PreprodConfig {
   faucetUrl = "https://faucet.preprod.midnight.network";
 
-  nodeUrl = "wss://rpc.preprod.midnight.network";
+  nodeUrl = "wss://rpc.preprod.shielded.tools";
 
-  indexerURL = "https://indexer.preprod.midnight.network/api/4/graphql";
+  indexerURL = "https://indexer.preprod.shielded.tools/api/v4/graphql";
 
-  indexerSubscriptionURL = "wss://indexer.preprod.midnight.network/api/v4/graphql";
+  indexerSubscriptionURL = "wss://indexer.preprod.shielded.tools/api/v4/graphql";
 
   networkId = NetworkId.NetworkId.PreProd;
 }

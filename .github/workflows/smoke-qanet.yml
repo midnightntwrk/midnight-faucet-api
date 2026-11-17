@@ -2,9 +2,12 @@ name: Faucet Smoke Test - qanet
 
 on:
   workflow_dispatch:
-  schedule:
-    # Runs twice a day
-    - cron: "0 0,6,12,16 * * *"
+  # Schedule paused: devnet and qanet hosts resolve to private addresses that GitHub-hosted
+  # runners cannot reach, so every scheduled run fails or times out. Re-enable once these
+  # suites run on a VPN-connected runner; workflow_dispatch still works for manual runs.
+  # schedule:
+  #   # Runs twice a day
+  #   - cron: "0 0,6,12,16 * * *"
 
 permissions: {}
 
@@ -19,11 +22,6 @@ jobs:
     uses: ./.github/workflows/smoke-test.yml
     with:
       network: qanet
-      # Pinned: the deployed preprod/preview/qanet envs run the ledger v8 stack, but main
-      # moved to ledger v9 (#574 onward), which breaks wallet sync against these envs.
-      # f27b171 is the last commit on the v8 stack (@midnight-ntwrk/ledger-v8). Revert to
-      # main once the environments are upgraded to ledger v9.
-      branch: f27b17138c42a9f931f31b1ad04b240705007137
     secrets:
       MIDNIGHTCI_PACKAGES_READ: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
       TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
