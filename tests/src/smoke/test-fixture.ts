@@ -203,6 +203,9 @@ export class TestContainersFixture {
       txHistoryStorage: new NoOpTransactionHistoryStorage(),
       // The per-wallet configurations require a fork schedule; only the facade presets one.
       forks: DefaultForkSchedule,
+      // Each smoke run starts a fresh wallet, so on a chain past the v9 fork it can begin from the dust the chain
+      // re-emitted at the fork instead of replaying the ledger-v8 dust history.
+      skipLedgerV8DustHistory: true,
     };
   }
 }
