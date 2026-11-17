@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="22" failures="0" errors="0" time="78.799489542">
+    <testsuite name="src/smoke/02_thirdPartyDrip.spec.ts" timestamp="2026-11-17T10:41:26.441Z" hostname="local" tests="22" failures="0" errors="0" skipped="0" time="78.799489542">
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/health &gt; Health check returns SERVING status" time="0.009653792">
+            <system-out>
+Third-party health status: { status: &apos;SERVING&apos;, reason: null }
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/health &gt; Health check returns 401 without API key" time="0.002272417">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/health &gt; Health check returns 401 with invalid API key" time="0.001816584">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drip-info/:network/:token &gt; Drip info reports the configured amount" time="0.002220834">
+            <system-out>
+Drip info: { dripAmount: &apos;5000000000&apos; }
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drip-info/:network/:token &gt; Drip info returns UNSUPPORTED_NETWORK for another network" time="0.002941333">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drip-info/:network/:token &gt; Drip info returns UNSUPPORTED_TOKEN for another token" time="0.00200125">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns the dripId alone" time="0.02306025">
+            <system-out>
+Drip requested successfully, dripId=2a388ec4-e2f8-45e3-a360-fc3e1019774e
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns 401 without API key" time="0.001141541">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_ADDRESS for an invalid address" time="0.001478875">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns UNSUPPORTED_NETWORK for another network" time="0.001244291">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns UNSUPPORTED_TOKEN for another token" time="0.001171833">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_REQUEST for a zero amount" time="0.001419958">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_REQUEST for an amount above the maximum" time="0.001324666">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_REQUEST for a decimal amount" time="0.001209375">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_REQUEST for a numeric amount" time="0.001691417">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_REQUEST when using the old &apos;address&apos; field" time="0.001630625">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; POST /v1/drips &gt; Request drip returns INVALID_REQUEST for missing body fields" time="0.001919458">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drips/:dripId &gt; Poll drip status returns valid response" time="0.002815167">
+            <system-out>
+Drip status: {
+  dripId: &apos;2a388ec4-e2f8-45e3-a360-fc3e1019774e&apos;,
+  response: {
+    dripId: &apos;2a388ec4-e2f8-45e3-a360-fc3e1019774e&apos;,
+    status: &apos;PENDING&apos;,
+    transactionHash: null,
+    error: null
+  }
+}
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drips/:dripId &gt; Poll drip until CONFIRMED or FAILED" time="25.045043875">
+            <system-out>
+Polling drip status for dripId=2a388ec4-e2f8-45e3-a360-fc3e1019774e...
+
+Attempt 1: status=PENDING
+
+Attempt 2: status=PENDING
+
+Attempt 3: status=PENDING
+
+Attempt 4: status=PENDING
+
+Attempt 5: status=CONFIRMED
+Drip confirmed! transactionHash=00ef6765f50573c5c2abe8b923d80165376bb43a284ac3006371767390b8f61e1f
+
+            </system-out>
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drips/:dripId &gt; Unknown dripId answers 200 with an error object" time="0.004755833">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; GET /v1/drips/:dripId &gt; Drip status returns 401 without API key" time="0.0029395">
+        </testcase>
+        <testcase classname="src/smoke/02_thirdPartyDrip.spec.ts" name="Third-Party API Smoke Tests &gt; Verify wallet balance &gt; Verify that wallet balance was increased after drip" time="0.008195584">
+        </testcase>
+    </testsuite>
+</testsuites>
