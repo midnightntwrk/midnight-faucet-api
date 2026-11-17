@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="16" failures="0" errors="0" time="0.121488208">
+    <testsuite name="src/spec/auth.spec.ts" timestamp="2026-11-17T10:36:58.136Z" hostname="local" tests="12" failures="0" errors="0" skipped="0" time="0.096814458">
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with username and password &gt; provides a validated user if correct username and password are provided" time="0.008241833">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with username and password &gt; allows to generate password-related credentials for a given password such that pass password verification" time="0.002822125">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with username and password &gt; errors if password is incorrect" time="0.004411708">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with username and password &gt; errors if salt is different" time="0.009875917">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; allows to create token for a validated user" time="0.010817334">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; does not allow to create tokens that expire after upper bound set in configuration" time="0.005573833">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; provides a validated user when verifying token" time="0.039963666">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; errors if supplied function cannot find user" time="0.049759875">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; errors if issuer doesn&apos;t match configuration" time="0.048810458">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; errors if expiry date is before reference one" time="0.048800791">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; with JWT &gt; errors if signature is forged with wrong secret" time="0.049788458">
+        </testcase>
+        <testcase classname="src/spec/auth.spec.ts" name="Auth &gt; doesn&apos;t allow to create verified users from outside" time="0.004092375">
+        </testcase>
+    </testsuite>
+    <testsuite name="src/spec/in-memory-user-repository.spec.ts" timestamp="2026-11-17T10:36:58.137Z" hostname="local" tests="4" failures="0" errors="0" skipped="0" time="0.02467375">
+        <testcase classname="src/spec/in-memory-user-repository.spec.ts" name="In-memory user repository &gt; returns a user after saving it" time="0.007334167">
+        </testcase>
+        <testcase classname="src/spec/in-memory-user-repository.spec.ts" name="In-memory user repository &gt; returns null if user was not saved" time="0.003070333">
+        </testcase>
+        <testcase classname="src/spec/in-memory-user-repository.spec.ts" name="In-memory user repository &gt; overrides previous value on save" time="0.005515209">
+        </testcase>
+        <testcase classname="src/spec/in-memory-user-repository.spec.ts" name="In-memory user repository &gt; returns an error if user name and id don&apos;t match on save" time="0.007136084">
+        </testcase>
+    </testsuite>
+</testsuites>
