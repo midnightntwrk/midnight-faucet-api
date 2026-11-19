@@ -7,7 +7,7 @@
 Set the `NETWORK` environment variable to the target deployment:
 
 ```shell
-export NETWORK=qanet    # or preview, preprod
+export NETWORK=preview  # or preprod
 ```
 
 ### 2. Run tests

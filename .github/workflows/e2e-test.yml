@@ -13,12 +13,10 @@ on:
         type: choice
         description: Midnight network to use
         required: true
-        default: "qanet"
+        default: "preprod"
         options:
-          - qanet
           - preprod
           - preview
-          - stagenet
           - undeployed
       deployment:
         type: choice
@@ -27,7 +25,6 @@ on:
         default: "preprod"
         options:
           - local
-          - qanet
           - preview
           - preprod
       modifier:
@@ -43,12 +40,12 @@ on:
     inputs:
       network:
         type: string
-        description: Midnight network to use (qanet/preview/preprod/undeployed)
+        description: Midnight network to use (preview/preprod/undeployed)
         required: false
         default: "preprod"
       deployment:
         type: string
-        description: Midnight deployment to use (qanet/preview/preprod/local)
+        description: Midnight deployment to use (preview/preprod/local)
         required: false
         default: "preprod"
       modifier:

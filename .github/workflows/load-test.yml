@@ -9,12 +9,10 @@ on:
         type: choice
         description: Midnight network to use
         required: true
-        default: "qanet"
+        default: "preprod"
         options:
-          - qanet
           - preview
           - preprod
-          - stagenet
       numberOfUsers:
         required: true
         default: "1"

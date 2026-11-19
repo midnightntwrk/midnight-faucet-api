@@ -15,9 +15,7 @@ on:
         default: "preview"
         options:
           - preview
-          - qanet
           - preprod
-          - stagenet
           - undeployed
       modifier:
         type: string
@@ -32,7 +30,7 @@ on:
     inputs:
       network:
         type: string
-        description: Midnight network to use (preview/qanet/preprod/undeployed)
+        description: Midnight network to use (preview/preprod/undeployed)
         required: false
         default: "preview"
       modifier:
