@@ -7,8 +7,10 @@
 Set the `NETWORK` environment variable to the target deployment:
 
 ```shell
-export NETWORK=qanet    # or preview, preprod
+export NETWORK=preview  # or preprod
 ```
+
+`qanet`, `devnet` and `stagenet` are still supported for local runs, but CI no longer tests them.
 
 ### 2. Run tests
 
@@ -41,9 +43,8 @@ From the `tests` directory:
 ```shell
 # Smoke tests (API-level tests via vitest)
 yarn smoke-test
-
-# E2E tests (browser tests via Playwright)
-yarn e2e-test
 ```
+
+E2E tests (Playwright) have no `undeployed` configuration; run them against a deployed network instead.
 
 > **Note:** The first run may take several minutes as Docker images are pulled and containers start up (up to 5 minutes for all services to become healthy).

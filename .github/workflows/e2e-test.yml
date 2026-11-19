@@ -13,23 +13,10 @@ on:
         type: choice
         description: Midnight network to use
         required: true
-        default: "qanet"
-        options:
-          - qanet
-          - preprod
-          - preview
-          - stagenet
-          - undeployed
-      deployment:
-        type: choice
-        description: Midnight deployment to use
-        required: false
         default: "preprod"
         options:
-          - local
-          - qanet
-          - preview
           - preprod
+          - preview
       modifier:
         type: string
         description: Suite or a testname to run
@@ -43,12 +30,7 @@ on:
     inputs:
       network:
         type: string
-        description: Midnight network to use (qanet/preview/preprod/undeployed)
-        required: false
-        default: "preprod"
-      deployment:
-        type: string
-        description: Midnight deployment to use (qanet/preview/preprod/local)
+        description: Midnight network to use (preview/preprod)
         required: false
         default: "preprod"
       modifier:
@@ -142,7 +124,6 @@ jobs:
         id: tests
         env:
           NETWORK: ${{ inputs.network }}
-          DEPLOYMENT: ${{ inputs.deployment }}
           TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
           VISITOR_PASSWORD: ${{ secrets.VISITOR_PASSWORD }}
         run: |
