@@ -36,7 +36,7 @@ services:
       proof-server:
         condition: service_started
   db:
-    image: postgres:18
+    image: postgres:19
     ports:
       - "5432:5432"
     environment:

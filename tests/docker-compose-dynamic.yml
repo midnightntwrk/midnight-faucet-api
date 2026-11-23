@@ -75,7 +75,7 @@ services:
       SIDECHAIN_BLOCK_BENEFICIARY: "04bcf7ad3be7a5c790460be82a713af570f22e0f801f6659ab8e84a52be6969e"
 
   db:
-    image: postgres:15
+    image: postgres:19
     container_name: db_$TESTCONTAINERS_UID
     ports:
       - "5432"
