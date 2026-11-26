@@ -45,7 +45,7 @@ jobs:
       # used by update-docker-images.yml does the whole thing with the job's own
       # GITHUB_TOKEN, scoped to this repository.
       - name: Open a docs PR
-        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.2
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
         with:
           # A PR opened with the job's own GITHUB_TOKEN does not trigger workflows, so
           # its required checks would never start and it could never merge. That is the
