@@ -138,9 +138,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: read # This is required for actions/checkout
       checks: write # This is needed to upload test results
       pull-requests: write # This is needed to comment test results on the PR
     steps:
+      # test-reporter runs `git ls-files` to resolve test paths against the repo, so it
+      # needs a checkout even though this job builds nothing. Without one it fails with
+      # "The process '/usr/bin/git' failed with exit code 128".
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Download test reports
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         continue-on-error: true
