@@ -1,7 +1,23 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", ".eslintrc.js"],
-  "globalPassThroughEnv": ["*"],
+  "//": "Enumerated rather than \"*\": passing every variable through handed each task the whole CI secret environment and left turbo unable to key its cache on anything.",
+  "globalPassThroughEnv": [
+    "CI",
+    "ENCRYPTION_KEY",
+    "JWT_SIGN_SECRET",
+    "NPM_TOKEN",
+    "NODE_OPTIONS",
+    "NETWORK",
+    "DEPLOYMENT",
+    "SYNC_CACHE",
+    "TURNSTILE_HEADER",
+    "THIRD_PARTY_API_KEY",
+    "VISITOR_PASSWORD",
+    "DISPLAY",
+    "DOCKER_HOST",
+    "TESTCONTAINERS_*"
+  ],
   "tasks": {
     "do-publish": {
       "dependsOn": ["build"],

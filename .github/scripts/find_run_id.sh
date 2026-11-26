@@ -12,7 +12,7 @@ if [[ -z "$REPO" || -z "$WORKFLOW_NAME" || -z "$ARTIFACT_NAME" ]]; then
 fi
 
 # Fetch the workflow ID for the specified workflow
-workflow_id=$(gh api repos/$REPO/actions/workflows | jq -r --arg name "$WORKFLOW_NAME" '.workflows[] | select(.name == $name) | .id')
+workflow_id=$(gh api repos/"$REPO"/actions/workflows | jq -r --arg name "$WORKFLOW_NAME" '.workflows[] | select(.name == $name) | .id')
 
 if [[ -z "$workflow_id" ]]; then
   echo "Workflow '$WORKFLOW_NAME' not found in repository '$REPO'."
@@ -20,11 +20,11 @@ if [[ -z "$workflow_id" ]]; then
 fi
 
 # Fetch all completed workflow runs for the specified workflow, ordered by created_at (newest first)
-runs=$(gh api repos/$REPO/actions/workflows/$workflow_id/runs --paginate | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
+runs=$(gh api repos/"$REPO"/actions/workflows/"$workflow_id"/runs --paginate | jq -r '.workflow_runs[] | select(.status == "completed") | .id')
 
 # Iterate over each run to check for the specified artifact, starting from the newest
 for run_id in $runs; do
-  artifact_check=$(gh api repos/$REPO/actions/runs/$run_id/artifacts | jq -r --arg name "$ARTIFACT_NAME" '.artifacts[] | select(.name == $name)')
+  artifact_check=$(gh api repos/"$REPO"/actions/runs/"$run_id"/artifacts | jq -r --arg name "$ARTIFACT_NAME" '.artifacts[] | select(.name == $name)')
 
  if [[ -n "$artifact_check" ]]; then
     echo "$run_id"

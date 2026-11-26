@@ -1,70 +1,43 @@
 name: CI
 
 on:
-  workflow_call:
-    secrets:
-      MIDNIGHTCI_PACKAGES_READ:
-        required: true
-  workflow_dispatch:
+  pull_request:
+  merge_group:
   push:
+    branches: [main]
+    tags: ["*"]
+  workflow_dispatch:
   schedule:
     - cron: "2 0 * * *"
 
 permissions: {}
 
+# Branch pushes are covered by `pull_request`, so a PR branch builds once rather than
+# once per event, and a new push cancels the superseded run. Everything else keys on
+# run_id — a unique group per run, so pushes to main and tags are never queued behind
+# each other and never cancelled: a queued run is dropped when a newer one arrives,
+# which would silently skip a commit's build and its publish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   check:
     name: Build & Test
     runs-on: ubuntu-latest-8-core-x64
+    timeout-minutes: 45
     permissions:
       contents: read # This is required for actions/checkout
       packages: read # This is required for using GH docker registry
-      checks: write # This is needed to upload test results
-      pull-requests: write # This is needed to upload test results
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # setup-node's registry inputs only write an .npmrc for the npm CLI, which Yarn
-      # Berry never reads. All packages resolve from public npmjs via .yarnrc.yml.
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspace
         with:
-          node-version-file: ".nvmrc"
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Log in to GitHub Container registry
-        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab
-        with:
-          registry: "https://ghcr.io"
-          username: ntwrk-bot
-          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-
-      - name: Dependencies cache restore
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ./.yarn/cache
-            ./node_modules
-          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
-          restore-keys: |
-            yarn-${{ github.ref_name }}
-            yarn-main
-
-      - name: Install dependencies
-        run: "yarn install --immutable"
-
-      - name: Dependencies cache save
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: always()
-        with:
-          path: |
-            ./.yarn/cache
-            ./node_modules
-          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+          packages-read-token: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+          ghcr-login: "true"
 
       - name: Turbo cache restore
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -75,6 +48,8 @@ jobs:
             turbo-${{ github.ref_name }}
             turbo-main
 
+      # Throwaway values, but still masked: a failing test that dumps its config would
+      # otherwise print them into a public log.
       - name: Generate test-only secrets
         run: |
           encryption_key=$(openssl rand -hex 32)
@@ -86,18 +61,21 @@ jobs:
             echo "JWT_SIGN_SECRET=$jwt_sign_secret"
           } >> "$GITHUB_ENV"
 
-      - name: Verify test secret env vars
-        run: |
-          echo "ENCRYPTION_KEY length: ${#ENCRYPTION_KEY}"
-          echo "JWT_SIGN_SECRET length: ${#JWT_SIGN_SECRET}"
-          if [ -z "$ENCRYPTION_KEY" ] || [ -z "$JWT_SIGN_SECRET" ]; then
-            echo "::error::Missing required ENCRYPTION_KEY or JWT_SIGN_SECRET secrets"
-            exit 1
-          fi
-
       - name: Run checks
+        env:
+          # The nightly run exists to catch drift from outside the repo — a moved
+          # registry tag, a new advisory, a dependency that stopped resolving. With a
+          # warm turbo cache it was replaying the previous result in 0s and, because
+          # the `test` task caches `reports/**`, re-publishing that run's JUnit XML as
+          # a fresh pass. Force real execution when nothing in the repo has changed.
+          TURBO_FORCE: ${{ github.event_name == 'schedule' }}
         run: |
-          npx turbo check --cache-dir ./turbo_cache --concurrency 1
+          # build/lint/typecheck are pure and parallelise freely. `test` stays serial:
+          # packages/faucet/test-compose.yml binds fixed host ports (8088, 9944) and
+          # fixed container names, so two workspaces running tests at once collide.
+          # Raising this means giving that compose file dynamic ports first.
+          npx turbo build lint typecheck --cache-dir ./turbo_cache --concurrency 8
+          npx turbo test --cache-dir ./turbo_cache --concurrency 1
 
       - name: Turbo cache save
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -106,25 +84,28 @@ jobs:
           path: ./turbo_cache
           key: turbo-${{ github.ref_name }}-${{ github.run_id }}
 
-      - name: Publish Test Report
-        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a # v3.2.0
+      - name: Collect test reports
         if: success() || failure()
-        with:
-          name: Vitest Tests Report
-          path: packages/**/reports/report/test-report.xml,apps/**/reports/report/test-report.xml,tests/**/reports/report/test-report.xml
-          reporter: java-junit
+        run: |
+          mkdir -p test-results
+          # Flatten each workspace's JUnit XML into one directory so the reporting job
+          # can consume a single artifact without knowing the workspace layout.
+          find apps packages tests -path '*/reports/report/test-report.xml' -print0 \
+            | while IFS= read -r -d '' f; do
+                workspace=$(printf '%s' "$f" | sed 's#/reports/report/test-report.xml##; s#/#-#g')
+                cp "$f" "test-results/${workspace}.xml"
+              done
 
-      - name: Publish Test Summary
-        uses: EnricoMi/publish-unit-test-result-action@da5b7be67623cd59bbbd1a0ce4f022050a55605f # v2
+      - name: Upload test reports
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: success() || failure()
         with:
-          check_name: Vitest Tests Results
-          files: |
-            ./packages/**/reports/report/test-report.xml
-            ./apps/**/reports/report/test-report.xml
-            ./tests/**/reports/report/test-report.xml
+          name: test-results
+          path: test-results
+          if-no-files-found: warn
 
       - name: Aggregate coverage reports
+        if: success() || failure()
         run: |
           mkdir -p coverage/workspaces
           # The command is interpreted by each workspace shell; expansion in
@@ -132,11 +113,61 @@ jobs:
           # shellcheck disable=SC2016,SC2046
           yarn workspaces foreach -Apv exec bash -c '[ ! -f coverage/coverage-final.json ] && exit 0 || cp coverage/coverage-final.json '$(pwd)'/coverage/workspaces/$(basename $(pwd))-coverage-final.json'
 
-      - name: Merge report as ZIP
-        run: mv coverage "coverage_$(date +"%Y%m%d%H%M%S")"
+      - name: Summarise coverage
+        if: success() || failure()
+        run: node scripts/summarise-coverage.mjs coverage/workspaces >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success() || failure()
         with:
           name: coverage-report
-          path: coverage*
+          path: coverage
+
+  # Reporting is split out so the job that executes repository code — and every
+  # dependency's install and test scripts with it — never holds a token that can
+  # write checks or comment on pull requests.
+  report:
+    name: Publish test results
+    needs: check
+    # Skipped for fork PRs: their GITHUB_TOKEN is read-only whatever `permissions`
+    # says, so the reporters cannot create a check and would fail the run even when
+    # the tests passed. The results are still in the `test-results` artifact, and
+    # "Build & Test" remains the authoritative status.
+    if: ${{ !cancelled() && github.event.pull_request.head.repo.fork != true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      checks: write # This is needed to upload test results
+      pull-requests: write # This is needed to comment test results on the PR
+    steps:
+      - name: Download test reports
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        continue-on-error: true
+        with:
+          name: test-results
+          path: test-results
+
+      - name: Publish Test Report
+        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a # v3.2.0
+        with:
+          name: Vitest Tests Report
+          path: test-results/*.xml
+          reporter: java-junit
+
+      - name: Publish Test Summary
+        uses: EnricoMi/publish-unit-test-result-action@da5b7be67623cd59bbbd1a0ce4f022050a55605f # v2
+        with:
+          check_name: Vitest Tests Results
+          files: test-results/*.xml
+
+  publish:
+    name: Publish packages and image
+    needs: check
+    if: ${{ github.event_name == 'push' }}
+    permissions:
+      contents: read
+      packages: write
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    uses: ./.github/workflows/cd.yml
