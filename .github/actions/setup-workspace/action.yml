@@ -1,0 +1,84 @@
+name: Set up workspace
+description: Node + Corepack + registry auth + yarn cache, shared by every workflow that installs this repo.
+
+inputs:
+  packages-read-token:
+    description: >-
+      Token with read access to GitHub Packages. Required when `midnight-scope` is true,
+      and when `ghcr-login` is true.
+    required: false
+    default: ""
+  midnight-scope:
+    description: >-
+      Point the @midnight-ntwrk scope at public npm and attach the token to it. Only the
+      test workflows need this; the server/package workflows resolve everything from
+      public npmjs via .yarnrc.yml.
+    required: false
+    default: "false"
+  ghcr-login:
+    description: Log in to ghcr.io, for workflows that pull the Midnight stack images.
+    required: false
+    default: "false"
+  install:
+    description: Run `yarn install --immutable`.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    # setup-node's registry inputs only write an .npmrc for the npm CLI, which Yarn
+    # Berry never reads. Registry and auth live in .yarnrc.yml and in the scope config
+    # below instead.
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: ".nvmrc"
+
+    - name: Enable Corepack
+      shell: bash
+      run: corepack enable
+
+    - name: Log in to GitHub Container registry
+      if: inputs.ghcr-login == 'true'
+      uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab # v3.7.0
+      with:
+        registry: "https://ghcr.io"
+        username: ntwrk-bot
+        password: ${{ inputs.packages-read-token }}
+
+    - name: Configure the @midnight-ntwrk scope
+      if: inputs.midnight-scope == 'true'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.packages-read-token }}
+      run: |
+        # The @midnight-ntwrk scope's deps span two registries: most are pinned to
+        # GitHub Packages archiveUrls in the lockfile, but three v8-stack deps
+        # (wallet-sdk-abstractions, wallet-sdk-hd, zkir-v2) are only on public npm and
+        # carry no archiveUrl. Point the scope at public npm so those three resolve.
+        # yarn ties download auth to the *scope* registry (not the archiveUrl host), so
+        # keep the token on the scope; with npmAlwaysAuth off it is sent only when a host
+        # returns 401 (GitHub Packages, via the archiveUrls) and never to public npm.
+        yarn config set 'npmScopes.midnight-ntwrk.npmRegistryServer' 'https://registry.npmjs.org'
+        yarn config set 'npmScopes.midnight-ntwrk.npmAlwaysAuth' false
+        yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
+
+    # Only the yarn download cache is restored, never node_modules. Caching the
+    # installed tree made `yarn install --immutable` a 2s no-op, which skipped the
+    # lockfile integrity check and meant CI trusted whatever a previous run wrote.
+    # Keying on the lockfile also lets the exact key hit, instead of writing a fresh
+    # multi-hundred-MB entry every run and evicting the fallbacks through the 10GB
+    # repository cache limit.
+    - name: Yarn cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ./.yarn/cache
+        key: yarn-${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          yarn-${{ runner.os }}-
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: yarn install --immutable

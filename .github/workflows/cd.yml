@@ -14,14 +14,24 @@ on:
 
 permissions: {}
 
+# Publishing is not safe to run twice at once: the image tag is the branch name, so
+# two merges landing together push the same `:main` tag and race on `yarn do-publish`.
+# Serialised deliberately. The trade-off is GitHub's queue depth of one — if a third
+# merge lands while one is publishing and one is queued, the queued run is dropped and
+# that commit publishes no prerelease. Correctness of the publish beats completeness
+# of intermediate prereleases; the newest commit always wins.
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Build packages, push to docker registry and npm registry
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read # This is required for actions/checkout
       packages: write # This is required for using GH docker registry
-    # if: ${{ github.event_name != 'schedule' && (github.ref_name == 'main' || contains(github.event.head_commit.message, '[do_publish]') || contains(github.event.ref, 'tags') || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Checkout midnight-faucet-api repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,23 +40,28 @@ jobs:
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
-      # setup-node's registry inputs only write an .npmrc for the npm CLI, which Yarn
-      # Berry never reads — registry and auth live in .yarnrc.yml instead.
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: ".nvmrc"
+      # Decided once, here, rather than re-derived per step. Four steps previously
+      # tested this four different ways — `contains(github.event.ref, 'tags')` among
+      # them, which is true for any branch whose *name* contains "tags", so pushing
+      # `feat/add-tags` published a `latest`-tagged npm release off a feature branch.
+      - name: Resolve release kind
+        id: kind
+        run: |
+          if [ "${GITHUB_REF}" != "${GITHUB_REF#refs/tags/}" ]; then
+            echo "is_tag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_tag=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Enable Corepack
-        run: corepack enable
+      - uses: ./.github/actions/setup-workspace
 
-      # The image now lives in this repo's own org, so the job's `packages: write`
-      # GITHUB_TOKEN is sufficient and is scoped to this repo alone, unlike the org-wide
-      # PAT, and GHCR links the new package to this repo automatically. Note the package
-      # is still created *private* on first push — visibility is not inherited — so a
-      # one-time manual flip to public in the package settings is required.
       - name: Log in to GitHub Container registry
-        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab
+        # The image lives in this repo's own org, so the job's `packages: write`
+        # GITHUB_TOKEN is sufficient and is scoped to this repo alone, unlike the org-wide
+        # PAT, and GHCR links the new package to this repo automatically. Note the package
+        # is still created *private* on first push — visibility is not inherited — so a
+        # one-time manual flip to public in the package settings is required.
+        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab # v3.7.0
         with:
           registry: "https://ghcr.io"
           username: ${{ github.actor }}
@@ -56,20 +71,6 @@ jobs:
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         with:
           platforms: linux/arm64,linux/amd64
-
-      - name: Dependencies cache restore
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ./.yarn/cache
-            ./node_modules
-          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
-          restore-keys: |
-            yarn-${{ github.ref_name }}
-            yarn-main
-
-      - name: Yarn install
-        run: "yarn install --immutable"
 
       - name: Turbo cache restore
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -83,8 +84,11 @@ jobs:
       - name: Build
         run: "yarn build --cache-dir ./turbo_cache"
 
+      # Must stay ahead of "Calculate versions and tags": that step reads the version
+      # back out of package.json, so the prerelease bump is an input to it, not a
+      # separate concern. On a tag the version already in package.json is the release.
       - name: Temp bump prerelease
-        if: ${{!contains(github.event.ref, 'tags') }} # When a tag is created, we want to use the version that is being saved in package.json
+        if: steps.kind.outputs.is_tag == 'false'
         run: yarn version prerelease --immediate
 
       - name: Calculate versions and tags
@@ -96,32 +100,14 @@ jobs:
         run: |
           calculatedSha=$(git rev-parse --short "$GIT_SHA")
           currentVersion=$(jq -r .version package.json)
-          targetVersion="$currentVersion-pre.$calculatedSha.$RUN_NUMBER"
-          echo "target_version=$targetVersion" >> "$GITHUB_OUTPUT"
-
-          dockerTag=$(echo "$HEAD_REF" | tr '/' '-')
-          echo "docker_tag=$dockerTag" >> "$GITHUB_OUTPUT"
+          echo "target_version=$currentVersion-pre.$calculatedSha.$RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "docker_tag=$(echo "$HEAD_REF" | tr '/' '-')" >> "$GITHUB_OUTPUT"
 
       - name: Bump versions
-        if: ${{!contains(github.event.ref, 'refs/tags/') }} # When a tag is created, we want to use the version that is being saved in package.json
+        if: steps.kind.outputs.is_tag == 'false'
         env:
           TARGET_VERSION: ${{ steps.vars.outputs.target_version }}
         run: yarn workspaces foreach --all version "$TARGET_VERSION"
-
-      # NPM_TOKEN reaches yarn through the ${NPM_TOKEN:-} interpolation in .yarnrc.yml.
-      # Passing it as step env (instead of `yarn config set`) keeps the secret out of the
-      # checked-out .yarnrc.yml, which the Dockerfile copies into the published image.
-      - name: Publish prerelease packages
-        if: ${{ !startsWith(github.ref, 'refs/tags/') }} # When a tag is created, we want to use the version that is being saved in package.json
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: yarn do-publish --cache-dir ./turbo_cache -- --tag prerelease
-
-      - name: Publish release packages
-        if: contains(github.event.ref, 'tags') #When a tag is created, we want to use the version that is being saved in package.json
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: yarn do-publish --cache-dir ./turbo_cache
 
       - name: Free disk space
         run: |
@@ -139,3 +125,22 @@ jobs:
           --platform linux/arm64,linux/amd64 \
           -t "ghcr.io/midnightntwrk/midnight-faucet-api:${DOCKER_TAG}" \
           --push .
+
+      # Published last, deliberately. Both of the last two steps can fail, and an
+      # orphaned image tag can simply be overwritten by the next run, whereas npm
+      # refuses to ever reuse a version number. Previously npm went first, so a
+      # Dockerfile error left a permanent release with no image behind it.
+      #
+      # NPM_TOKEN reaches yarn through the ${NPM_TOKEN:-} interpolation in .yarnrc.yml.
+      # Passing it as step env (instead of `yarn config set`) keeps the secret out of the
+      # checked-out .yarnrc.yml, which the Dockerfile copies into the published image.
+      - name: Publish packages
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          IS_TAG: ${{ steps.kind.outputs.is_tag }}
+        run: |
+          if [ "$IS_TAG" = "true" ]; then
+            yarn do-publish --cache-dir ./turbo_cache
+          else
+            yarn do-publish --cache-dir ./turbo_cache -- --tag prerelease
+          fi

@@ -1,11 +1,27 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local", ".eslintrc.js"],
-  "globalPassThroughEnv": ["*"],
+  "//": "globalPassThroughEnv is enumerated rather than \"*\" so a dependency's install or test script cannot read the whole CI secret environment (NPM_TOKEN, the registry PAT) out of its own process. That is only safe for the cached, non-interactive tasks. dev, start and migrate-db run the real server with the developer's own environment (.env via direnv), so they set passThroughEnv \"*\" individually: apps/server/src/config.ts reads ~40 variables, and a trimmed list makes it fall back to localhost defaults without saying so. Those three are uncached, so passing everything through costs nothing. Note pass-through variables are never part of turbo's cache key either way.",
+  "globalPassThroughEnv": [
+    "CI",
+    "ENCRYPTION_KEY",
+    "JWT_SIGN_SECRET",
+    "NODE_OPTIONS",
+    "NETWORK",
+    "DEPLOYMENT",
+    "SYNC_CACHE",
+    "TURNSTILE_HEADER",
+    "THIRD_PARTY_API_KEY",
+    "VISITOR_PASSWORD",
+    "DISPLAY",
+    "DOCKER_HOST",
+    "TESTCONTAINERS_*"
+  ],
   "tasks": {
     "do-publish": {
       "dependsOn": ["build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["NPM_TOKEN"]
     },
     "build": {
       "dependsOn": ["^build", "typecheck"],
@@ -34,16 +50,19 @@
     "dev": {
       "cache": false,
       "persistent": true,
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "passThroughEnv": ["*"]
     },
     "start": {
       "persistent": true,
       "cache": false,
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "passThroughEnv": ["*"]
     },
     "migrate-db": {
       "cache": false,
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "passThroughEnv": ["*"]
     },
     "publish": {},
     "check": {

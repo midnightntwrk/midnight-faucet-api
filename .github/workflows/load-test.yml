@@ -23,6 +23,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read # This is required for actions/checkout
       packages: read # This is required for using GH docker registry
@@ -31,44 +32,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspace
         with:
-          always-auth: true
-          registry-url: https://npm.pkg.github.com/
-          scope: "@midnight-ntwrk"
-          node-version-file: ".nvmrc"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+          packages-read-token: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+          midnight-scope: "true"
+          ghcr-login: "true"
 
-      - name: Log in to GitHub Container registry
-        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab
-        with:
-          registry: "https://ghcr.io"
-          username: ntwrk-bot
-          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-
-      - name: Configure yarn
-        env:
-          GH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-        run: |
-          yarn config set 'npmScopes.midnight-ntwrk.npmAuthToken' "$GH_TOKEN"
-
-      - name: Dependencies cache restore
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ./.yarn/cache
-            ./node_modules
-          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
-          restore-keys: |
-            yarn-${{ github.ref_name }}
-            yarn-main
-
-      - name: Install dependencies
-        run: |
-          yarn install --immutable
-          yarn build
+      - name: Build
+        run: yarn build
 
       - name: Run Load Test
         env:
