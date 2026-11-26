@@ -23,3 +23,15 @@ repos:
     rev: 914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12
     hooks:
       - id: actionlint
+
+  # actionlint checks workflow *syntax*; zizmor checks workflow *security* — excessive
+  # permissions, cache poisoning, template injection, unpinned actions.
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: c7d31dc612dffdd4d3b2f2b88b9660d3ab057ee8 # v1.33.1
+    hooks:
+      - id: zizmor
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: 3f77b826548d8dc2d26675f077361c92773b50a7 # v0.9.0
+    hooks:
+      - id: shellcheck

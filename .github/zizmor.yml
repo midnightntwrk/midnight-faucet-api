@@ -1,0 +1,15 @@
+rules:
+  # Flags `uses: ./.github/...` and wants GitHub's July 2026 self-repository form,
+  # `uses: $/.github/...`, which is genuinely better: it is not resolved against runtime
+  # filesystem state, so it cannot load an action cloned during the job.
+  #
+  # We cannot adopt it yet. actionlint rejects `$/` outright —
+  #   specifying action "$/.github/actions/setup-workspace" in invalid format
+  #   because ref is missing
+  # — and its latest release (v1.7.12, 2026-03-30) predates the syntax, so the two
+  # pre-commit hooks cannot both pass. Disabled rather than suppressed per-site because
+  # every local `uses:` in this repo trips it, including ones that predate this config.
+  #
+  # Re-enable and convert all `./` references once actionlint ships support.
+  self-repository:
+    disable: true

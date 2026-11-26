@@ -8,41 +8,16 @@ permissions: {}
 jobs:
   docs:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
+    permissions:
+      contents: write # push the docs branch
+      pull-requests: write # open the docs PR
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # setup-node's registry inputs only write an .npmrc for the npm CLI, which Yarn
-      # Berry never reads. All packages resolve from public npmjs via .yarnrc.yml.
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: ".nvmrc"
-
-      - name: Dependencies cache restore
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ./.yarn/cache
-            ./node_modules
-          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
-          restore-keys: |
-            yarn-${{ github.ref_name }}
-            yarn-main
-
-      - name: Install dependencies
-        run: "yarn install --immutable"
-
-      - name: Dependencies cache save
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: always()
-        with:
-          path: |
-            ./.yarn/cache
-            ./node_modules
-          key: yarn-${{ github.ref_name }}-${{ github.run_id }}
+      - uses: ./.github/actions/setup-workspace
 
       - name: Turbo cache restore
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -55,7 +30,7 @@ jobs:
 
       - name: Generate documentation
         run: |
-          yarn install && yarn build
+          yarn build --cache-dir ./turbo_cache
           yarn build:markdown-docs
 
       - name: Turbo cache save
@@ -65,39 +40,24 @@ jobs:
           path: ./turbo_cache
           key: turbo-${{ github.ref_name }}-${{ github.run_id }}
 
-      - name: Check if there are changes in docs and create a new branch
-        id: set_update
-        run: |
-          if [ -n "$(git status ./docs --porcelain)" ]; then
-            echo "Adding new..."
-            git config --global user.email "midnight-ci@users.noreply.github.com"
-            git config --global user.name "Midnight CI GitHub Action"
-            BRANCH="api-docs/merge-prs/$(date +'%Y-%m-%dT%H%M%S')"
-            git checkout -b "$BRANCH"
-            gh auth setup-git
-            git push -u origin "$BRANCH"
-            echo "UPDATE=true" >> "$GITHUB_OUTPUT"
-            echo "NEW_BRANCH=$BRANCH" >> "$GITHUB_OUTPUT"
-          else
-            echo "Nothing to update"
-            echo "UPDATE=false" >> "$GITHUB_OUTPUT"
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
-
-      - uses: MonikaJassova/ghcommit-action@aee0efc02d3707e178c534477e5c87f70fe6678f
-        if: steps.set_update.outputs.UPDATE == 'true'
+      # Was a hand-rolled branch-and-push plus a third-party commit action on a personal
+      # account, both driven by the org-wide MIDNIGHTCI_REPO PAT. The same action already
+      # used by update-docker-images.yml does the whole thing with the job's own
+      # GITHUB_TOKEN, scoped to this repository.
+      - name: Open a docs PR
+        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.2
         with:
-          commit_message: "Faucet API documentation update - created by Midnight CI Github Action"
-          repo: ${{ github.repository }}
-          branch: ${{ steps.set_update.outputs.NEW_BRANCH }}
-          file_pattern: "docs"
-        env:
-          GITHUB_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
-
-      - name: Open a PR
-        if: steps.set_update.outputs.UPDATE == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.MIDNIGHTCI_REPO }}
-          PR_HEAD: ${{ steps.set_update.outputs.NEW_BRANCH }}
-        run: gh pr create --base main --head "$PR_HEAD" --title "API documentation update" --body "Update API documentation - created by Midnight CI Github Action"
+          # A PR opened with the job's own GITHUB_TOKEN does not trigger workflows, so
+          # its required checks would never start and it could never merge. That is the
+          # only reason this still needs the PAT.
+          token: ${{ secrets.MIDNIGHTCI_REPO }}
+          add-paths: docs
+          commit-message: "docs: update generated API documentation"
+          title: "API documentation update"
+          body: |
+            Regenerated API documentation, created by the "Publish updated API documentation"
+            workflow. Produced by `yarn build:markdown-docs`; review the diff rather than
+            editing these files by hand.
+          branch: docs/api-update
+          delete-branch: true
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"

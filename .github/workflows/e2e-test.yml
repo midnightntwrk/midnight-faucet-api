@@ -19,7 +19,7 @@ on:
           - preview
       modifier:
         type: string
-        description: Suite or a testname to run
+        description: Extra Playwright args, e.g. -g "dispense"
         required: false
       branch:
         type: string
@@ -35,7 +35,7 @@ on:
         default: "preprod"
       modifier:
         type: string
-        description: Suite or a testname to run
+        description: Extra Playwright args, e.g. -g "dispense"
         required: false
       branch:
         type: string
@@ -54,11 +54,11 @@ jobs:
   build:
     name: Faucet E2E Test
     runs-on: ubuntu-latest-8-core-x64
+    timeout-minutes: 90
     permissions:
       contents: read # This is required for actions/checkout
       packages: read # This is required for using GH docker registry
       checks: write # This is needed to upload test results
-      pull-requests: write # This is needed to upload test results
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -66,69 +66,57 @@ jobs:
           ref: ${{ inputs.branch }}
           persist-credentials: false
 
-      # - name: Determine the latest run ID with appropriate artifact
-      #   continue-on-error: true
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GH_TOKEN }}
-      #   run: |
-      #       LATEST_RUN_ID=$(./.github/scripts/find_run_id.sh ${{ github.repository }} "Faucet E2E Test - ${{ inputs.network }}" ".sync_cache")
-      #       echo "LATEST_RUN_ID=$LATEST_RUN_ID" >> $GITHUB_ENV
-      #       mkdir -p ${{ env.SYNC_CACHE }}
-
-      # - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-      #   continue-on-error: true
-      #   with:
-      #     run-id: ${{ env.LATEST_RUN_ID }}
-      #     path: ${{ env.SYNC_CACHE }}
-      #     github-token: ${{ secrets.GH_TOKEN }}
-      #     name: .sync_cache
-
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: ./.github/actions/setup-workspace
         with:
-          always-auth: true
-          registry-url: https://npm.pkg.github.com/
-          scope: "@midnight-ntwrk"
-          node-version-file: ".nvmrc"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+          packages-read-token: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+          midnight-scope: "true"
+          ghcr-login: "true"
+          install: "false"
 
-      - name: Enable Corepack
-        run: corepack enable
-
-      - name: Log in to GitHub Container registry
-        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab
-        with:
-          registry: "https://ghcr.io"
-          username: ntwrk-bot
-          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
-
-      - name: Install Playwright
+      - name: Install dependencies
         working-directory: ./tests
-        run: |
-          yarn install --immutable
-          yarn playwright install --with-deps
+        run: yarn install --immutable
 
-      - name: Log in to GitHub Container registry
-        uses: docker/login-action@d0b8297dd55199249f38268efae35fcb03f75aab
+      - name: Resolve Playwright version
+        id: playwright
+        working-directory: ./tests
+        run: echo "version=$(yarn playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      # Browsers are ~400MB and otherwise re-downloaded on every run. Keyed on the
+      # resolved Playwright version, since browser builds are pinned per release.
+      - name: Playwright browser cache
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          registry: "https://ghcr.io"
-          username: ntwrk-bot
-          password: ${{ secrets.MIDNIGHTCI_PACKAGES_READ }}
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Playwright browsers
+        working-directory: ./tests
+        env:
+          CACHE_HIT: ${{ steps.playwright-cache.outputs.cache-hit }}
+        run: |
+          if [ "$CACHE_HIT" = "true" ]; then
+            # The browsers are cached but their OS-level shared libraries are not.
+            yarn playwright install-deps
+          else
+            yarn playwright install --with-deps
+          fi
 
       - name: Start XVFB
-        run: |
-          Xvfb :99 &
+        run: Xvfb :99 &
 
       - name: Run E2E tests
         id: tests
+        working-directory: ./tests
         env:
           NETWORK: ${{ inputs.network }}
           TURNSTILE_HEADER: ${{ secrets.TURNSTILE_HEADER }}
           VISITOR_PASSWORD: ${{ secrets.VISITOR_PASSWORD }}
+          MODIFIER: ${{ inputs.modifier }}
         run: |
-          cd tests
-          yarn e2e-test
+          # shellcheck disable=SC2086 # MODIFIER is a caller-supplied argument list
+          yarn e2e-test ${MODIFIER}
 
       - name: Upload sync cache
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -156,12 +144,3 @@ jobs:
             ./tests/src/e2e/reports/playwright-report
             ./tests/src/e2e/reports/playwrightResults
           retention-days: 30
-
-      # - uses: rtCamp/action-slack-notify@33ca3be66c6f378fe1610fd1d5258632dbed5e58 # v2
-      #   if: ${{ failure() && inputs.network == 'testnet' && steps.tests.outcome == 'failure' }}
-      #   env:
-      #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-      #     SLACK_CHANNEL: topic-incident-management
-      #     SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
-      #     SLACK_MESSAGE: 'Testnet run failed :x:'
-      #     SLACK_TITLE: Faucet E2E tests
