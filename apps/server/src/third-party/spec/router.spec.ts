@@ -425,6 +425,21 @@ describe("Third-Party API", () => {
       },
     }) as unknown as WalletState;
 
+  /**
+   * `prepareServer` subscribes `timer(0, …)`, so a real snapshot write is
+   * already in flight when `use` starts. It calls `statePersistenceStatus
+   * .set(1)` when it lands, which would silently overwrite a gauge a test had
+   * pinned to 0. Wait for that first tick before pinning.
+   */
+  const afterFirstPersistTick = async (attempts = 100): Promise<void> => {
+    const value = (await statePersistenceStatus.get()).values[0]?.value;
+    if (value === 1 || attempts <= 1) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return afterFirstPersistTick(attempts - 1);
+  };
+
   const pollUntilSettled = async (dripId: string, attempts = 60): Promise<string> => {
     const status = await get(`/drips/${dripId}`).then((result) => result.body.status as string);
     if (status === "CONFIRMED" || status === "FAILED" || attempts <= 1) {
@@ -717,7 +732,8 @@ describe("Third-Party API", () => {
     // never exercised on `/v1` (#77).
     it("returns 503 SERVICE_UNAVAILABLE once a snapshot write has failed", async () => {
       const receiver = getRandomBech32mAddress();
-      const result = await withServer(config, faucetFor(receiver), () => {
+      const result = await withServer(config, faucetFor(receiver), async () => {
+        await afterFirstPersistTick();
         statePersistenceStatus.set(0);
         return post(validBody(receiver));
       });
@@ -839,7 +855,8 @@ describe("Third-Party API", () => {
     });
 
     it("reports INTERNAL_ERROR once a snapshot write has failed", async () => {
-      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), async () => {
+        await afterFirstPersistTick();
         statePersistenceStatus.set(0);
         return get("/health");
       });

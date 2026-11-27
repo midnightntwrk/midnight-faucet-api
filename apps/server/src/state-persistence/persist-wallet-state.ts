@@ -43,12 +43,22 @@ export const mkPersistWalletState =
       // wallet mid-resync, and the caller fire-and-forgets this function — an
       // escaping rejection would leave the gauge frozen at its last value,
       // which is the #77 failure mode one layer up.
+      //
+      // `Promise.all`, not three sequential awaits: `serializeWalletState`
+      // starts all three eagerly, so awaiting them in turn attaches a handler
+      // to the first one only. If a second also rejects it is an unhandled
+      // rejection, and node's default kills the process.
       const state = serializeWalletState();
+      const [shieldedState, unshieldedState, dustState] = await Promise.all([
+        state.shielded,
+        state.unshielded,
+        state.dust,
+      ]);
 
       await saveState({
-        shieldedState: await state.shielded,
-        unshieldedState: await state.unshielded,
-        dustState: await state.dust,
+        shieldedState,
+        unshieldedState,
+        dustState,
         stateContext,
         encryptionKey,
       });

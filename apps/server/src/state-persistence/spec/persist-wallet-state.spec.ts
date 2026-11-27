@@ -97,6 +97,32 @@ describe("persistWalletState", () => {
     expect(await gauge()).toBe(0);
   });
 
+  // All three serialize calls are started eagerly, so awaiting them one by one
+  // leaves the later rejections unobserved — node's default for an unhandled
+  // rejection is to kill the process, which a `catch` on the first one does
+  // not prevent.
+  it("observes every serialization rejection, not just the first", async () => {
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+
+    const { persist } = persistWith({
+      serializeWalletState: () => ({
+        shielded: Promise.reject(new Error("shielded")),
+        unshielded: Promise.reject(new Error("unshielded")),
+        dust: Promise.reject(new Error("dust")),
+      }),
+    });
+
+    await persist();
+    // Unhandled rejections are reported a macrotask later, so give the check
+    // a turn of the event loop before asserting none arrived.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    process.off("unhandledRejection", unhandled);
+
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(await gauge()).toBe(0);
+  });
+
   it("skips the write and leaves the gauge alone during sync stuck recovery", async () => {
     statePersistenceStatus.set(0);
     const { persist, save } = persistWith({ needsRestart: true });
