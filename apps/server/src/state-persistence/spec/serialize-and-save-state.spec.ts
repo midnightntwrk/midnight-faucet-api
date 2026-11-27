@@ -59,7 +59,6 @@ describe("serialize and save state", () => {
         taskRepository: {} as PostgresqlTaskRepository,
         rateCountRepository: {} as PostgresqlRateCountRepository,
       },
-      logger,
     });
 
     expect(id).toBeDefined();
@@ -77,7 +76,6 @@ describe("serialize and save state", () => {
           taskRepository: {} as PostgresqlTaskRepository,
           rateCountRepository: {} as PostgresqlRateCountRepository,
         },
-        logger,
       }),
     ).toThrow();
   });
@@ -96,7 +94,6 @@ describe("serialize and save state", () => {
           taskRepository: {} as PostgresqlTaskRepository,
           rateCountRepository: {} as PostgresqlRateCountRepository,
         },
-        logger,
       }),
     ).rejects.toThrow();
   });

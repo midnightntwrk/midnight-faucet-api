@@ -130,7 +130,9 @@ describe("GET /health — state clearing on restart signal", () => {
 });
 
 // Regression guard for #77: `saveState` used to swallow its own DB errors, so
-// `statePersistenceStatus` never dropped to 0 and this branch was dead code.
+// `statePersistenceStatus` never dropped back to 0 after the first successful
+// save, and this branch only fired before boot finished (a label-less gauge
+// reads 0 until its first `set`).
 describe("GET /health — state persistence failures", () => {
   afterEach(async () => {
     await closeServer();
@@ -170,6 +172,7 @@ describe("GET /health — state persistence failures", () => {
 
     const response = await getHealth();
 
+    expect(response.status).toBe(503);
     expect(response.body.reason).toBe("SYNC_STUCK_RECOVERY");
   });
 });

@@ -36,7 +36,9 @@ export class PostgresqlStateSnapshotsRepository {
         }
       })
       .catch((error: Error) => {
-        logger.error({ error }, "Error retrieving state snapshot data from DB");
+        // `err`, not `error`: pino's error serializer only fires on `err`, and
+        // under any other key the non-enumerable `message` is dropped.
+        logger.error({ err: error }, "Error retrieving state snapshot data from DB");
         return undefined;
       });
   }
@@ -46,43 +48,40 @@ export class PostgresqlStateSnapshotsRepository {
     logger.warn("state_snapshots table truncated");
   }
 
+  /**
+   * Rejects when the write fails rather than swallowing the error (#77): the
+   * caller turns a rejection into `statePersistenceStatus = 0`, which is what
+   * lets the health routes report STATE_PERSISTENCE_FAILURE.
+   *
+   * Deliberately does not log — `persistWalletState` logs the same error once,
+   * under pino's `err` key. Logging here as well produced two ERROR lines per
+   * failed write.
+   */
   async saveState({
-    logger,
     shielded,
     unshielded,
     dust,
   }: {
-    logger: pino.Logger;
     shielded: string;
     unshielded: string;
     dust: string;
   }): Promise<Pick<StateDataType, "id">> {
-    return this.knex
-      .transaction(async (trx) => {
-        const [inserted] = await trx<StateDataType>("state_snapshots")
-          .insert({
-            shielded,
-            unshielded,
-            dust,
-            identifier: this.identifier,
-          })
-          .returning("id");
+    return this.knex.transaction(async (trx) => {
+      const [inserted] = await trx<StateDataType>("state_snapshots")
+        .insert({
+          shielded,
+          unshielded,
+          dust,
+          identifier: this.identifier,
+        })
+        .returning("id");
 
-        await trx("state_snapshots")
-          .where("identifier", this.identifier)
-          .whereNot("id", inserted.id)
-          .delete();
+      await trx("state_snapshots")
+        .where("identifier", this.identifier)
+        .whereNot("id", inserted.id)
+        .delete();
 
-        return inserted;
-      })
-      .catch((error: Error) => {
-        // Rethrow: the caller turns a failed snapshot write into
-        // `statePersistenceStatus = 0`, which is what lets /health report
-        // STATE_PERSISTENCE_FAILURE. Swallowing it here pinned the gauge at 1.
-        // `err` (not `error`) is the key pino's error serializer looks for —
-        // under `error` the non-enumerable `message` is dropped.
-        logger.error({ err: error }, "Error while saving faucet state snapshot data to DB");
-        throw error;
-      });
+      return inserted;
+    });
   }
 }
