@@ -56,7 +56,7 @@ export class PostgresqlStateSnapshotsRepository {
     shielded: string;
     unshielded: string;
     dust: string;
-  }): Promise<Pick<StateDataType, "id"> | undefined> {
+  }): Promise<Pick<StateDataType, "id">> {
     return this.knex
       .transaction(async (trx) => {
         const [inserted] = await trx<StateDataType>("state_snapshots")
@@ -76,8 +76,13 @@ export class PostgresqlStateSnapshotsRepository {
         return inserted;
       })
       .catch((error: Error) => {
-        logger.error({ error }, "Error while saving faucet state snapshot data to DB");
-        return undefined;
+        // Rethrow: the caller turns a failed snapshot write into
+        // `statePersistenceStatus = 0`, which is what lets /health report
+        // STATE_PERSISTENCE_FAILURE. Swallowing it here pinned the gauge at 1.
+        // `err` (not `error`) is the key pino's error serializer looks for —
+        // under `error` the non-enumerable `message` is dropped.
+        logger.error({ err: error }, "Error while saving faucet state snapshot data to DB");
+        throw error;
       });
   }
 }
