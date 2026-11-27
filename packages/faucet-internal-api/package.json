@@ -35,7 +35,7 @@
     "@types/luxon": "3.7.6",
     "eslint": "10.15.0",
     "fast-check": "4.10.3",
-    "testcontainers": "12.2.1",
+    "testcontainers": "12.2.2",
     "typescript": "6.0.3"
   },
   "peerDependencies": {
