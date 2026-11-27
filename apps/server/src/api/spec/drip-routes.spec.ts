@@ -11,6 +11,7 @@ import {
 } from "../drip-routes.js";
 import type { HealthService } from "../../health.js";
 import type { PostgresqlStateSnapshotsRepository } from "../../state-persistence/state-persistence-repository.js";
+import { statePersistenceStatus } from "../../metrics/index.js";
 
 const logger = pino({ level: "silent" });
 
@@ -48,31 +49,39 @@ const makeDeps = (opts: {
   maxAmount: 1000,
 });
 
-describe("GET /health — state clearing on restart signal", () => {
-  let server: http.Server;
-  let baseUrl: string;
+// Test harness: mutable because the server is started per test and torn down
+// in `afterEach`.
+let server: http.Server;
+let baseUrl: string;
 
-  const listen = (deps: DripRouteDeps): Promise<void> => {
-    const app = express.default();
-    app.use(createDripRoutes(deps));
-    return new Promise((resolve) => {
-      server = app.listen(0, "127.0.0.1", () => {
-        const address = server.address();
-        const port = typeof address === "object" && address !== null ? address.port : 0;
-        baseUrl = `http://127.0.0.1:${port}`;
-        resolve();
-      });
+const listen = (deps: DripRouteDeps): Promise<void> => {
+  const app = express.default();
+  app.use(createDripRoutes(deps));
+  return new Promise((resolve) => {
+    server = app.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      const port = typeof address === "object" && address !== null ? address.port : 0;
+      baseUrl = `http://127.0.0.1:${port}`;
+      resolve();
     });
-  };
-
-  const getHealth = async (): Promise<{ status: number; body: { reason: string | null } }> => {
-    const response = await fetch(`${baseUrl}/health`);
-    return { status: response.status, body: (await response.json()) as { reason: string | null } };
-  };
-
-  afterEach(async () => {
-    await new Promise((resolve) => server.close(resolve));
   });
+};
+
+const closeServer = (): Promise<unknown> => new Promise((resolve) => server.close(resolve));
+
+const getHealth = async (): Promise<{
+  status: number;
+  body: { status: string; reason: string | null };
+}> => {
+  const response = await fetch(`${baseUrl}/health`);
+  return {
+    status: response.status,
+    body: (await response.json()) as { status: string; reason: string | null },
+  };
+};
+
+describe("GET /health — state clearing on restart signal", () => {
+  afterEach(closeServer);
 
   it("clears state_snapshots once, however many times the probe is polled", async () => {
     const stateSnapshots = makeStateSnapshots();
@@ -112,6 +121,54 @@ describe("GET /health — state clearing on restart signal", () => {
       truncate: truncateMock().mockRejectedValue(new Error("db gone")),
     };
     await listen(makeDeps({ needsRestart: true, connectivity: "ok", stateSnapshots }));
+
+    const response = await getHealth();
+
+    expect(response.status).toBe(503);
+    expect(response.body.reason).toBe("SYNC_STUCK_RECOVERY");
+  });
+});
+
+// Regression guard for #77: `saveState` used to swallow its own DB errors, so
+// `statePersistenceStatus` never dropped back to 0 after the first successful
+// save, and this branch only fired before boot finished (a label-less gauge
+// reads 0 until its first `set`).
+describe("GET /health — state persistence failures", () => {
+  afterEach(async () => {
+    await closeServer();
+    statePersistenceStatus.set(1);
+  });
+
+  it("reports STATE_PERSISTENCE_FAILURE once a snapshot write has failed", async () => {
+    statePersistenceStatus.set(0);
+    await listen(
+      makeDeps({ needsRestart: false, connectivity: "ok", stateSnapshots: makeStateSnapshots() }),
+    );
+
+    const response = await getHealth();
+
+    expect(response.status).toBe(503);
+    expect(response.body.status).toBe("NOT_SERVING");
+    expect(response.body.reason).toBe("STATE_PERSISTENCE_FAILURE");
+  });
+
+  it("serves normally while snapshot writes are succeeding", async () => {
+    statePersistenceStatus.set(1);
+    await listen(
+      makeDeps({ needsRestart: false, connectivity: "ok", stateSnapshots: makeStateSnapshots() }),
+    );
+
+    const response = await getHealth();
+
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe("SERVING");
+  });
+
+  it("lets the restart signal win over a persistence failure", async () => {
+    statePersistenceStatus.set(0);
+    await listen(
+      makeDeps({ needsRestart: true, connectivity: "ok", stateSnapshots: makeStateSnapshots() }),
+    );
 
     const response = await getHealth();
 

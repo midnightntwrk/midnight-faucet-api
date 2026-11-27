@@ -21,9 +21,8 @@ import {
   dustPendingBalance,
   dustCoinCount,
   dustSynced,
-  statePersistenceStatus,
 } from "./metrics/index.js";
-import { saveState } from "./state-persistence/serialize-and-save-state.js";
+import { mkPersistWalletState } from "./state-persistence/persist-wallet-state.js";
 
 interface Server {
   statePersistenceSubscription: Subscription;
@@ -126,33 +125,13 @@ const mkServerResource = (
               error: (error) => logger.error({ err: error }, "Faucet wallet error"),
             });
 
-          const persistWalletState = async (): Promise<void> => {
-            if (root.syncStuckDetector.needsRestart) {
-              logger.warn("Skipping state persistence — sync stuck recovery in progress");
-              return;
-            }
-
-            const state = faucet.serializeWalletState();
-
-            const shieldedState = await state.shielded;
-            const unshieldedState = await state.unshielded;
-            const dustState = await state.dust;
-
-            try {
-              await saveState({
-                shieldedState,
-                unshieldedState,
-                dustState,
-                stateContext,
-                logger,
-                encryptionKey: config.encryptionKey,
-              });
-              statePersistenceStatus.set(1);
-            } catch (error) {
-              statePersistenceStatus.set(0);
-              logger.error({ err: error }, "Failed to persist wallet state");
-            }
-          };
+          const persistWalletState = mkPersistWalletState({
+            serializeWalletState: () => faucet.serializeWalletState(),
+            syncStuckDetector: root.syncStuckDetector,
+            stateContext,
+            encryptionKey: config.encryptionKey,
+            logger,
+          });
 
           const statePersistenceInterval = 1000 * 900;
           const statePersistenceSubscription = timer(0, statePersistenceInterval).subscribe(() => {

@@ -282,6 +282,12 @@ describe("Third-Party API", () => {
     await prepareData(config);
   });
 
+  // The persistence gauge is process-wide, so a case that drives it to 0 would
+  // otherwise leak into whatever runs next.
+  afterEach(() => {
+    statePersistenceStatus.set(1);
+  });
+
   const allowedOrigin = "https://partner.com";
 
   // Helper to mock healthService connectivity check (services not running in tests)
@@ -705,6 +711,20 @@ describe("Third-Party API", () => {
       expect(result.response.status).toBe(503);
       expect(result.body).toMatchObject({ error: { code: "SERVICE_UNAVAILABLE" } });
     });
+
+    // `withMockedConnectivity` sets the gauge to 1 for every other case here,
+    // so without this the persistence rung of the `evaluateHealth` ladder is
+    // never exercised on `/v1` (#77).
+    it("returns 503 SERVICE_UNAVAILABLE once a snapshot write has failed", async () => {
+      const receiver = getRandomBech32mAddress();
+      const result = await withServer(config, faucetFor(receiver), () => {
+        statePersistenceStatus.set(0);
+        return post(validBody(receiver));
+      });
+
+      expect(result.response.status).toBe(503);
+      expect(result.body).toMatchObject({ error: { code: "SERVICE_UNAVAILABLE" } });
+    });
   });
 
   describe("GET /v1/drips/:dripId", () => {
@@ -816,6 +836,16 @@ describe("Third-Party API", () => {
 
       expect(result.response.status).toBe(200);
       expect(result.body).toEqual({ status: "NOT_SERVING", reason: "WALLET_BALANCE_LOW" });
+    });
+
+    it("reports INTERNAL_ERROR once a snapshot write has failed", async () => {
+      const result = await withServer(config, faucetFor(getRandomBech32mAddress()), () => {
+        statePersistenceStatus.set(0);
+        return get("/health");
+      });
+
+      expect(result.response.status).toBe(200);
+      expect(result.body).toEqual({ status: "NOT_SERVING", reason: "INTERNAL_ERROR" });
     });
   });
 });
