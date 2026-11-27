@@ -13,7 +13,12 @@ import { AuthContext, prepareAuthContext } from "./auth/authContext.js";
 import { PostgresqlUserRepository } from "./auth/postgresql-user-repository.js";
 import { ServerConfig } from "./config.js";
 import { prepareFaucet } from "./faucet.js";
-import { HealthService } from "./health.js";
+import {
+  HealthService,
+  FAUCET_SYNC_CHECK,
+  FAUCET_WALLET_BALANCE_CHECK,
+  hasSyncStarted,
+} from "./health.js";
 import { createLogger } from "./logging.js";
 import { checkDb, knexResource } from "./postgres.js";
 import { TaskManager } from "./TaskManager.js";
@@ -152,7 +157,7 @@ export const defaultRoot = (
         {
           liveness: {
             /**
-             * Checking if available balance allows to cover a single request + fees with some buffer is the only liveness check, this should happen
+             * Checking if available balance allows to cover a single request + fees with some buffer is the only liveness concern, this should happen
              * only if the sync progress is close to the tip because the coins might not be fully synced otherwise.
              * Given in some circumstances all coins may be used, a 3 minutes window should be given before
              * forcing a restart (it is the time it should take for a transaction from being requested to change
@@ -163,17 +168,23 @@ export const defaultRoot = (
              *   - connectivity issues should be gracefully handled and do not indicate faucet is in a state mandating restart
              *   - faucet is able to serve requests even if there is no connection to the indexer for some time
              *   - faucet startup takes time due to sync up needed; thus restarts should be triggered only when necessary
+             *
+             * A wallet that has not started syncing is deliberately not a
+             * liveness concern: the wallet SDK's sync progress is
+             * non-optional and always present, so a liveness check on its
+             * presence could never fail. That state is covered by the
+             * readiness group instead (see `faucet-sync` below), which is
+             * also why the health endpoint can report this check's failure
+             * as WALLET_BALANCE_LOW without mislabelling a sync problem as
+             * a funds problem (see #78).
              */
-            "faucet-wallet": HealthService.checkFromObservable(
+            // if it's fully synced and we don't have enough balance we're not alive
+            [FAUCET_WALLET_BALANCE_CHECK]: HealthService.checkFromObservable(
               pipe(
                 faucet.state$,
                 rx.map((state) => {
                   const { unshielded } = state;
 
-                  // if sync hasn't started we're alive but not ready
-                  if (!unshielded.syncProgress) return "not_ok";
-
-                  // if it's fully synced and we have enough balance we're not alive
                   if (
                     unshielded.isSynced &&
                     unshielded.availableBalance < 2n * BigInt(faucet.dropAmount)
@@ -193,11 +204,16 @@ export const defaultRoot = (
            * important for initial sync-up, which takes significant amount of time and loads CPU noticeably
            */
           readiness: {
-            "faucet-sync": HealthService.checkFromObservable(
+            [FAUCET_SYNC_CHECK]: HealthService.checkFromObservable(
               pipe(
                 faucet.state$,
                 rx.map((state) => {
-                  if (state.unshielded.syncProgress === undefined) {
+                  // Before the first sync frame arrives the wallet reports
+                  // the SDK's default progress (zero indices, not
+                  // connected), whose gap of 0 would pass the tip check
+                  // below and report SERVING for a wallet that has not
+                  // started syncing at all.
+                  if (!hasSyncStarted(state.unshielded.syncProgress)) {
                     return "not_ok";
                   }
 

@@ -19,7 +19,7 @@ import { verifyAddress, InvalidAddressError } from "../helpers/verify-address.js
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import { PostgresqlTaskRepository } from "../tasks/task-repository.js";
 import { PostgresqlStateSnapshotsRepository } from "../state-persistence/state-persistence-repository.js";
-import { HealthService } from "../health.js";
+import { HealthService, FAUCET_WALLET_BALANCE_CHECK, type CheckStatus } from "../health.js";
 import { statePersistenceStatus } from "../metrics/index.js";
 import type { SyncStuckDetector } from "../sync-stuck-detector.js";
 
@@ -136,6 +136,27 @@ export const mkClearStateForRestart = (
  * Both public and third-party routers mount these routes,
  * each applying their own auth middleware beforehand.
  */
+/**
+ * Map a failed liveness group to the health reason that actually caused it.
+ *
+ * The health endpoint used to report every liveness failure as
+ * `WALLET_BALANCE_LOW`. That mislabels any future liveness check as a funds
+ * problem, which sends operators chasing a balance that may be fine
+ * (see #78), so only the balance check earns the specific reason and
+ * anything unrecognised gets a generic one rather than a guessed one.
+ *
+ * A wallet that has not started syncing never reaches this mapping: that
+ * state is a readiness failure (the `faucet-sync` check requires a
+ * connected sync progress) and is reported as `SYNC_BEHIND` before
+ * liveness is consulted.
+ */
+export const livenessFailureReason = (details: Record<string, CheckStatus>): string => {
+  if (details[FAUCET_WALLET_BALANCE_CHECK] === "not_ok") {
+    return "WALLET_BALANCE_LOW";
+  }
+  return "LIVENESS_CHECK_FAILED";
+};
+
 export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
   const router: express.Router = express.Router();
 
@@ -298,7 +319,7 @@ export const createDripRoutes = (deps: DripRouteDeps): express.Router => {
       if (livenessResult.status === "not_ok") {
         const response: DripHealthResponse = {
           status: "NOT_SERVING",
-          reason: "WALLET_BALANCE_LOW",
+          reason: livenessFailureReason(livenessResult.details),
           needsRestart,
         };
         return res.status(503).json(dripHealthResponseCodec.encode(response));
