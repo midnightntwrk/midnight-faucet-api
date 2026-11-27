@@ -937,7 +937,7 @@ __metadata:
     pino: "npm:^10.4.0"
     pino-pretty: "npm:^13.2.0"
     prom-client: "npm:^15.1.2"
-    quick-lru: "npm:^7.0.0"
+    quick-lru: "npm:^8.0.0"
     rxjs: "npm:^7.8.1"
     testcontainers: "npm:12.2.1"
     tsx: "npm:4.23.15"
@@ -6550,10 +6550,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"quick-lru@npm:^7.0.0":
-  version: 7.3.0
-  resolution: "quick-lru@npm:7.3.0"
-  checksum: 10/5acbfe925c47065a479df2df6899491fded29e910f56a436094c7370031b5cdcbfbf44f70bb10f2c4ade0d6b1f8c90e20cce780494e9f6eedd5fdef8ff8a90a8
+"quick-lru@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "quick-lru@npm:8.0.0"
+  checksum: 10/04b84820b516d4abfb7dded301e4b9cdab7ed58ba825b5acefdd04c9b22d0ec7dfee7ddbcc5f9c56be3dded7eaec1b03c8292994b6302f36e042c16b017c43ac
   languageName: node
   linkType: hard
 

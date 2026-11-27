@@ -65,7 +65,7 @@
     "pino": "^10.4.0",
     "pino-pretty": "^13.2.0",
     "prom-client": "^15.1.2",
-    "quick-lru": "^7.0.0",
+    "quick-lru": "^8.0.0",
     "rxjs": "^7.8.1",
     "vite": "^8.3.8",
     "vitest": "^5.1.1",
