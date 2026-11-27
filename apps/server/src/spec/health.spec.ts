@@ -3,7 +3,7 @@ import mapValues from "lodash/mapValues";
 import pino from "pino";
 import * as fc from "fast-check";
 import * as rx from "rxjs";
-import { Check, CheckStatus, HealthService } from "../health.js";
+import { Check, CheckStatus, hasSyncStarted, HealthService } from "../health.js";
 
 describe("HealthService", () => {
   const logger = pino();
@@ -228,5 +228,21 @@ describe("HealthService", () => {
         }),
       );
     });
+  });
+});
+
+describe("hasSyncStarted", () => {
+  it("is false for the SDK's default progress, which has not connected yet", () => {
+    // `createSyncProgress()` with no frames received: zero indices and
+    // `isConnected: false` — the state a wallet sits in until sync starts.
+    expect(hasSyncStarted({ isConnected: false })).toBe(false);
+  });
+
+  it("is false when there is no progress at all", () => {
+    expect(hasSyncStarted(undefined)).toBe(false);
+  });
+
+  it("is true once the progress reports a connection", () => {
+    expect(hasSyncStarted({ isConnected: true })).toBe(true);
   });
 });

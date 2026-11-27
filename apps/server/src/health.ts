@@ -5,6 +5,27 @@ import * as rx from "rxjs";
 
 export type CheckStatus = "ok" | "not_ok";
 
+/**
+ * Names of the health checks the composition root registers under the
+ * readiness and liveness groups. The health endpoint reasons about some of
+ * them by name (it maps a failed liveness group to a reason via the balance
+ * check), so the names live here, shared by both sides: a rename on only one
+ * side would otherwise pass the type checker while the endpoint silently
+ * mislabels every failure.
+ */
+export const FAUCET_SYNC_CHECK = "faucet-sync";
+export const FAUCET_WALLET_BALANCE_CHECK = "faucet-wallet-balance";
+
+/**
+ * Whether the wallet has started syncing at all. The wallet SDK's progress
+ * is non-optional (`get progress(): SyncProgress`) and starts out as the
+ * `createSyncProgress()` default — zero indices and `isConnected: false` —
+ * so the presence of a progress object proves nothing; only a connected
+ * progress shows a sync frame has actually arrived.
+ */
+export const hasSyncStarted = (progress: { isConnected: boolean } | undefined): boolean =>
+  progress !== undefined && progress.isConnected;
+
 const joinStatuses = (prev: CheckStatus, next: CheckStatus): CheckStatus => {
   if (prev === "not_ok") {
     return "not_ok";

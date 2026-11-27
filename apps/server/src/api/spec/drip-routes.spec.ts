@@ -5,13 +5,14 @@ import pino from "pino";
 import { NetworkId } from "@midnightntwrk/wallet-sdk-abstractions";
 import {
   createDripRoutes,
+  livenessFailureReason,
   mkClearStateForRestart,
   CLEAR_STATE_MAX_ATTEMPTS,
   type DripRouteDeps,
 } from "../drip-routes.js";
-import type { HealthService } from "../../health.js";
-import type { PostgresqlStateSnapshotsRepository } from "../../state-persistence/state-persistence-repository.js";
+import { FAUCET_WALLET_BALANCE_CHECK, type CheckStatus, type HealthService } from "../../health.js";
 import { statePersistenceStatus } from "../../metrics/index.js";
+import type { PostgresqlStateSnapshotsRepository } from "../../state-persistence/state-persistence-repository.js";
 
 const logger = pino({ level: "silent" });
 
@@ -24,10 +25,13 @@ const makeStateSnapshots = (): StateSnapshotsStub => ({
   truncate: truncateMock().mockResolvedValue(undefined),
 });
 
+type CheckResultStub = { status: CheckStatus; details: Record<string, CheckStatus> };
+
 const makeDeps = (opts: {
   needsRestart: boolean;
   connectivity: "ok" | "not_ok";
   stateSnapshots: StateSnapshotsStub;
+  checks?: Partial<Record<"liveness" | "readiness" | "connectivity", CheckResultStub>>;
 }): DripRouteDeps => ({
   // Only /health is exercised here, so the request-path dependencies are unused.
   taskManager: {} as DripRouteDeps["taskManager"],
@@ -36,7 +40,16 @@ const makeDeps = (opts: {
   // constructing a real repository would need a live knex connection.
   stateSnapshots: opts.stateSnapshots as unknown as PostgresqlStateSnapshotsRepository,
   healthService: {
-    doChecks: vi.fn().mockResolvedValue({ status: opts.connectivity, details: {} }),
+    doChecks: vi
+      .fn()
+      .mockImplementation((key: "liveness" | "readiness" | "connectivity") =>
+        Promise.resolve(
+          opts.checks?.[key] ??
+            (key === "connectivity"
+              ? { status: opts.connectivity, details: {} }
+              : { status: "ok", details: {} }),
+        ),
+      ),
   } as unknown as HealthService<"liveness" | "readiness" | "connectivity">,
   syncStuckDetector: {
     needsRestart: opts.needsRestart,
@@ -174,6 +187,78 @@ describe("GET /health — state persistence failures", () => {
 
     expect(response.status).toBe(503);
     expect(response.body.reason).toBe("SYNC_STUCK_RECOVERY");
+  });
+});
+
+describe("GET /health — liveness failure reasons", () => {
+  const listenWithLiveness = (details: Record<string, CheckStatus>): Promise<void> =>
+    listen(
+      makeDeps({
+        needsRestart: false,
+        connectivity: "ok",
+        stateSnapshots: makeStateSnapshots(),
+        checks: { liveness: { status: "not_ok", details } },
+      }),
+    );
+
+  beforeEach(() => {
+    // The persistence branch sits ahead of liveness in the health ladder;
+    // pin it healthy so these tests exercise the liveness branch.
+    statePersistenceStatus.set(1);
+  });
+
+  afterEach(closeServer);
+
+  it("reports WALLET_BALANCE_LOW when the balance check is the one failing", async () => {
+    await listenWithLiveness({ [FAUCET_WALLET_BALANCE_CHECK]: "not_ok" });
+
+    const response = await getHealth();
+
+    expect(response.status).toBe(503);
+    expect(response.body.reason).toBe("WALLET_BALANCE_LOW");
+  });
+
+  it("does not blame the balance when a different liveness check is the one failing", async () => {
+    await listenWithLiveness({
+      [FAUCET_WALLET_BALANCE_CHECK]: "ok",
+      "some-future-check": "not_ok",
+    });
+
+    const response = await getHealth();
+
+    expect(response.status).toBe(503);
+    expect(response.body.reason).toBe("LIVENESS_CHECK_FAILED");
+  });
+
+  it("falls back to a generic reason for an unrecognised liveness failure", async () => {
+    await listenWithLiveness({ "some-future-check": "not_ok" });
+
+    const response = await getHealth();
+
+    expect(response.status).toBe(503);
+    expect(response.body.reason).toBe("LIVENESS_CHECK_FAILED");
+  });
+});
+
+describe("livenessFailureReason", () => {
+  it("keys off the shared balance-check constant, whose wire name is pinned here", () => {
+    // The composition root registers the liveness check under this name and
+    // the endpoint looks it up by the same constant; pinning the literal
+    // value means a rename has to happen in both places at once.
+    expect(FAUCET_WALLET_BALANCE_CHECK).toBe("faucet-wallet-balance");
+    expect(livenessFailureReason({ [FAUCET_WALLET_BALANCE_CHECK]: "not_ok" })).toBe(
+      "WALLET_BALANCE_LOW",
+    );
+  });
+
+  it("is generic when the balance check did not fail", () => {
+    expect(livenessFailureReason({})).toBe("LIVENESS_CHECK_FAILED");
+    expect(livenessFailureReason({ [FAUCET_WALLET_BALANCE_CHECK]: "ok" })).toBe(
+      "LIVENESS_CHECK_FAILED",
+    );
+    expect(
+      livenessFailureReason({ [FAUCET_WALLET_BALANCE_CHECK]: "ok", "some-future-check": "not_ok" }),
+    ).toBe("LIVENESS_CHECK_FAILED");
   });
 });
 
